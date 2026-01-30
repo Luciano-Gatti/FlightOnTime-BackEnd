@@ -64,6 +64,36 @@ public class FlightRequestJpaAdapter implements FlightRequestRepositoryPort {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<FlightRequest> findByFlightDateBetweenWithUserPredictions(
+            OffsetDateTime start,
+            OffsetDateTime end
+    ) {
+        return flightRequestJpaRepository.findByFlightDateBetweenWithUserPredictions(start, end)
+                .stream()
+                .map(flightRequestMapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<FlightRequest> findByFlightDateBetweenWithoutActuals(
+            OffsetDateTime start,
+            OffsetDateTime end
+    ) {
+        return flightRequestJpaRepository.findByFlightDateBetweenWithoutActuals(start, end)
+                .stream()
+                .map(flightRequestMapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<FlightRequest> findByFlightDateBeforeAndActive(OffsetDateTime cutoff) {
+        return flightRequestJpaRepository.findByFlightDateBeforeAndActive(cutoff)
+                .stream()
+                .map(flightRequestMapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
     private FlightRequestEntity resolveEntity(Long id) {
         if (id == null) {
             return new FlightRequestEntity();

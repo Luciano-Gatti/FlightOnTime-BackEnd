@@ -18,7 +18,9 @@ public class FlightRequestMapper {
                 entity.getOrigin(),
                 entity.getDestination(),
                 entity.getFlightNumber(),
-                entity.getCreatedAt()
+                entity.getCreatedAt(),
+                entity.getActive() == null || entity.getActive(),
+                entity.getClosedAt()
         );
     }
 
@@ -33,6 +35,8 @@ public class FlightRequestMapper {
         target.setOrigin(request.origin());
         target.setDestination(request.destination());
         target.setFlightNumber(request.flightNumber());
+        target.setActive(request.active());
+        target.setClosedAt(toUtc(request.closedAt()));
         if (request.createdAt() != null) {
             target.setCreatedAt(toUtc(request.createdAt()));
         }

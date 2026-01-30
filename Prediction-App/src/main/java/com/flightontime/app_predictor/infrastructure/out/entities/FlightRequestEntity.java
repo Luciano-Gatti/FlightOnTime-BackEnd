@@ -35,6 +35,12 @@ public class FlightRequestEntity {
     @Column(name = "flight_number")
     private String flightNumber;
 
+    @Column(name = "active", nullable = false)
+    private Boolean active;
+
+    @Column(name = "closed_at")
+    private OffsetDateTime closedAt;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
@@ -42,6 +48,9 @@ public class FlightRequestEntity {
     public void onCreate() {
         if (createdAt == null) {
             createdAt = OffsetDateTime.now(ZoneOffset.UTC);
+        }
+        if (active == null) {
+            active = Boolean.TRUE;
         }
     }
 
@@ -99,6 +108,22 @@ public class FlightRequestEntity {
 
     public void setFlightNumber(String flightNumber) {
         this.flightNumber = flightNumber;
+    }
+
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
+    }
+
+    public OffsetDateTime getClosedAt() {
+        return closedAt;
+    }
+
+    public void setClosedAt(OffsetDateTime closedAt) {
+        this.closedAt = closedAt;
     }
 
     public OffsetDateTime getCreatedAt() {

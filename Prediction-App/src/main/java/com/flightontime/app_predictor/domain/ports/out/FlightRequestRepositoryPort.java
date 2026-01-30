@@ -20,4 +20,16 @@ public interface FlightRequestRepositoryPort {
     );
 
     List<FlightRequest> findByUserId(Long userId);
+
+    List<FlightRequest> findByFlightDateBetweenWithUserPredictions(
+            OffsetDateTime start,
+            OffsetDateTime end
+    );
+
+    List<FlightRequest> findByFlightDateBetweenWithoutActuals(
+            OffsetDateTime start,
+            OffsetDateTime end
+    );
+
+    List<FlightRequest> findByFlightDateBeforeAndActive(OffsetDateTime cutoff);
 }

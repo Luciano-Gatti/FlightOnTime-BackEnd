@@ -10,6 +10,8 @@ public record FlightRequest(
         String origin,
         String destination,
         String flightNumber,
-        OffsetDateTime createdAt
+        OffsetDateTime createdAt,
+        boolean active,
+        OffsetDateTime closedAt
 ) {
 }

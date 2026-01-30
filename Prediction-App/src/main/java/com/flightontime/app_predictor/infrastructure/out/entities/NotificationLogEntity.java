@@ -20,6 +20,15 @@ public class NotificationLogEntity {
     @Column(name = "user_prediction_id", nullable = false)
     private Long userPredictionId;
 
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
+    @Column(name = "request_id", nullable = false)
+    private Long requestId;
+
+    @Column(name = "type", nullable = false)
+    private String type;
+
     @Column(name = "channel", nullable = false)
     private String channel;
 
@@ -56,6 +65,30 @@ public class NotificationLogEntity {
 
     public void setUserPredictionId(Long userPredictionId) {
         this.userPredictionId = userPredictionId;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public Long getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(Long requestId) {
+        this.requestId = requestId;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public String getChannel() {

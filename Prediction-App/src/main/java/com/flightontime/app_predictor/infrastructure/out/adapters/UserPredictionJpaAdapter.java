@@ -4,6 +4,7 @@ import com.flightontime.app_predictor.domain.model.UserPrediction;
 import com.flightontime.app_predictor.domain.ports.out.UserPredictionRepositoryPort;
 import com.flightontime.app_predictor.infrastructure.out.entities.UserPredictionEntity;
 import com.flightontime.app_predictor.infrastructure.out.repository.UserPredictionJpaRepository;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
 
@@ -35,6 +36,17 @@ public class UserPredictionJpaAdapter implements UserPredictionRepositoryPort {
     @Override
     public long countDistinctUsersByRequestId(Long requestId) {
         return userPredictionJpaRepository.countDistinctUsersByRequestId(requestId);
+    }
+
+    @Override
+    public List<Long> findDistinctUserIdsByRequestId(Long requestId) {
+        return userPredictionJpaRepository.findDistinctUserIdsByRequestId(requestId);
+    }
+
+    @Override
+    public Optional<UserPrediction> findLatestByUserIdAndRequestId(Long userId, Long requestId) {
+        return userPredictionJpaRepository.findTopByUserIdAndRequestIdOrderByCreatedAtDesc(userId, requestId)
+                .map(userPredictionMapper::toDomain);
     }
 
     private UserPredictionEntity resolveEntity(Long id) {

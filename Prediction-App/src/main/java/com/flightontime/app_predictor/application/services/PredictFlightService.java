@@ -134,7 +134,9 @@ public class PredictFlightService implements PredictFlightUseCase {
                 request.origin(),
                 request.dest(),
                 request.flightNumber(),
-                now
+                now,
+                true,
+                null
         );
         return flightRequestRepositoryPort.save(flightRequest);
     }
