@@ -6,6 +6,7 @@ import com.flightontime.app_predictor.domain.ports.out.ModelPredictionPort;
 import com.flightontime.app_predictor.infrastructure.out.dto.ModelPredictRequest;
 import com.flightontime.app_predictor.infrastructure.out.dto.ModelPredictResponse;
 import java.util.Objects;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -13,7 +14,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class FastApiModelClient implements ModelPredictionPort {
     private final WebClient modelWebClient;
 
-    public FastApiModelClient(WebClient modelWebClient) {
+    public FastApiModelClient(@Qualifier("modelWebClient") WebClient modelWebClient) {
         this.modelWebClient = modelWebClient;
     }
 

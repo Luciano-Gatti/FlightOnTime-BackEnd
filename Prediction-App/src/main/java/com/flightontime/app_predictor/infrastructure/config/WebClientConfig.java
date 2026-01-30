@@ -3,6 +3,8 @@ package com.flightontime.app_predictor.infrastructure.config;
 import io.netty.channel.ChannelOption;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
+import io.netty.channel.ChannelOption;
+import java.time.Duration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
