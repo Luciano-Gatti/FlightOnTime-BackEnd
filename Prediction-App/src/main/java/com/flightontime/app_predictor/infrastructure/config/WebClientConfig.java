@@ -1,9 +1,13 @@
 package com.flightontime.app_predictor.infrastructure.config;
 
 import org.springframework.beans.factory.annotation.Value;
+import io.netty.channel.ChannelOption;
+import java.time.Duration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.netty.http.client.HttpClient;
 
 @Configuration
 public class WebClientConfig {
@@ -11,6 +15,34 @@ public class WebClientConfig {
     public WebClient modelWebClient(@Value("${model.service.url}") String modelServiceUrl) {
         return WebClient.builder()
                 .baseUrl(modelServiceUrl)
+                .build();
+    }
+
+    @Bean
+    public WebClient weatherWebClient(
+            @Value("${weather.service.base-url}") String weatherServiceBaseUrl,
+            @Value("${weather.service.timeout.connect}") Duration connectTimeout,
+            @Value("${weather.service.timeout.read}") Duration readTimeout
+    ) {
+        HttpClient httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Math.toIntExact(connectTimeout.toMillis()))
+                .responseTimeout(readTimeout);
+        return WebClient.builder()
+                .baseUrl(weatherServiceBaseUrl)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
+    }
+
+    @Bean
+    public WebClient fallbackWeatherWebClient(
+            @Value("${weather.fallback.timeout.connect}") Duration connectTimeout,
+            @Value("${weather.fallback.timeout.read}") Duration readTimeout
+    ) {
+        HttpClient httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Math.toIntExact(connectTimeout.toMillis()))
+                .responseTimeout(readTimeout);
+        return WebClient.builder()
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }
 }
