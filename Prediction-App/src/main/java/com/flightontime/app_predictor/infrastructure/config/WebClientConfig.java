@@ -1,5 +1,7 @@
 package com.flightontime.app_predictor.infrastructure.config;
 
+import io.netty.channel.ChannelOption;
+import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import io.netty.channel.ChannelOption;
 import java.time.Duration;
@@ -15,6 +17,13 @@ public class WebClientConfig {
     public WebClient modelWebClient(@Value("${model.service.url}") String modelServiceUrl) {
         return WebClient.builder()
                 .baseUrl(modelServiceUrl)
+                .build();
+    }
+
+    @Bean
+    public WebClient airportWebClient(@Value("${airport.service.url}") String airportServiceUrl) {
+        return WebClient.builder()
+                .baseUrl(airportServiceUrl)
                 .build();
     }
 
