@@ -1,6 +1,7 @@
 package com.flightontime.app_predictor.application.services;
 
 import com.flightontime.app_predictor.domain.model.PredictFlightCommand;
+import com.flightontime.app_predictor.domain.ports.in.DistanceUseCase;
 import com.flightontime.app_predictor.domain.ports.in.PredictFlightUseCase;
 import com.flightontime.app_predictor.domain.ports.out.ModelPredictionPort;
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictRequestDTO;
@@ -12,20 +13,24 @@ import org.springframework.stereotype.Service;
 @Service
 public class PredictFlightService implements PredictFlightUseCase {
     private final ModelPredictionPort modelPredictionPort;
+    private final DistanceUseCase distanceUseCase;
 
-    public PredictFlightService(ModelPredictionPort modelPredictionPort) {
+    public PredictFlightService(ModelPredictionPort modelPredictionPort, DistanceUseCase distanceUseCase) {
         this.modelPredictionPort = modelPredictionPort;
+        this.distanceUseCase = distanceUseCase;
     }
 
     @Override
     public PredictResponseDTO predict(PredictRequestDTO request) {
         validateRequest(request);
+        double distance = distanceUseCase.calculateDistance(request.origin(), request.dest());
         PredictFlightCommand command = new PredictFlightCommand(
                 request.flDate(),
                 request.carrier(),
                 request.origin(),
                 request.dest(),
-                request.flightNumber()
+                request.flightNumber(),
+                distance
         );
         var prediction = modelPredictionPort.requestPrediction(command);
         return new PredictResponseDTO(

@@ -24,7 +24,8 @@ public class FastApiModelClient implements ModelPredictionPort {
                 command.carrier(),
                 command.origin(),
                 command.dest(),
-                command.flightNumber()
+                command.flightNumber(),
+                command.distance()
         );
         ModelPredictResponse response = modelWebClient.post()
                 .uri("/predict")
