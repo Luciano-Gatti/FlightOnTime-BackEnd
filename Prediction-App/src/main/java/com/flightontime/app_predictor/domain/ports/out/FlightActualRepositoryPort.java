@@ -7,4 +7,8 @@ public interface FlightActualRepositoryPort {
     FlightActual save(FlightActual flightActual);
 
     Optional<FlightActual> findById(Long id);
+
+    long countAll();
+
+    long countByStatus(String status);
 }

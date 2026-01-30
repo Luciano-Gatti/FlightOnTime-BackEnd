@@ -32,6 +32,16 @@ public class FlightActualJpaAdapter implements FlightActualRepositoryPort {
                 .map(flightActualMapper::toDomain);
     }
 
+    @Override
+    public long countAll() {
+        return flightActualJpaRepository.count();
+    }
+
+    @Override
+    public long countByStatus(String status) {
+        return flightActualJpaRepository.countByStatus(status);
+    }
+
     private FlightActualEntity resolveEntity(Long id) {
         if (id == null) {
             return new FlightActualEntity();
