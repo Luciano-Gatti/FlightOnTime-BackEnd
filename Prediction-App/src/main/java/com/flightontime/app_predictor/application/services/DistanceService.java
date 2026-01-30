@@ -17,10 +17,14 @@ public class DistanceService implements DistanceUseCase {
 
     @Override
     public double calculateDistance(String originIata, String destinationIata) {
-        Airport origin = airportRepositoryPort.findByIataCode(originIata)
+        Airport origin = airportRepositoryPort.findByIata(originIata)
                 .orElseThrow(() -> new IllegalArgumentException("Airport not found: " + originIata));
-        Airport destination = airportRepositoryPort.findByIataCode(destinationIata)
+        Airport destination = airportRepositoryPort.findByIata(destinationIata)
                 .orElseThrow(() -> new IllegalArgumentException("Airport not found: " + destinationIata));
+        if (origin.latitude() == null || origin.longitude() == null
+                || destination.latitude() == null || destination.longitude() == null) {
+            throw new IllegalArgumentException("Airport coordinates are required to calculate distance");
+        }
         return haversine(origin.latitude(), origin.longitude(), destination.latitude(), destination.longitude());
     }
 

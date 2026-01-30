@@ -1,6 +1,6 @@
-package com.flightontime.app_predictor.domain.model;
+package com.flightontime.app_predictor.application.dto;
 
-public record Airport(
+public record AirportDTO(
         String airportIata,
         String airportName,
         String country,

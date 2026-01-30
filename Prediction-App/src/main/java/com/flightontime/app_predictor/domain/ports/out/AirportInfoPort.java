@@ -4,8 +4,8 @@ import com.flightontime.app_predictor.domain.model.Airport;
 import java.util.List;
 import java.util.Optional;
 
-public interface AirportRepositoryPort {
+public interface AirportInfoPort {
     Optional<Airport> findByIata(String airportIata);
 
-    List<Airport> saveAll(List<Airport> airports);
+    List<Airport> searchByText(String text);
 }
