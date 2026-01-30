@@ -1,12 +1,12 @@
 package com.flightontime.app_predictor.infrastructure.out.adapters;
 
 import com.flightontime.app_predictor.domain.model.FlightActual;
-import com.flightontime.app_predictor.infrastructure.out.entities.FlightActualEntity;
+import com.flightontime.app_predictor.infrastructure.out.entities.FlightOutcomeEntity;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 public class FlightActualMapper {
-    public FlightActual toDomain(FlightActualEntity entity) {
+    public FlightActual toDomain(FlightOutcomeEntity entity) {
         if (entity == null) {
             return null;
         }
@@ -25,11 +25,11 @@ public class FlightActualMapper {
         );
     }
 
-    public FlightActualEntity toEntity(FlightActual flightActual, FlightActualEntity entity) {
+    public FlightOutcomeEntity toEntity(FlightActual flightActual, FlightOutcomeEntity entity) {
         if (flightActual == null) {
             return entity;
         }
-        FlightActualEntity target = entity == null ? new FlightActualEntity() : entity;
+        FlightOutcomeEntity target = entity == null ? new FlightOutcomeEntity() : entity;
         target.setRequestId(flightActual.requestId());
         target.setFlightDate(toUtc(flightActual.flightDate()));
         target.setCarrier(flightActual.carrier());

@@ -11,7 +11,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 @Entity
-@Table(name = "request")
+@Table(name = "flight_request")
 public class FlightRequestEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -11,8 +11,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 @Entity
-@Table(name = "flight_actual")
-public class FlightActualEntity {
+@Table(name = "flight_outcome")
+public class FlightOutcomeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

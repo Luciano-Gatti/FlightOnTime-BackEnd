@@ -1,12 +1,12 @@
 package com.flightontime.app_predictor.infrastructure.out.adapters;
 
 import com.flightontime.app_predictor.domain.model.UserPrediction;
-import com.flightontime.app_predictor.infrastructure.out.entities.UserPredictionEntity;
+import com.flightontime.app_predictor.infrastructure.out.entities.UserPredictionSnapshotEntity;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 public class UserPredictionMapper {
-    public UserPrediction toDomain(UserPredictionEntity entity) {
+    public UserPrediction toDomain(UserPredictionSnapshotEntity entity) {
         if (entity == null) {
             return null;
         }
@@ -18,11 +18,11 @@ public class UserPredictionMapper {
         );
     }
 
-    public UserPredictionEntity toEntity(UserPrediction userPrediction, UserPredictionEntity entity) {
+    public UserPredictionSnapshotEntity toEntity(UserPrediction userPrediction, UserPredictionSnapshotEntity entity) {
         if (userPrediction == null) {
             return entity;
         }
-        UserPredictionEntity target = entity == null ? new UserPredictionEntity() : entity;
+        UserPredictionSnapshotEntity target = entity == null ? new UserPredictionSnapshotEntity() : entity;
         target.setUserId(userPrediction.userId());
         target.setPredictionId(userPrediction.predictionId());
         if (userPrediction.createdAt() != null) {

@@ -1,10 +1,10 @@
 package com.flightontime.app_predictor.infrastructure.out.adapters;
 
 import com.flightontime.app_predictor.domain.model.FlightFollow;
-import com.flightontime.app_predictor.infrastructure.out.entities.FlightFollowEntity;
+import com.flightontime.app_predictor.infrastructure.out.entities.FlightSubscriptionEntity;
 
 public class FlightFollowMapper {
-    public FlightFollow toDomain(FlightFollowEntity entity) {
+    public FlightFollow toDomain(FlightSubscriptionEntity entity) {
         if (entity == null) {
             return null;
         }
@@ -19,8 +19,8 @@ public class FlightFollowMapper {
         );
     }
 
-    public FlightFollowEntity toEntity(FlightFollow flightFollow, FlightFollowEntity entity) {
-        FlightFollowEntity target = entity == null ? new FlightFollowEntity() : entity;
+    public FlightSubscriptionEntity toEntity(FlightFollow flightFollow, FlightSubscriptionEntity entity) {
+        FlightSubscriptionEntity target = entity == null ? new FlightSubscriptionEntity() : entity;
         target.setUserId(flightFollow.userId());
         target.setRequestId(flightFollow.requestId());
         target.setRefreshMode(flightFollow.refreshMode());

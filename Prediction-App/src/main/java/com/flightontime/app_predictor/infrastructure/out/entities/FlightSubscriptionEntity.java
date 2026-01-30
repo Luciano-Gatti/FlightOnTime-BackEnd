@@ -16,10 +16,10 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 @Entity
-@Table(name = "flight_follow", uniqueConstraints = {
+@Table(name = "flight_subscription", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"user_id", "request_id"})
 })
-public class FlightFollowEntity {
+public class FlightSubscriptionEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

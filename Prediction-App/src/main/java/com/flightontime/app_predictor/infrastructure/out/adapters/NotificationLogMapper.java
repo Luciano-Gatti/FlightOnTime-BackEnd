@@ -1,12 +1,12 @@
 package com.flightontime.app_predictor.infrastructure.out.adapters;
 
 import com.flightontime.app_predictor.domain.model.NotificationLog;
-import com.flightontime.app_predictor.infrastructure.out.entities.NotificationLogEntity;
+import com.flightontime.app_predictor.infrastructure.out.entities.FlightNotificationLogEntity;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 public class NotificationLogMapper {
-    public NotificationLog toDomain(NotificationLogEntity entity) {
+    public NotificationLog toDomain(FlightNotificationLogEntity entity) {
         if (entity == null) {
             return null;
         }
@@ -24,11 +24,11 @@ public class NotificationLogMapper {
         );
     }
 
-    public NotificationLogEntity toEntity(NotificationLog notificationLog, NotificationLogEntity entity) {
+    public FlightNotificationLogEntity toEntity(NotificationLog notificationLog, FlightNotificationLogEntity entity) {
         if (notificationLog == null) {
             return entity;
         }
-        NotificationLogEntity target = entity == null ? new NotificationLogEntity() : entity;
+        FlightNotificationLogEntity target = entity == null ? new FlightNotificationLogEntity() : entity;
         target.setUserPredictionId(notificationLog.userPredictionId());
         target.setUserId(notificationLog.userId());
         target.setRequestId(notificationLog.requestId());
