@@ -1,11 +1,14 @@
 package com.flightontime.app_predictor.infrastructure.out.adapters;
 
+import com.flightontime.app_predictor.domain.model.FlightRequestPopularity;
 import com.flightontime.app_predictor.domain.model.UserPrediction;
 import com.flightontime.app_predictor.domain.ports.out.UserPredictionRepositoryPort;
 import com.flightontime.app_predictor.infrastructure.out.entities.UserPredictionEntity;
 import com.flightontime.app_predictor.infrastructure.out.repository.UserPredictionJpaRepository;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 @Component
