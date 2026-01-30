@@ -1,11 +1,14 @@
 package com.flightontime.app_predictor.infrastructure.out.adapters;
 
+import com.flightontime.app_predictor.domain.model.FlightRequestPopularity;
 import com.flightontime.app_predictor.domain.model.UserPrediction;
 import com.flightontime.app_predictor.domain.ports.out.UserPredictionRepositoryPort;
 import com.flightontime.app_predictor.infrastructure.out.entities.UserPredictionEntity;
 import com.flightontime.app_predictor.infrastructure.out.repository.UserPredictionJpaRepository;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -47,6 +50,17 @@ public class UserPredictionJpaAdapter implements UserPredictionRepositoryPort {
     public Optional<UserPrediction> findLatestByUserIdAndRequestId(Long userId, Long requestId) {
         return userPredictionJpaRepository.findTopByUserIdAndRequestIdOrderByCreatedAtDesc(userId, requestId)
                 .map(userPredictionMapper::toDomain);
+    }
+
+    @Override
+    public List<FlightRequestPopularity> findTopRequestPopularity(int limit) {
+        if (limit <= 0) {
+            return List.of();
+        }
+        return userPredictionJpaRepository.findTopRequestPopularity(PageRequest.of(0, limit))
+                .stream()
+                .map(view -> new FlightRequestPopularity(view.getRequestId(), view.getUniqueUsers()))
+                .collect(Collectors.toList());
     }
 
     private UserPredictionEntity resolveEntity(Long id) {

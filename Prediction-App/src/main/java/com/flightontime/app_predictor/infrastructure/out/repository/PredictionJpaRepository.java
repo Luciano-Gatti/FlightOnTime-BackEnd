@@ -28,4 +28,20 @@ public interface PredictionJpaRepository extends JpaRepository<PredictionEntity,
             @Param("requestId") Long requestId,
             @Param("userId") Long userId
     );
+
+    long countByStatus(String status);
+
+    @Query("""
+            select request.flightDate as flightDate,
+                   prediction.predictedAt as predictedAt,
+                   prediction.status as predictedStatus,
+                   actual.status as actualStatus
+            from PredictionEntity prediction
+            join FlightRequestEntity request
+              on prediction.requestId = request.id
+            join FlightActualEntity actual
+              on actual.requestId = request.id
+            where actual.status <> 'CANCELLED'
+            """)
+    List<PredictionAccuracyView> findAccuracySamplesExcludingCancelled();
 }

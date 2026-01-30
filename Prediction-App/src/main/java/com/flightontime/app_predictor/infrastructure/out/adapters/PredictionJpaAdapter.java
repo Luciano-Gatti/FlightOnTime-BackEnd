@@ -1,6 +1,7 @@
 package com.flightontime.app_predictor.infrastructure.out.adapters;
 
 import com.flightontime.app_predictor.domain.model.Prediction;
+import com.flightontime.app_predictor.domain.model.PredictionAccuracySample;
 import com.flightontime.app_predictor.domain.ports.out.PredictionRepositoryPort;
 import com.flightontime.app_predictor.infrastructure.out.entities.PredictionEntity;
 import com.flightontime.app_predictor.infrastructure.out.repository.PredictionJpaRepository;
@@ -53,6 +54,29 @@ public class PredictionJpaAdapter implements PredictionRepositoryPort {
         return predictionJpaRepository.findByRequestIdAndUserId(requestId, userId)
                 .stream()
                 .map(predictionMapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public long countAll() {
+        return predictionJpaRepository.count();
+    }
+
+    @Override
+    public long countByStatus(String status) {
+        return predictionJpaRepository.countByStatus(status);
+    }
+
+    @Override
+    public List<PredictionAccuracySample> findAccuracySamplesExcludingCancelled() {
+        return predictionJpaRepository.findAccuracySamplesExcludingCancelled()
+                .stream()
+                .map(view -> new PredictionAccuracySample(
+                        view.getFlightDate(),
+                        view.getPredictedAt(),
+                        view.getPredictedStatus(),
+                        view.getActualStatus()
+                ))
                 .collect(Collectors.toList());
     }
 
