@@ -16,7 +16,10 @@ import com.flightontime.app_predictor.domain.ports.out.PredictionRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.UserPredictionRepositoryPort;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 
@@ -76,6 +79,7 @@ public class T12hNotifyJobService {
             }
             processUserNotification(follow.userId(), request, follow, now);
         }
+        dispatchNotifications(notificationsByUser, now);
     }
 
     private void processUserNotification(
@@ -106,24 +110,54 @@ public class T12hNotifyJobService {
         if (!isRelevantStatusChange(baselinePrediction.get().status(), currentPrediction.status())) {
             return;
         }
-        notificationPort.sendT12hStatusChange(userId, request, baselinePrediction.get(), currentPrediction);
-        NotificationLog log = new NotificationLog(
-                null,
+        NotificationCandidate candidate = new NotificationCandidate(
                 userId,
-                request.id(),
-                NOTIFICATION_TYPE,
+                request,
                 baselineUserPrediction.get().id(),
-                CHANNEL,
                 currentPrediction.status(),
-                buildMessage(baselinePrediction.get(), currentPrediction),
-                now,
-                now
+                buildMessage(request, baselinePrediction.get(), currentPrediction)
         );
-        notificationLogRepositoryPort.save(log);
+        notificationsByUser
+                .computeIfAbsent(userId, ignored -> new ArrayList<>())
+                .add(candidate);
     }
 
-    private String buildMessage(Prediction baseline, Prediction current) {
-        return "Status changed from " + baseline.status() + " to " + current.status();
+    private void dispatchNotifications(
+            Map<Long, List<NotificationCandidate>> notificationsByUser,
+            OffsetDateTime now
+    ) {
+        for (Map.Entry<Long, List<NotificationCandidate>> entry : notificationsByUser.entrySet()) {
+            List<NotificationCandidate> candidates = entry.getValue();
+            if (candidates == null || candidates.isEmpty()) {
+                continue;
+            }
+            List<String> messages = candidates.stream()
+                    .map(NotificationCandidate::message)
+                    .toList();
+            notificationPort.sendT12hSummary(entry.getKey(), messages);
+            for (NotificationCandidate candidate : candidates) {
+                NotificationLog log = new NotificationLog(
+                        null,
+                        candidate.userId(),
+                        candidate.request().id(),
+                        NOTIFICATION_TYPE,
+                        candidate.userPredictionId(),
+                        CHANNEL,
+                        candidate.status(),
+                        candidate.message(),
+                        now,
+                        now
+                );
+                notificationLogRepositoryPort.save(log);
+            }
+        }
+    }
+
+    private String buildMessage(FlightRequest request, Prediction baseline, Prediction current) {
+        String flightLabel = hasFlightNumber(request.flightNumber())
+                ? request.flightNumber()
+                : "Request " + request.id();
+        return "Flight " + flightLabel + " cambió de " + baseline.status() + " a " + current.status();
     }
 
     private boolean isRelevantStatusChange(String baselineStatus, String currentStatus) {
@@ -137,6 +171,10 @@ public class T12hNotifyJobService {
 
     private boolean isOnTimeOrDelayed(String status) {
         return "ON_TIME".equals(status) || "DELAYED".equals(status);
+    }
+
+    private boolean hasFlightNumber(String flightNumber) {
+        return flightNumber != null && !flightNumber.isBlank();
     }
 
     private Prediction getOrCreateCurrentPrediction(FlightRequest request, OffsetDateTime now) {
@@ -187,5 +225,14 @@ public class T12hNotifyJobService {
             return null;
         }
         return value.withOffsetSameInstant(ZoneOffset.UTC);
+    }
+
+    private record NotificationCandidate(
+            Long userId,
+            FlightRequest request,
+            Long userPredictionId,
+            String status,
+            String message
+    ) {
     }
 }
