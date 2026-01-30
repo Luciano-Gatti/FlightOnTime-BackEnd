@@ -1,12 +1,12 @@
 package com.flightontime.app_predictor.infrastructure.out.adapters;
 
 import com.flightontime.app_predictor.domain.model.Prediction;
-import com.flightontime.app_predictor.infrastructure.out.entities.PredictionEntity;
+import com.flightontime.app_predictor.infrastructure.out.entities.FlightPredictionEntity;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 public class PredictionMapper {
-    public Prediction toDomain(PredictionEntity entity) {
+    public Prediction toDomain(FlightPredictionEntity entity) {
         if (entity == null) {
             return null;
         }
@@ -21,11 +21,11 @@ public class PredictionMapper {
         );
     }
 
-    public PredictionEntity toEntity(Prediction prediction, PredictionEntity entity) {
+    public FlightPredictionEntity toEntity(Prediction prediction, FlightPredictionEntity entity) {
         if (prediction == null) {
             return entity;
         }
-        PredictionEntity target = entity == null ? new PredictionEntity() : entity;
+        FlightPredictionEntity target = entity == null ? new FlightPredictionEntity() : entity;
         target.setRequestId(prediction.requestId());
         target.setStatus(prediction.status());
         target.setProbability(prediction.probability());

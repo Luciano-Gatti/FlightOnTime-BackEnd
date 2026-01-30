@@ -27,8 +27,8 @@ public interface FlightRequestJpaRepository extends JpaRepository<FlightRequestE
               and request.active = true
               and exists (
                 select 1
-                from UserPredictionEntity userPrediction
-                join PredictionEntity prediction
+                from UserPredictionSnapshotEntity userPrediction
+                join FlightPredictionEntity prediction
                   on userPrediction.predictionId = prediction.id
                 where prediction.requestId = request.id
               )
@@ -45,7 +45,7 @@ public interface FlightRequestJpaRepository extends JpaRepository<FlightRequestE
               and request.active = true
               and not exists (
                 select 1
-                from FlightActualEntity actual
+                from FlightOutcomeEntity actual
                 where actual.requestId = request.id
               )
             """)

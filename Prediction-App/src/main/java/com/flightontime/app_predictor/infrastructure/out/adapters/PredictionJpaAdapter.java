@@ -3,8 +3,8 @@ package com.flightontime.app_predictor.infrastructure.out.adapters;
 import com.flightontime.app_predictor.domain.model.Prediction;
 import com.flightontime.app_predictor.domain.model.PredictionAccuracySample;
 import com.flightontime.app_predictor.domain.ports.out.PredictionRepositoryPort;
-import com.flightontime.app_predictor.infrastructure.out.entities.PredictionEntity;
-import com.flightontime.app_predictor.infrastructure.out.repository.PredictionJpaRepository;
+import com.flightontime.app_predictor.infrastructure.out.entities.FlightPredictionEntity;
+import com.flightontime.app_predictor.infrastructure.out.repository.FlightPredictionJpaRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -13,11 +13,11 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class PredictionJpaAdapter implements PredictionRepositoryPort {
-    private final PredictionJpaRepository predictionJpaRepository;
+    private final FlightPredictionJpaRepository flightPredictionJpaRepository;
     private final PredictionMapper predictionMapper = new PredictionMapper();
 
-    public PredictionJpaAdapter(PredictionJpaRepository predictionJpaRepository) {
-        this.predictionJpaRepository = predictionJpaRepository;
+    public PredictionJpaAdapter(FlightPredictionJpaRepository flightPredictionJpaRepository) {
+        this.flightPredictionJpaRepository = flightPredictionJpaRepository;
     }
 
     @Override
@@ -25,14 +25,14 @@ public class PredictionJpaAdapter implements PredictionRepositoryPort {
         if (prediction == null) {
             throw new IllegalArgumentException("Prediction is required");
         }
-        PredictionEntity entity = resolveEntity(prediction.id());
+        FlightPredictionEntity entity = resolveEntity(prediction.id());
         predictionMapper.toEntity(prediction, entity);
-        return predictionMapper.toDomain(predictionJpaRepository.save(entity));
+        return predictionMapper.toDomain(flightPredictionJpaRepository.save(entity));
     }
 
     @Override
     public Optional<Prediction> findById(Long id) {
-        return predictionJpaRepository.findById(id)
+        return flightPredictionJpaRepository.findById(id)
                 .map(predictionMapper::toDomain);
     }
 
@@ -42,7 +42,7 @@ public class PredictionJpaAdapter implements PredictionRepositoryPort {
             OffsetDateTime start,
             OffsetDateTime end
     ) {
-        return predictionJpaRepository.findFirstByRequestIdAndPredictedAtBetweenOrderByPredictedAtDesc(
+        return flightPredictionJpaRepository.findFirstByRequestIdAndPredictedAtBetweenOrderByPredictedAtDesc(
                 requestId,
                 start,
                 end
@@ -51,7 +51,7 @@ public class PredictionJpaAdapter implements PredictionRepositoryPort {
 
     @Override
     public List<Prediction> findByRequestIdAndUserId(Long requestId, Long userId) {
-        return predictionJpaRepository.findByRequestIdAndUserId(requestId, userId)
+        return flightPredictionJpaRepository.findByRequestIdAndUserId(requestId, userId)
                 .stream()
                 .map(predictionMapper::toDomain)
                 .collect(Collectors.toList());
@@ -59,17 +59,17 @@ public class PredictionJpaAdapter implements PredictionRepositoryPort {
 
     @Override
     public long countAll() {
-        return predictionJpaRepository.count();
+        return flightPredictionJpaRepository.count();
     }
 
     @Override
     public long countByStatus(String status) {
-        return predictionJpaRepository.countByStatus(status);
+        return flightPredictionJpaRepository.countByStatus(status);
     }
 
     @Override
     public List<PredictionAccuracySample> findAccuracySamplesExcludingCancelled() {
-        return predictionJpaRepository.findAccuracySamplesExcludingCancelled()
+        return flightPredictionJpaRepository.findAccuracySamplesExcludingCancelled()
                 .stream()
                 .map(view -> new PredictionAccuracySample(
                         view.getFlightDate(),
@@ -80,10 +80,10 @@ public class PredictionJpaAdapter implements PredictionRepositoryPort {
                 .collect(Collectors.toList());
     }
 
-    private PredictionEntity resolveEntity(Long id) {
+    private FlightPredictionEntity resolveEntity(Long id) {
         if (id == null) {
-            return new PredictionEntity();
+            return new FlightPredictionEntity();
         }
-        return predictionJpaRepository.findById(id).orElseGet(PredictionEntity::new);
+        return flightPredictionJpaRepository.findById(id).orElseGet(FlightPredictionEntity::new);
     }
 }

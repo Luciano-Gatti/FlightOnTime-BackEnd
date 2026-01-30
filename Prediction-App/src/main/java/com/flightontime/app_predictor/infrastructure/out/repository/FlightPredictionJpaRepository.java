@@ -1,6 +1,6 @@
 package com.flightontime.app_predictor.infrastructure.out.repository;
 
-import com.flightontime.app_predictor.infrastructure.out.entities.PredictionEntity;
+import com.flightontime.app_predictor.infrastructure.out.entities.FlightPredictionEntity;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -8,8 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface PredictionJpaRepository extends JpaRepository<PredictionEntity, Long> {
-    Optional<PredictionEntity> findFirstByRequestIdAndPredictedAtBetweenOrderByPredictedAtDesc(
+public interface FlightPredictionJpaRepository extends JpaRepository<FlightPredictionEntity, Long> {
+    Optional<FlightPredictionEntity> findFirstByRequestIdAndPredictedAtBetweenOrderByPredictedAtDesc(
             Long requestId,
             OffsetDateTime start,
             OffsetDateTime end
@@ -17,14 +17,14 @@ public interface PredictionJpaRepository extends JpaRepository<PredictionEntity,
 
     @Query("""
             select prediction
-            from PredictionEntity prediction
-            join UserPredictionEntity userPrediction
+            from FlightPredictionEntity prediction
+            join UserPredictionSnapshotEntity userPrediction
               on userPrediction.predictionId = prediction.id
             where prediction.requestId = :requestId
               and userPrediction.userId = :userId
             order by prediction.predictedAt desc
             """)
-    List<PredictionEntity> findByRequestIdAndUserId(
+    List<FlightPredictionEntity> findByRequestIdAndUserId(
             @Param("requestId") Long requestId,
             @Param("userId") Long userId
     );
@@ -36,10 +36,10 @@ public interface PredictionJpaRepository extends JpaRepository<PredictionEntity,
                    prediction.predictedAt as predictedAt,
                    prediction.status as predictedStatus,
                    actual.status as actualStatus
-            from PredictionEntity prediction
+            from FlightPredictionEntity prediction
             join FlightRequestEntity request
               on prediction.requestId = request.id
-            join FlightActualEntity actual
+            join FlightOutcomeEntity actual
               on actual.requestId = request.id
             where actual.status <> 'CANCELLED'
             """)

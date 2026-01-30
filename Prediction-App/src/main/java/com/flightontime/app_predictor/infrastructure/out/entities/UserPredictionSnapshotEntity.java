@@ -11,8 +11,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 @Entity
-@Table(name = "user_prediction")
-public class UserPredictionEntity {
+@Table(name = "user_prediction_snapshot")
+public class UserPredictionSnapshotEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
