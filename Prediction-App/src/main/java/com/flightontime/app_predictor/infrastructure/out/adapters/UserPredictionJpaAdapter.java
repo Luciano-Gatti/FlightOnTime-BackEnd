@@ -52,17 +52,6 @@ public class UserPredictionJpaAdapter implements UserPredictionRepositoryPort {
                 .map(userPredictionMapper::toDomain);
     }
 
-    @Override
-    public List<FlightRequestPopularity> findTopRequestPopularity(int limit) {
-        if (limit <= 0) {
-            return List.of();
-        }
-        return userPredictionJpaRepository.findTopRequestPopularity(PageRequest.of(0, limit))
-                .stream()
-                .map(view -> new FlightRequestPopularity(view.getRequestId(), view.getUniqueUsers()))
-                .collect(Collectors.toList());
-    }
-
     private UserPredictionEntity resolveEntity(Long id) {
         if (id == null) {
             return new UserPredictionEntity();

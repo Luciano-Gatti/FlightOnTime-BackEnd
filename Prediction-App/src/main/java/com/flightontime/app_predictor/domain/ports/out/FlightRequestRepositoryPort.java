@@ -21,8 +21,6 @@ public interface FlightRequestRepositoryPort {
 
     List<FlightRequest> findByUserId(Long userId);
 
-    List<FlightRequest> findByIds(List<Long> ids);
-
     List<FlightRequest> findByFlightDateBetweenWithUserPredictions(
             OffsetDateTime start,
             OffsetDateTime end
