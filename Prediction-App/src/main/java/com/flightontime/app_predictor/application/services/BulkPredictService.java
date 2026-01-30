@@ -1,0 +1,179 @@
+package com.flightontime.app_predictor.application.services;
+
+import com.flightontime.app_predictor.application.dto.BulkPredictError;
+import com.flightontime.app_predictor.application.dto.BulkPredictResult;
+import com.flightontime.app_predictor.domain.model.FlightFollow;
+import com.flightontime.app_predictor.domain.model.RefreshMode;
+import com.flightontime.app_predictor.domain.ports.in.BulkPredictUseCase;
+import com.flightontime.app_predictor.domain.ports.out.FlightFollowRepositoryPort;
+import com.flightontime.app_predictor.infrastructure.in.CsvParser;
+import java.io.InputStream;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
+import org.springframework.stereotype.Service;
+
+@Service
+public class BulkPredictService implements BulkPredictUseCase {
+    private static final List<String> EXPECTED_HEADER = List.of(
+            "fl_date_utc",
+            "carrier",
+            "origin",
+            "dest",
+            "flight_number"
+    );
+
+    private final PredictionWorkflowService predictionWorkflowService;
+    private final FlightFollowRepositoryPort flightFollowRepositoryPort;
+    private final CsvParser csvParser;
+
+    public BulkPredictService(
+            PredictionWorkflowService predictionWorkflowService,
+            FlightFollowRepositoryPort flightFollowRepositoryPort
+    ) {
+        this.predictionWorkflowService = predictionWorkflowService;
+        this.flightFollowRepositoryPort = flightFollowRepositoryPort;
+        this.csvParser = new CsvParser();
+    }
+
+    @Override
+    public BulkPredictResult importPredictionsFromCsv(InputStream inputStream, Long userId, boolean dryRun) {
+        List<BulkPredictError> errors = new ArrayList<>();
+        int accepted = 0;
+        int rejected = 0;
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+
+        CsvParser.CsvParseResult parseResult = csvParser.parse(inputStream);
+        if (!EXPECTED_HEADER.equals(parseResult.header())) {
+            throw new IllegalArgumentException("Invalid CSV header. Expected: " + String.join(",", EXPECTED_HEADER));
+        }
+
+        for (CsvParser.CsvParseError parseError : parseResult.errors()) {
+            rejected++;
+            errors.add(new BulkPredictError(
+                    parseError.rowNumber(),
+                    parseError.message(),
+                    parseError.rawRow()
+            ));
+        }
+
+        for (CsvParser.CsvRow row : parseResult.rows()) {
+            List<String> fields = row.fields();
+            String flDateRaw = fields.get(0);
+            String carrier = fields.get(1);
+            String origin = fields.get(2);
+            String dest = fields.get(3);
+            String flightNumber = fields.get(4);
+
+            OffsetDateTime flightDate;
+            try {
+                flightDate = OffsetDateTime.parse(flDateRaw);
+            } catch (DateTimeParseException ex) {
+                rejected++;
+                errors.add(new BulkPredictError(
+                        row.rowNumber(),
+                        "fl_date_utc must be ISO-8601 with UTC offset",
+                        row.rawRow()
+                ));
+                continue;
+            }
+
+            if (!ZoneOffset.UTC.equals(flightDate.getOffset())) {
+                rejected++;
+                errors.add(new BulkPredictError(
+                        row.rowNumber(),
+                        "fl_date_utc must be in UTC (offset Z)",
+                        row.rawRow()
+                ));
+                continue;
+            }
+            if (!flightDate.isAfter(now)) {
+                rejected++;
+                errors.add(new BulkPredictError(
+                        row.rowNumber(),
+                        "fl_date_utc must be in the future",
+                        row.rawRow()
+                ));
+                continue;
+            }
+            if (carrier.isBlank()) {
+                rejected++;
+                errors.add(new BulkPredictError(
+                        row.rowNumber(),
+                        "carrier is required",
+                        row.rawRow()
+                ));
+                continue;
+            }
+            if (origin.length() != 3) {
+                rejected++;
+                errors.add(new BulkPredictError(
+                        row.rowNumber(),
+                        "origin must be length 3",
+                        row.rawRow()
+                ));
+                continue;
+            }
+            if (dest.length() != 3) {
+                rejected++;
+                errors.add(new BulkPredictError(
+                        row.rowNumber(),
+                        "dest must be length 3",
+                        row.rawRow()
+                ));
+                continue;
+            }
+
+            if (!dryRun) {
+                var workflowResult = predictionWorkflowService.predict(
+                        flightDate,
+                        carrier,
+                        origin,
+                        dest,
+                        flightNumber.isBlank() ? null : flightNumber,
+                        userId,
+                        true,
+                        userId != null
+                );
+                if (userId != null && workflowResult.prediction() != null && workflowResult.flightRequest() != null) {
+                    upsertFlightFollow(
+                            userId,
+                            workflowResult.flightRequest().id(),
+                            workflowResult.prediction().id(),
+                            RefreshMode.T12_ONLY
+                    );
+                }
+            }
+            accepted++;
+        }
+
+        return new BulkPredictResult(accepted, rejected, errors);
+    }
+
+    private void upsertFlightFollow(Long userId, Long requestId, Long baselinePredictionId, RefreshMode refreshMode) {
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        FlightFollow flightFollow = flightFollowRepositoryPort
+                .findByUserIdAndRequestId(userId, requestId)
+                .map(existing -> new FlightFollow(
+                        existing.id(),
+                        userId,
+                        requestId,
+                        refreshMode,
+                        baselinePredictionId,
+                        existing.createdAt(),
+                        now
+                ))
+                .orElseGet(() -> new FlightFollow(
+                        null,
+                        userId,
+                        requestId,
+                        refreshMode,
+                        baselinePredictionId,
+                        now,
+                        now
+                ));
+        flightFollowRepositoryPort.save(flightFollow);
+    }
+}

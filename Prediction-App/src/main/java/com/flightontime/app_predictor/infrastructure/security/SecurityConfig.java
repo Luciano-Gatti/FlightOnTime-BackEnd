@@ -42,6 +42,8 @@ public class SecurityConfig {
                                 writeError(response, request, HttpServletResponse.SC_FORBIDDEN, "Forbidden"))
                 )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.POST, "/predict/bulk-import")
+                        .hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login", "/predict")
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/airports/**")
