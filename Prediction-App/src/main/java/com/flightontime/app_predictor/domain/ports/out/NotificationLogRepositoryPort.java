@@ -7,4 +7,6 @@ public interface NotificationLogRepositoryPort {
     NotificationLog save(NotificationLog notificationLog);
 
     Optional<NotificationLog> findById(Long id);
+
+    Optional<NotificationLog> findByUserIdAndRequestIdAndType(Long userId, Long requestId, String type);
 }

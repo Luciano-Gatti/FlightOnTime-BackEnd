@@ -54,4 +54,13 @@ public class WebClientConfig {
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }
+
+    @Bean
+    public WebClient aeroDataBoxWebClient(
+            @Value("${aerodatabox.service.url}") String aeroDataBoxServiceUrl
+    ) {
+        return WebClient.builder()
+                .baseUrl(aeroDataBoxServiceUrl)
+                .build();
+    }
 }

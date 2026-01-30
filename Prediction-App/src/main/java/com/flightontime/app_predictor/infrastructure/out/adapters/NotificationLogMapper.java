@@ -12,6 +12,9 @@ public class NotificationLogMapper {
         }
         return new NotificationLog(
                 entity.getId(),
+                entity.getUserId(),
+                entity.getRequestId(),
+                entity.getType(),
                 entity.getUserPredictionId(),
                 entity.getChannel(),
                 entity.getStatus(),
@@ -27,6 +30,9 @@ public class NotificationLogMapper {
         }
         NotificationLogEntity target = entity == null ? new NotificationLogEntity() : entity;
         target.setUserPredictionId(notificationLog.userPredictionId());
+        target.setUserId(notificationLog.userId());
+        target.setRequestId(notificationLog.requestId());
+        target.setType(notificationLog.type());
         target.setChannel(notificationLog.channel());
         target.setStatus(notificationLog.status());
         target.setMessage(notificationLog.message());
