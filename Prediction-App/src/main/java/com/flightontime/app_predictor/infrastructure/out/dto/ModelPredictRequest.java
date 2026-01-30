@@ -9,6 +9,7 @@ public record ModelPredictRequest(
         String carrier,
         String origin,
         String dest,
-        String flightNumber
+        String flightNumber,
+        double distance
 ) {
 }

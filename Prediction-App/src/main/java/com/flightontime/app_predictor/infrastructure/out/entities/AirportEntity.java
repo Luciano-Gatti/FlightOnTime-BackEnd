@@ -9,7 +9,7 @@ import jakarta.persistence.Table;
 @Table(name = "airports")
 public class AirportEntity {
     @Id
-    @Column(name = "airport_iata", nullable = false)
+    @Column(name = "airport_iata", nullable = false, length = 3)
     private String airportIata;
 
     @Column(name = "airport_name")
@@ -35,31 +35,6 @@ public class AirportEntity {
 
     @Column(name = "google_maps")
     private String googleMaps;
-
-    protected AirportEntity() {
-    }
-
-    public AirportEntity(
-            String airportIata,
-            String airportName,
-            String country,
-            String cityName,
-            Double latitude,
-            Double longitude,
-            Double elevation,
-            String timeZone,
-            String googleMaps
-    ) {
-        this.airportIata = airportIata;
-        this.airportName = airportName;
-        this.country = country;
-        this.cityName = cityName;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.elevation = elevation;
-        this.timeZone = timeZone;
-        this.googleMaps = googleMaps;
-    }
 
     public String getAirportIata() {
         return airportIata;

@@ -7,6 +7,7 @@ public record PredictFlightCommand(
         String carrier,
         String origin,
         String dest,
-        String flightNumber
+        String flightNumber,
+        double distance
 ) {
 }

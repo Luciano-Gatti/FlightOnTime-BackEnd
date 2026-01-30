@@ -28,8 +28,7 @@ public class AirportJpaAdapter implements AirportRepositoryPort {
         List<AirportEntity> entities = airports.stream()
                 .map(this::toEntity)
                 .collect(Collectors.toList());
-        return airportJpaRepository.saveAll(entities)
-                .stream()
+        return airportJpaRepository.saveAll(entities).stream()
                 .map(this::toDomain)
                 .collect(Collectors.toList());
     }
@@ -49,16 +48,16 @@ public class AirportJpaAdapter implements AirportRepositoryPort {
     }
 
     private AirportEntity toEntity(Airport airport) {
-        return new AirportEntity(
-                airport.airportIata(),
-                airport.airportName(),
-                airport.country(),
-                airport.cityName(),
-                airport.latitude(),
-                airport.longitude(),
-                airport.elevation(),
-                airport.timeZone(),
-                airport.googleMaps()
-        );
+        AirportEntity entity = new AirportEntity();
+        entity.setAirportIata(airport.airportIata());
+        entity.setAirportName(airport.airportName());
+        entity.setCountry(airport.country());
+        entity.setCityName(airport.cityName());
+        entity.setLatitude(airport.latitude());
+        entity.setLongitude(airport.longitude());
+        entity.setElevation(airport.elevation());
+        entity.setTimeZone(airport.timeZone());
+        entity.setGoogleMaps(airport.googleMaps());
+        return entity;
     }
 }
