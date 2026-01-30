@@ -65,6 +65,14 @@ public class FlightRequestJpaAdapter implements FlightRequestRepositoryPort {
     }
 
     @Override
+    public List<FlightRequest> findByIds(List<Long> ids) {
+        return flightRequestJpaRepository.findAllById(ids)
+                .stream()
+                .map(flightRequestMapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<FlightRequest> findByFlightDateBetweenWithUserPredictions(
             OffsetDateTime start,
             OffsetDateTime end

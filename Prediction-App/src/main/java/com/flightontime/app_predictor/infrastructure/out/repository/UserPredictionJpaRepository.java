@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 
 public interface UserPredictionJpaRepository extends JpaRepository<UserPredictionEntity, Long> {
@@ -39,4 +40,15 @@ public interface UserPredictionJpaRepository extends JpaRepository<UserPredictio
             @Param("userId") Long userId,
             @Param("requestId") Long requestId
     );
+
+    @Query("""
+            select prediction.requestId as requestId,
+                   count(distinct userPrediction.userId) as uniqueUsers
+            from UserPredictionEntity userPrediction
+            join PredictionEntity prediction
+              on userPrediction.predictionId = prediction.id
+            group by prediction.requestId
+            order by count(distinct userPrediction.userId) desc
+            """)
+    List<FlightRequestPopularityView> findTopRequestPopularity(Pageable pageable);
 }
