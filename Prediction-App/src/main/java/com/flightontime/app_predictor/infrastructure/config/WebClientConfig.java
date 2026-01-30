@@ -13,4 +13,11 @@ public class WebClientConfig {
                 .baseUrl(modelServiceUrl)
                 .build();
     }
+
+    @Bean
+    public WebClient airportWebClient(@Value("${airport.service.url}") String airportServiceUrl) {
+        return WebClient.builder()
+                .baseUrl(airportServiceUrl)
+                .build();
+    }
 }
