@@ -4,5 +4,7 @@ import com.flightontime.app_predictor.infrastructure.in.dto.PredictRequestDTO;
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictResponseDTO;
 
 public interface PredictFlightUseCase {
-    PredictResponseDTO predict(PredictRequestDTO request);
+    PredictResponseDTO predict(PredictRequestDTO request, Long userId);
+
+    PredictResponseDTO getLatestPrediction(Long requestId, Long userId);
 }
