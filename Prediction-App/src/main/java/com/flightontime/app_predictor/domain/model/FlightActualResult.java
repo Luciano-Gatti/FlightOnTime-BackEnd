@@ -1,0 +1,10 @@
+package com.flightontime.app_predictor.domain.model;
+
+import java.time.OffsetDateTime;
+
+public record FlightActualResult(
+        String status,
+        OffsetDateTime actualDeparture,
+        OffsetDateTime actualArrival
+) {
+}

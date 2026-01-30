@@ -4,6 +4,9 @@ import java.time.OffsetDateTime;
 
 public record NotificationLog(
         Long id,
+        Long userId,
+        Long requestId,
+        String type,
         Long userPredictionId,
         String channel,
         String status,

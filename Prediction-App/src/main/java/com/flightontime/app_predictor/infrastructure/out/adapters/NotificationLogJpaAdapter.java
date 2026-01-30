@@ -32,6 +32,12 @@ public class NotificationLogJpaAdapter implements NotificationLogRepositoryPort 
                 .map(notificationLogMapper::toDomain);
     }
 
+    @Override
+    public Optional<NotificationLog> findByUserIdAndRequestIdAndType(Long userId, Long requestId, String type) {
+        return notificationLogJpaRepository.findFirstByUserIdAndRequestIdAndType(userId, requestId, type)
+                .map(notificationLogMapper::toDomain);
+    }
+
     private NotificationLogEntity resolveEntity(Long id) {
         if (id == null) {
             return new NotificationLogEntity();
