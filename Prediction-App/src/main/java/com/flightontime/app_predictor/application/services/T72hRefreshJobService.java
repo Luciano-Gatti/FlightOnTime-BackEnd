@@ -3,7 +3,9 @@ package com.flightontime.app_predictor.application.services;
 import com.flightontime.app_predictor.domain.model.FlightRequest;
 import com.flightontime.app_predictor.domain.model.PredictFlightCommand;
 import com.flightontime.app_predictor.domain.model.Prediction;
+import com.flightontime.app_predictor.domain.model.RefreshMode;
 import com.flightontime.app_predictor.domain.ports.in.DistanceUseCase;
+import com.flightontime.app_predictor.domain.ports.out.FlightFollowRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.FlightRequestRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.ModelPredictionPort;
 import com.flightontime.app_predictor.domain.ports.out.PredictionRepositoryPort;
@@ -11,22 +13,26 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 @Service
 public class T72hRefreshJobService {
     private final FlightRequestRepositoryPort flightRequestRepositoryPort;
+    private final FlightFollowRepositoryPort flightFollowRepositoryPort;
     private final PredictionRepositoryPort predictionRepositoryPort;
     private final ModelPredictionPort modelPredictionPort;
     private final DistanceUseCase distanceUseCase;
 
     public T72hRefreshJobService(
             FlightRequestRepositoryPort flightRequestRepositoryPort,
+            FlightFollowRepositoryPort flightFollowRepositoryPort,
             PredictionRepositoryPort predictionRepositoryPort,
             ModelPredictionPort modelPredictionPort,
             DistanceUseCase distanceUseCase
     ) {
         this.flightRequestRepositoryPort = flightRequestRepositoryPort;
+        this.flightFollowRepositoryPort = flightFollowRepositoryPort;
         this.predictionRepositoryPort = predictionRepositoryPort;
         this.modelPredictionPort = modelPredictionPort;
         this.distanceUseCase = distanceUseCase;
@@ -35,8 +41,16 @@ public class T72hRefreshJobService {
     public void refreshPredictions() {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         OffsetDateTime end = now.plusHours(72);
-        List<FlightRequest> requests = flightRequestRepositoryPort
-                .findByFlightDateBetweenWithUserPredictions(now, end);
+        List<Long> requestIds = flightFollowRepositoryPort
+                .findByRefreshModeAndFlightDateBetween(RefreshMode.T72_REFRESH, now, end)
+                .stream()
+                .map(follow -> follow.requestId())
+                .distinct()
+                .collect(Collectors.toList());
+        if (requestIds.isEmpty()) {
+            return;
+        }
+        List<FlightRequest> requests = flightRequestRepositoryPort.findByIds(requestIds);
         for (FlightRequest request : requests) {
             PredictFlightCommand command = buildCommand(request);
             getOrCreatePrediction(request.id(), command, now);

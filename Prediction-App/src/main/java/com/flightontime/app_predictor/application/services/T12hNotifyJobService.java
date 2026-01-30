@@ -1,11 +1,13 @@
 package com.flightontime.app_predictor.application.services;
 
 import com.flightontime.app_predictor.domain.model.FlightRequest;
+import com.flightontime.app_predictor.domain.model.FlightFollow;
 import com.flightontime.app_predictor.domain.model.NotificationLog;
 import com.flightontime.app_predictor.domain.model.PredictFlightCommand;
 import com.flightontime.app_predictor.domain.model.Prediction;
 import com.flightontime.app_predictor.domain.model.UserPrediction;
 import com.flightontime.app_predictor.domain.ports.in.DistanceUseCase;
+import com.flightontime.app_predictor.domain.ports.out.FlightFollowRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.FlightRequestRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.ModelPredictionPort;
 import com.flightontime.app_predictor.domain.ports.out.NotificationLogRepositoryPort;
@@ -27,6 +29,7 @@ public class T12hNotifyJobService {
     private static final String CHANNEL = "SYSTEM";
 
     private final FlightRequestRepositoryPort flightRequestRepositoryPort;
+    private final FlightFollowRepositoryPort flightFollowRepositoryPort;
     private final UserPredictionRepositoryPort userPredictionRepositoryPort;
     private final PredictionRepositoryPort predictionRepositoryPort;
     private final ModelPredictionPort modelPredictionPort;
@@ -36,6 +39,7 @@ public class T12hNotifyJobService {
 
     public T12hNotifyJobService(
             FlightRequestRepositoryPort flightRequestRepositoryPort,
+            FlightFollowRepositoryPort flightFollowRepositoryPort,
             UserPredictionRepositoryPort userPredictionRepositoryPort,
             PredictionRepositoryPort predictionRepositoryPort,
             ModelPredictionPort modelPredictionPort,
@@ -44,6 +48,7 @@ public class T12hNotifyJobService {
             DistanceUseCase distanceUseCase
     ) {
         this.flightRequestRepositoryPort = flightRequestRepositoryPort;
+        this.flightFollowRepositoryPort = flightFollowRepositoryPort;
         this.userPredictionRepositoryPort = userPredictionRepositoryPort;
         this.predictionRepositoryPort = predictionRepositoryPort;
         this.modelPredictionPort = modelPredictionPort;
@@ -56,14 +61,23 @@ public class T12hNotifyJobService {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         OffsetDateTime windowStart = now.plusHours(11);
         OffsetDateTime windowEnd = now.plusHours(13);
-        List<FlightRequest> requests = flightRequestRepositoryPort
-                .findByFlightDateBetweenWithUserPredictions(windowStart, windowEnd);
-        Map<Long, List<NotificationCandidate>> notificationsByUser = new HashMap<>();
-        for (FlightRequest request : requests) {
-            List<Long> userIds = userPredictionRepositoryPort.findDistinctUserIdsByRequestId(request.id());
-            for (Long userId : userIds) {
-                processUserNotification(userId, request, now, notificationsByUser);
+        List<FlightFollow> follows = flightFollowRepositoryPort.findByFlightDateBetween(windowStart, windowEnd);
+        if (follows.isEmpty()) {
+            return;
+        }
+        List<Long> requestIds = follows.stream()
+                .map(FlightFollow::requestId)
+                .distinct()
+                .toList();
+        List<FlightRequest> requests = flightRequestRepositoryPort.findByIds(requestIds);
+        var requestLookup = requests.stream()
+                .collect(java.util.stream.Collectors.toMap(FlightRequest::id, item -> item));
+        for (FlightFollow follow : follows) {
+            FlightRequest request = requestLookup.get(follow.requestId());
+            if (request == null) {
+                continue;
             }
+            processUserNotification(follow.userId(), request, follow, now);
         }
         dispatchNotifications(notificationsByUser, now);
     }
@@ -71,8 +85,8 @@ public class T12hNotifyJobService {
     private void processUserNotification(
             Long userId,
             FlightRequest request,
-            OffsetDateTime now,
-            Map<Long, List<NotificationCandidate>> notificationsByUser
+            FlightFollow follow,
+            OffsetDateTime now
     ) {
         Optional<NotificationLog> existing = notificationLogRepositoryPort
                 .findByUserIdAndRequestIdAndType(userId, request.id(), NOTIFICATION_TYPE);
@@ -84,8 +98,11 @@ public class T12hNotifyJobService {
         if (baselineUserPrediction.isEmpty()) {
             return;
         }
-        Optional<Prediction> baselinePrediction = predictionRepositoryPort
-                .findById(baselineUserPrediction.get().predictionId());
+        Long baselinePredictionId = follow.baselinePredictionId();
+        if (baselinePredictionId == null) {
+            baselinePredictionId = baselineUserPrediction.get().predictionId();
+        }
+        Optional<Prediction> baselinePrediction = predictionRepositoryPort.findById(baselinePredictionId);
         if (baselinePrediction.isEmpty()) {
             return;
         }
