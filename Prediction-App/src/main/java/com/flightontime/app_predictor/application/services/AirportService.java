@@ -21,7 +21,7 @@ public class AirportService {
         String normalizedIata = normalizeIata(airportIata);
         Airport airport = airportRepositoryPort.findByIata(normalizedIata)
                 .orElseGet(() -> fetchAndStoreAirport(normalizedIata));
-        return toDto(airport);
+        return AirportDTO.fromDomain(airport);
     }
 
     private Airport fetchAndStoreAirport(String airportIata) {
@@ -46,17 +46,4 @@ public class AirportService {
         }
     }
 
-    private AirportDTO toDto(Airport airport) {
-        return new AirportDTO(
-                airport.airportIata(),
-                airport.airportName(),
-                airport.country(),
-                airport.cityName(),
-                airport.latitude(),
-                airport.longitude(),
-                airport.elevation(),
-                airport.timeZone(),
-                airport.googleMaps()
-        );
-    }
 }
