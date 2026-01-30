@@ -46,10 +46,12 @@ public class ActualsFetchJobService {
     private void processRequest(FlightRequest request, OffsetDateTime nowUtc) {
         Optional<FlightActualResult> actualResult = fetchActualResult(request);
         if (actualResult.isEmpty()) {
+            closeIfExpired(request, nowUtc);
             return;
         }
         FlightActualResult result = actualResult.get();
         if (!isPersistableStatus(result.status())) {
+            closeIfExpired(request, nowUtc);
             return;
         }
         FlightActual actual = new FlightActual(
@@ -66,6 +68,7 @@ public class ActualsFetchJobService {
                 nowUtc
         );
         flightActualRepositoryPort.save(actual);
+        closeIfExpired(request, nowUtc);
     }
 
     private Optional<FlightActualResult> fetchActualResult(FlightRequest request) {
@@ -108,6 +111,27 @@ public class ActualsFetchJobService {
 
     private boolean isPersistableStatus(String status) {
         return "ON_TIME".equals(status) || "DELAYED".equals(status) || "CANCELLED".equals(status);
+    }
+
+    private void closeIfExpired(FlightRequest request, OffsetDateTime nowUtc) {
+        if (request == null || request.flightDate() == null || !request.active()) {
+            return;
+        }
+        if (request.flightDate().isBefore(nowUtc)) {
+            FlightRequest closedRequest = new FlightRequest(
+                    request.id(),
+                    request.userId(),
+                    request.flightDate(),
+                    request.carrier(),
+                    request.origin(),
+                    request.destination(),
+                    request.flightNumber(),
+                    request.createdAt(),
+                    false,
+                    nowUtc
+            );
+            flightRequestRepositoryPort.save(closedRequest);
+        }
     }
 
     private OffsetDateTime toUtc(OffsetDateTime value) {

@@ -24,6 +24,7 @@ public interface FlightRequestJpaRepository extends JpaRepository<FlightRequestE
             select request
             from FlightRequestEntity request
             where request.flightDate between :start and :end
+              and request.active = true
               and exists (
                 select 1
                 from UserPredictionEntity userPrediction
@@ -41,6 +42,7 @@ public interface FlightRequestJpaRepository extends JpaRepository<FlightRequestE
             select request
             from FlightRequestEntity request
             where request.flightDate between :start and :end
+              and request.active = true
               and not exists (
                 select 1
                 from FlightActualEntity actual
@@ -51,4 +53,12 @@ public interface FlightRequestJpaRepository extends JpaRepository<FlightRequestE
             @Param("start") OffsetDateTime start,
             @Param("end") OffsetDateTime end
     );
+
+    @Query("""
+            select request
+            from FlightRequestEntity request
+            where request.flightDate < :cutoff
+              and request.active = true
+            """)
+    List<FlightRequestEntity> findByFlightDateBeforeAndActive(@Param("cutoff") OffsetDateTime cutoff);
 }

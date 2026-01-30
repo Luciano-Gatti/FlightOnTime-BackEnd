@@ -95,29 +95,62 @@ public class PredictFlightService implements PredictFlightUseCase {
         }
     }
 
-    private void upsertFlightFollow(Long userId, Long requestId, Long baselinePredictionId, RefreshMode refreshMode) {
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        FlightFollow flightFollow = flightFollowRepositoryPort
-                .findByUserIdAndRequestId(userId, requestId)
-                .map(existing -> new FlightFollow(
-                        existing.id(),
-                        userId,
-                        requestId,
-                        refreshMode,
-                        baselinePredictionId,
-                        existing.createdAt(),
-                        now
-                ))
-                .orElseGet(() -> new FlightFollow(
-                        null,
-                        userId,
-                        requestId,
-                        refreshMode,
-                        baselinePredictionId,
-                        now,
-                        now
-                ));
-        flightFollowRepositoryPort.save(flightFollow);
+    private FlightRequest getOrCreateFlightRequest(PredictRequestDTO request, Long userId, OffsetDateTime now) {
+        OffsetDateTime flightDateUtc = toUtc(request.flDate());
+        Optional<FlightRequest> existing = flightRequestRepositoryPort.findByUserAndFlight(
+                userId,
+                flightDateUtc,
+                request.carrier(),
+                request.origin(),
+                request.dest(),
+                request.flightNumber()
+        );
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+        FlightRequest flightRequest = new FlightRequest(
+                null,
+                userId,
+                flightDateUtc,
+                request.carrier(),
+                request.origin(),
+                request.dest(),
+                request.flightNumber(),
+                now,
+                true,
+                null
+        );
+        return flightRequestRepositoryPort.save(flightRequest);
+    }
+
+    private Prediction getOrCreatePrediction(Long requestId, PredictFlightCommand command, OffsetDateTime now) {
+        OffsetDateTime bucketStart = resolveBucketStart(now);
+        OffsetDateTime bucketEnd = bucketStart.plusHours(3);
+        Optional<Prediction> cached = predictionRepositoryPort.findByRequestIdAndPredictedAtBetween(
+                requestId,
+                bucketStart,
+                bucketEnd
+        );
+        if (cached.isPresent()) {
+            return cached.get();
+        }
+        var modelPrediction = modelPredictionPort.requestPrediction(command);
+        Prediction prediction = new Prediction(
+                null,
+                requestId,
+                modelPrediction.status(),
+                modelPrediction.probability(),
+                modelPrediction.modelVersion(),
+                now,
+                now
+        );
+        return predictionRepositoryPort.save(prediction);
+    }
+
+    private OffsetDateTime resolveBucketStart(OffsetDateTime timestamp) {
+        OffsetDateTime normalized = timestamp.withMinute(0).withSecond(0).withNano(0);
+        int offset = normalized.getHour() % 3;
+        return normalized.minusHours(offset);
     }
 
 }

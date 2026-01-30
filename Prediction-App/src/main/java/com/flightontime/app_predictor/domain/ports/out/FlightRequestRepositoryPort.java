@@ -30,4 +30,6 @@ public interface FlightRequestRepositoryPort {
             OffsetDateTime start,
             OffsetDateTime end
     );
+
+    List<FlightRequest> findByFlightDateBeforeAndActive(OffsetDateTime cutoff);
 }
