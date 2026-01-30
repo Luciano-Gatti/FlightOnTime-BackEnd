@@ -4,6 +4,7 @@ import com.flightontime.app_predictor.application.dto.AirportDTO;
 import com.flightontime.app_predictor.application.services.AirportNotFoundException;
 import com.flightontime.app_predictor.application.services.AirportService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/airports")
+@Validated
 public class AirportController {
     private final AirportService airportService;
 
@@ -21,7 +23,8 @@ public class AirportController {
 
     @GetMapping("/{iata}")
     public ResponseEntity<AirportDTO> getAirport(@PathVariable String iata) {
-        return ResponseEntity.ok(airportService.getAirportByIata(iata));
+        String normalizedIata = normalizeIata(iata);
+        return ResponseEntity.ok(airportService.getAirportByIata(normalizedIata));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -32,6 +35,17 @@ public class AirportController {
     @ExceptionHandler(AirportNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(AirportNotFoundException ex) {
         return ResponseEntity.status(404).body(new ErrorResponse(ex.getMessage()));
+    }
+
+    private String normalizeIata(String iata) {
+        if (iata == null) {
+            throw new IllegalArgumentException("iata must be length 3");
+        }
+        String normalized = iata.trim().toUpperCase();
+        if (!normalized.matches("^[A-Z]{3}$")) {
+            throw new IllegalArgumentException("iata must be length 3");
+        }
+        return normalized;
     }
 
     public record ErrorResponse(String message) {
