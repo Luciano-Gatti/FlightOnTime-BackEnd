@@ -7,6 +7,8 @@ public record Prediction(
         Long flightRequestId,
         String predictedStatus,
         Double predictedProbability,
+        String confidence,
+        Double thresholdUsed,
         String modelVersion,
         OffsetDateTime predictedAt,
         OffsetDateTime createdAt

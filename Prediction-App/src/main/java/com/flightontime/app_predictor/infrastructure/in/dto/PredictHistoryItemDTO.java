@@ -21,6 +21,10 @@ public record PredictHistoryItemDTO(
         String predictedStatus,
         @JsonProperty("probability")
         Double predictedProbability,
+        @JsonProperty("confidence")
+        String confidence,
+        @JsonProperty("thresholdUsed")
+        Double thresholdUsed,
         String modelVersion,
         @JsonFormat(shape = JsonFormat.Shape.STRING)
         OffsetDateTime predictedAt,

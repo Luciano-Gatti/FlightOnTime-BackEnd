@@ -23,8 +23,14 @@ public class FlightPredictionEntity {
     @Column(name = "predicted_status", nullable = false)
     private String predictedStatus;
 
-    @Column(name = "predicted_probability", nullable = false)
+    @Column(name = "predicted_probability")
     private Double predictedProbability;
+
+    @Column(name = "confidence", nullable = true)
+    private String confidence;
+
+    @Column(name = "threshold_used")
+    private Double thresholdUsed;
 
     @Column(name = "model_version", nullable = false)
     private String modelVersion;
@@ -72,6 +78,22 @@ public class FlightPredictionEntity {
 
     public void setPredictedProbability(Double predictedProbability) {
         this.predictedProbability = predictedProbability;
+    }
+
+    public String getConfidence() {
+        return confidence;
+    }
+
+    public void setConfidence(String confidence) {
+        this.confidence = confidence;
+    }
+
+    public Double getThresholdUsed() {
+        return thresholdUsed;
+    }
+
+    public void setThresholdUsed(Double thresholdUsed) {
+        this.thresholdUsed = thresholdUsed;
     }
 
     public String getModelVersion() {

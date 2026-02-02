@@ -78,6 +78,8 @@ public class PredictHistoryService implements PredictHistoryUseCase {
                 request.flightNumber(),
                 latest.map(Prediction::predictedStatus).orElse(null),
                 latest.map(Prediction::predictedProbability).orElse(null),
+                latest.map(Prediction::confidence).orElse(null),
+                latest.map(Prediction::thresholdUsed).orElse(null),
                 latest.map(Prediction::modelVersion).orElse(null),
                 latest.map(Prediction::predictedAt).orElse(null),
                 uniqueUsersCount
@@ -88,6 +90,8 @@ public class PredictHistoryService implements PredictHistoryUseCase {
         return new PredictHistoryPredictionDTO(
                 prediction.predictedStatus(),
                 prediction.predictedProbability(),
+                prediction.confidence(),
+                prediction.thresholdUsed(),
                 prediction.modelVersion(),
                 prediction.predictedAt()
         );

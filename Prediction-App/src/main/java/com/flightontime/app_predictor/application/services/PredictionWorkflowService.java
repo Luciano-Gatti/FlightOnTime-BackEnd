@@ -13,10 +13,13 @@ import com.flightontime.app_predictor.domain.ports.out.UserPredictionRepositoryP
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class PredictionWorkflowService {
+    private static final Logger log = LoggerFactory.getLogger(PredictionWorkflowService.class);
     public record PredictionWorkflowResult(
             FlightRequest flightRequest,
             Prediction prediction,
@@ -54,6 +57,7 @@ public class PredictionWorkflowService {
             boolean createUserPrediction
     ) {
         double distance = distanceUseCase.calculateDistance(originIata, destIata);
+        log.info("Calculated distance origin={} destination={} distanceKm={}", originIata, destIata, distance);
         PredictFlightCommand command = new PredictFlightCommand(
                 flightDateUtc,
                 airlineCode,
@@ -64,10 +68,13 @@ public class PredictionWorkflowService {
         );
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         if (userId == null && !persistWhenAnonymous) {
+            log.info("Anonymous prediction request, skipping persistence.");
             var prediction = modelPredictionPort.requestPrediction(command);
             PredictionResult result = new PredictionResult(
                     prediction.predictedStatus(),
                     prediction.predictedProbability(),
+                    prediction.confidence(),
+                    prediction.thresholdUsed(),
                     prediction.modelVersion(),
                     now
             );
@@ -82,13 +89,18 @@ public class PredictionWorkflowService {
                 flightNumber,
                 now
         );
+        log.info("Resolved flight request id={} userId={}", flightRequest.id(), userId);
         Prediction prediction = getOrCreatePrediction(flightRequest.id(), command, now);
+        log.info("Resolved prediction id={} for flightRequestId={}", prediction.id(), flightRequest.id());
         if (createUserPrediction && userId != null) {
             userPredictionRepositoryPort.save(new UserPrediction(null, userId, prediction.id(), now));
+            log.info("Saved user prediction userId={} predictionId={}", userId, prediction.id());
         }
         PredictionResult result = new PredictionResult(
                 prediction.predictedStatus(),
                 prediction.predictedProbability(),
+                prediction.confidence(),
+                prediction.thresholdUsed(),
                 prediction.modelVersion(),
                 prediction.predictedAt()
         );
@@ -97,6 +109,7 @@ public class PredictionWorkflowService {
 
     public PredictionWorkflowResult getOrCreatePredictionForRequest(FlightRequest flightRequest) {
         double distance = distanceUseCase.calculateDistance(flightRequest.originIata(), flightRequest.destIata());
+        log.info("Calculated distance for existing requestId={} distanceKm={}", flightRequest.id(), distance);
         PredictFlightCommand command = new PredictFlightCommand(
                 flightRequest.flightDateUtc(),
                 flightRequest.airlineCode(),
@@ -107,9 +120,12 @@ public class PredictionWorkflowService {
         );
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         Prediction prediction = getOrCreatePrediction(flightRequest.id(), command, now);
+        log.info("Resolved prediction id={} for flightRequestId={}", prediction.id(), flightRequest.id());
         PredictionResult result = new PredictionResult(
                 prediction.predictedStatus(),
                 prediction.predictedProbability(),
+                prediction.confidence(),
+                prediction.thresholdUsed(),
                 prediction.modelVersion(),
                 prediction.predictedAt()
         );
@@ -135,6 +151,7 @@ public class PredictionWorkflowService {
                 flightNumber
         );
         if (existing.isPresent()) {
+            log.info("Reusing existing flight request id={} userId={}", existing.get().id(), userId);
             return existing.get();
         }
         FlightRequest flightRequest = new FlightRequest(
@@ -149,6 +166,8 @@ public class PredictionWorkflowService {
                 true,
                 null
         );
+        log.info("Creating new flight request userId={} origin={} dest={} flightNumber={}",
+                userId, originIata, destIata, flightNumber);
         return flightRequestRepositoryPort.save(flightRequest);
     }
 
@@ -161,14 +180,19 @@ public class PredictionWorkflowService {
                 bucketEnd
         );
         if (cached.isPresent()) {
+            log.info("Using cached prediction id={} for flightRequestId={} bucketStart={}",
+                    cached.get().id(), flightRequestId, bucketStart);
             return cached.get();
         }
+        log.info("Requesting model prediction for flightRequestId={} bucketStart={}", flightRequestId, bucketStart);
         var modelPrediction = modelPredictionPort.requestPrediction(command);
         Prediction prediction = new Prediction(
                 null,
                 flightRequestId,
                 modelPrediction.predictedStatus(),
                 modelPrediction.predictedProbability(),
+                modelPrediction.confidence(),
+                modelPrediction.thresholdUsed(),
                 modelPrediction.modelVersion(),
                 now,
                 now

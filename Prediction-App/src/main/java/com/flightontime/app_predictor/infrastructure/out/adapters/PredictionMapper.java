@@ -15,6 +15,8 @@ public class PredictionMapper {
                 entity.getFlightRequestId(),
                 entity.getPredictedStatus(),
                 entity.getPredictedProbability(),
+                entity.getConfidence(),
+                entity.getThresholdUsed(),
                 entity.getModelVersion(),
                 entity.getPredictedAt(),
                 entity.getCreatedAt()
@@ -29,6 +31,8 @@ public class PredictionMapper {
         target.setFlightRequestId(prediction.flightRequestId());
         target.setPredictedStatus(prediction.predictedStatus());
         target.setPredictedProbability(prediction.predictedProbability());
+        target.setConfidence(prediction.confidence());
+        target.setThresholdUsed(prediction.thresholdUsed());
         target.setModelVersion(prediction.modelVersion());
         target.setPredictedAt(toUtc(prediction.predictedAt()));
         if (prediction.createdAt() != null) {
