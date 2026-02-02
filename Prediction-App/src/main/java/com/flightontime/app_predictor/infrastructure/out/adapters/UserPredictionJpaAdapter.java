@@ -55,6 +55,17 @@ public class UserPredictionJpaAdapter implements UserPredictionRepositoryPort {
                 .map(userPredictionMapper::toDomain);
     }
 
+    @Override
+    public List<FlightRequestPopularity> findTopRequestPopularity(int topN) {
+        if (topN <= 0) {
+            return List.of();
+        }
+        List<Object[]> rows = userPredictionSnapshotJpaRepository.findTopRequestPopularity(PageRequest.of(0, topN));
+        return rows.stream()
+                .map(row -> new FlightRequestPopularity((Long) row[0], ((Number) row[1]).longValue()))
+                .collect(Collectors.toList());
+    }
+
     private UserPredictionSnapshotEntity resolveEntity(Long id) {
         if (id == null) {
             return new UserPredictionSnapshotEntity();

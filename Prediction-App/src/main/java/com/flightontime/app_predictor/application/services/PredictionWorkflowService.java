@@ -145,7 +145,9 @@ public class PredictionWorkflowService {
                 originIata,
                 destIata,
                 flightNumber,
-                now
+                now,
+                true,
+                null
         );
         return flightRequestRepositoryPort.save(flightRequest);
     }

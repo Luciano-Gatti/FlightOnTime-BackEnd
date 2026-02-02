@@ -1,10 +1,15 @@
 package com.flightontime.app_predictor.infrastructure.out.adapters;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.flightontime.app_predictor.domain.model.FlightActualResult;
 import com.flightontime.app_predictor.domain.ports.out.FlightActualPort;
+import com.flightontime.app_predictor.infrastructure.out.dto.AeroDataBoxFlightActualResponse;
+import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -17,11 +22,14 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
     private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
     private final WebClient aeroDataBoxWebClient;
+    private final ObjectMapper objectMapper;
 
     public AeroDataBoxFlightActualClient(
-            @Qualifier("aeroDataBoxWebClient") WebClient aeroDataBoxWebClient
+            @Qualifier("aeroDataBoxWebClient") WebClient aeroDataBoxWebClient,
+            ObjectMapper objectMapper
     ) {
         this.aeroDataBoxWebClient = aeroDataBoxWebClient;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -31,12 +39,12 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
         }
         String date = DATE_FORMAT.format(flightDate);
         try {
-            JsonNode response = aeroDataBoxWebClient.get()
+            String response = aeroDataBoxWebClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .path("/flights/number/{flightNumber}/{date}")
                             .build(flightNumber, date))
                     .retrieve()
-                    .bodyToMono(JsonNode.class)
+                    .bodyToMono(String.class)
                     .block();
             return parseFlightActualResponse(response);
         } catch (WebClientResponseException.NotFound ex) {
@@ -55,14 +63,14 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
             return Optional.empty();
         }
         try {
-            JsonNode response = aeroDataBoxWebClient.get()
+            String response = aeroDataBoxWebClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .path("/flights/route/{origin}/{destination}")
                             .queryParam("from", DATE_TIME_FORMAT.format(windowStart))
                             .queryParam("to", DATE_TIME_FORMAT.format(windowEnd))
                             .build(originIata, destIata))
                     .retrieve()
-                    .bodyToMono(JsonNode.class)
+                    .bodyToMono(String.class)
                     .block();
             return parseFlightActualResponse(response);
         } catch (WebClientResponseException.NotFound ex) {
@@ -70,62 +78,50 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
         }
     }
 
-    private Optional<FlightActualResult> parseFlightActualResponse(JsonNode response) {
-        if (response == null || response.isNull()) {
+    private Optional<FlightActualResult> parseFlightActualResponse(String responseBody) {
+        if (responseBody == null || responseBody.isBlank()) {
             return Optional.empty();
         }
-        JsonNode flightNode = response.isArray() ? response.path(0) : response;
-        if (flightNode == null || flightNode.isMissingNode() || flightNode.isNull()) {
+        try {
+            AeroDataBoxFlightActualResponse response = objectMapper.readValue(
+                    responseBody,
+                    AeroDataBoxFlightActualResponse.class
+            );
+            return toFlightActualResult(response);
+        } catch (MismatchedInputException ex) {
+            return parseFlightActualResponseList(responseBody);
+        } catch (IOException ex) {
             return Optional.empty();
         }
-        String status = readStatus(flightNode);
-        OffsetDateTime actualDeparture = readOffsetDateTime(
-                flightNode.path("actualDeparture"),
-                "actualDeparture",
-                "departure"
-        );
-        OffsetDateTime actualArrival = readOffsetDateTime(
-                flightNode.path("actualArrival"),
-                "actualArrival",
-                "arrival"
-        );
+    }
+
+    private Optional<FlightActualResult> parseFlightActualResponseList(String responseBody) {
+        try {
+            List<AeroDataBoxFlightActualResponse> responses = objectMapper.readValue(
+                    responseBody,
+                    new TypeReference<List<AeroDataBoxFlightActualResponse>>() {
+                    }
+            );
+            if (responses == null || responses.isEmpty()) {
+                return Optional.empty();
+            }
+            return toFlightActualResult(responses.getFirst());
+        } catch (IOException ex) {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<FlightActualResult> toFlightActualResult(AeroDataBoxFlightActualResponse response) {
+        if (response == null) {
+            return Optional.empty();
+        }
+        String status = response.status() != null ? response.status() : response.statusCode();
+        OffsetDateTime actualDeparture = firstNonNull(response.actualDeparture(), response.departure());
+        OffsetDateTime actualArrival = firstNonNull(response.actualArrival(), response.arrival());
         return Optional.of(new FlightActualResult(status, actualDeparture, actualArrival));
     }
 
-    private String readStatus(JsonNode flightNode) {
-        String status = textValue(flightNode, "status");
-        if (status == null) {
-            status = textValue(flightNode, "statusCode");
-        }
-        return status;
-    }
-
-    private OffsetDateTime readOffsetDateTime(JsonNode node, String primaryField, String fallbackField) {
-        String value = null;
-        if (node != null && node.isObject()) {
-            value = textValue(node, "utc");
-            if (value == null) {
-                value = textValue(node, primaryField);
-            }
-        }
-        if (value == null) {
-            value = textValue(node, fallbackField);
-        }
-        if (value == null) {
-            return null;
-        }
-        return OffsetDateTime.parse(value);
-    }
-
-    private String textValue(JsonNode node, String field) {
-        if (node == null || field == null) {
-            return null;
-        }
-        JsonNode child = node.get(field);
-        if (child == null || child.isNull() || child.isMissingNode()) {
-            return null;
-        }
-        String value = child.asText();
-        return value == null || value.isBlank() ? null : value;
+    private OffsetDateTime firstNonNull(OffsetDateTime primary, OffsetDateTime fallback) {
+        return primary != null ? primary : fallback;
     }
 }
