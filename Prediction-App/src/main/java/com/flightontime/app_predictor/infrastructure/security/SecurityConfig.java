@@ -1,5 +1,6 @@
 package com.flightontime.app_predictor.infrastructure.security;
 
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -37,45 +38,41 @@ public class SecurityConfig {
         JwtAuthFilter jwtAuthFilter = new JwtAuthFilter(jwtTokenProvider);
 
         http
-                .csrf(csrf -> csrf.disable())
-                .cors(Customizer.withDefaults())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint((request, response, authException) ->
-                                writeError(response, request, HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
-                        .accessDeniedHandler((request, response, accessDeniedException) ->
-                                writeError(response, request, HttpServletResponse.SC_FORBIDDEN, "Forbidden"))
-                )
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/v3/api-docs/**",
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/swagger-ui/index.html",
-                                "/swagger-resources/**",
-                                "/webjars/**",
-                                "/error"
-                        )
-                        .permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS, "/**")
-                        .permitAll()
-                        .requestMatchers(HttpMethod.POST, "/predict/bulk-import")
-                        .hasAuthority("ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login", "/predict")
-                        .permitAll()
-                        .requestMatchers(HttpMethod.GET, "/airports/**")
-                        .permitAll()
-                        .requestMatchers("/predict/history")
-                        .hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
-                        .requestMatchers("/stats/model-accuracy")
-                        .hasAuthority("ROLE_ADMIN")
-                        .requestMatchers("/stats/**")
-                        .hasAuthority("ROLE_ADMIN")
-                        .anyRequest()
-                        .authenticated()
-                )
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                .httpBasic(Customizer.withDefaults());
+            .csrf(csrf -> csrf.disable())
+            .cors(Customizer.withDefaults())
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint((request, response, authException) ->
+                    writeError(response, request, HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
+                .accessDeniedHandler((request, response, accessDeniedException) ->
+                    writeError(response, request, HttpServletResponse.SC_FORBIDDEN, "Forbidden"))
+            )
+            .authorizeHttpRequests(auth -> auth
+                // ✅ CLAVE: permitir dispatchers de error/forward
+                .dispatcherTypeMatchers(DispatcherType.ERROR, DispatcherType.FORWARD).permitAll()
+
+                // ✅ Swagger / OpenAPI
+                .requestMatchers(
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html"
+                ).permitAll()
+
+                // ✅ Error endpoint (por las dudas)
+                .requestMatchers("/error").permitAll()
+
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                .requestMatchers(HttpMethod.POST, "/predict/bulk-import").hasAuthority("ROLE_ADMIN")
+                .requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login", "/predict").permitAll()
+                .requestMatchers(HttpMethod.GET, "/airports/**").permitAll()
+                .requestMatchers("/predict/history").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+                .requestMatchers("/stats/model-accuracy").hasAuthority("ROLE_ADMIN")
+                .requestMatchers("/stats/**").hasAuthority("ROLE_ADMIN")
+
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
