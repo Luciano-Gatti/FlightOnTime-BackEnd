@@ -1,11 +1,11 @@
 package com.flightontime.app_predictor.infrastructure.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -76,7 +76,7 @@ public class SecurityConfig {
     ) throws IOException {
         response.setStatus(status);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.getWriter().write(new ObjectMapper().writeValueAsString(new ErrorResponse(
+        response.getWriter().write(toJson(new ErrorResponse(
                 OffsetDateTime.now(ZoneOffset.UTC),
                 status,
                 message,
@@ -90,5 +90,29 @@ public class SecurityConfig {
             String message,
             String path
     ) {
+    }
+
+    private String toJson(ErrorResponse response) {
+        if (response == null) {
+            return "{}";
+        }
+        String timestamp = response.timestamp() == null
+                ? ""
+                : response.timestamp().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        return "{\"timestamp\":\"" + escapeJson(timestamp) + "\","
+                + "\"status\":" + response.status() + ","
+                + "\"message\":\"" + escapeJson(response.message()) + "\","
+                + "\"path\":\"" + escapeJson(response.path()) + "\"}";
+    }
+
+    private String escapeJson(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
     }
 }
