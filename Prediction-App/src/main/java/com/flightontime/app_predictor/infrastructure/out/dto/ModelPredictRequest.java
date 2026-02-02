@@ -1,20 +1,43 @@
 package com.flightontime.app_predictor.infrastructure.out.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.time.OffsetDateTime;
 
 public record ModelPredictRequest(
-        @JsonFormat(shape = JsonFormat.Shape.STRING)
-        @JsonProperty("flDate")
-        OffsetDateTime flightDateUtc,
-        @JsonProperty("carrier")
-        String airlineCode,
+        @JsonProperty("year")
+        Integer year,
+        @JsonProperty("month")
+        Integer month,
+        @JsonProperty("day_of_month")
+        Integer dayOfMonth,
+        @JsonProperty("day_of_week")
+        Integer dayOfWeek,
+        @JsonProperty("dep_hour")
+        Integer depHour,
+        @JsonProperty("dep_minute")
+        Integer depMinute,
+        @JsonProperty("sched_minute_of_day")
+        Integer schedMinuteOfDay,
+        @JsonProperty("op_unique_carrier")
+        String opUniqueCarrier,
         @JsonProperty("origin")
         String originIata,
         @JsonProperty("dest")
         String destIata,
-        String flightNumber,
-        double distance
+        @JsonProperty("distance")
+        Double distance,
+        @JsonProperty("temp")
+        Double temp,
+        @JsonProperty("wind_spd")
+        Double windSpd,
+        @JsonProperty("precip_1h")
+        Double precip1h,
+        @JsonProperty("climate_severity_idx")
+        Double climateSeverityIdx,
+        @JsonProperty("dist_met_km")
+        Double distMetKm,
+        @JsonProperty("latitude")
+        Double latitude,
+        @JsonProperty("longitude")
+        Double longitude
 ) {
 }

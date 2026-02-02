@@ -104,6 +104,9 @@ public class PredictFlightService implements PredictFlightUseCase {
         if (request.destIata() == null || request.destIata().length() != 3) {
             throw new IllegalArgumentException("destIata must be length 3");
         }
+        if (request.airlineCode() == null || request.airlineCode().isBlank()) {
+            throw new IllegalArgumentException("airlineCode is required");
+        }
     }
 
     private void upsertFlightFollow(

@@ -27,13 +27,26 @@ public class FastApiModelClient implements ModelPredictionPort {
 
     @Override
     public ModelPrediction requestPrediction(PredictFlightCommand command) {
+        int schedMinuteOfDay = (command.flightDateUtc().getHour() * 60) + command.flightDateUtc().getMinute();
         ModelPredictRequest request = new ModelPredictRequest(
-                command.flightDateUtc(),
+                command.flightDateUtc().getYear(),
+                command.flightDateUtc().getMonthValue(),
+                command.flightDateUtc().getDayOfMonth(),
+                command.flightDateUtc().getDayOfWeek().getValue(),
+                command.flightDateUtc().getHour(),
+                command.flightDateUtc().getMinute(),
+                schedMinuteOfDay,
                 command.airlineCode(),
                 command.originIata(),
                 command.destIata(),
-                command.flightNumber(),
-                command.distance()
+                command.distance(),
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                command.distance(),
+                0.0,
+                0.0
         );
         logJson("Model request payload", request);
         ModelPredictResponse response = modelWebClient.post()
