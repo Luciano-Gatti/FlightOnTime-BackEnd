@@ -75,6 +75,8 @@ public class T72hRefreshJobService {
                 flightRequestId,
                 modelPrediction.predictedStatus(),
                 modelPrediction.predictedProbability(),
+                modelPrediction.confidence(),
+                modelPrediction.thresholdUsed(),
                 modelPrediction.modelVersion(),
                 now,
                 now

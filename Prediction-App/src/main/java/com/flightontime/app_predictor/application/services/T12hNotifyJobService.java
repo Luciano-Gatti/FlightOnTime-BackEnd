@@ -208,6 +208,8 @@ public class T12hNotifyJobService {
                 request.id(),
                 modelPrediction.predictedStatus(),
                 modelPrediction.predictedProbability(),
+                modelPrediction.confidence(),
+                modelPrediction.thresholdUsed(),
                 modelPrediction.modelVersion(),
                 now,
                 now
