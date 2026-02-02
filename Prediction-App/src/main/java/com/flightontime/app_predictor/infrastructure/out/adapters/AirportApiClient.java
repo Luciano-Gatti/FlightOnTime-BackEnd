@@ -3,9 +3,13 @@ package com.flightontime.app_predictor.infrastructure.out.adapters;
 import com.flightontime.app_predictor.domain.model.Airport;
 import com.flightontime.app_predictor.domain.ports.out.AirportInfoPort;
 import com.flightontime.app_predictor.infrastructure.out.dto.AirportApiResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -14,20 +18,25 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 @Component
 public class AirportApiClient implements AirportInfoPort {
+    private static final Logger log = LoggerFactory.getLogger(AirportApiClient.class);
     private final WebClient airportWebClient;
     private final String apiKey;
+    private final ObjectMapper objectMapper;
 
     public AirportApiClient(
             @Qualifier("airportWebClient") WebClient airportWebClient,
-            @Value("${api.market.key:}") String apiKey
+            @Value("${api.market.key:}") String apiKey,
+            ObjectMapper objectMapper
     ) {
         this.airportWebClient = airportWebClient;
         this.apiKey = apiKey;
+        this.objectMapper = objectMapper;
     }
 
     @Override
     public Optional<Airport> findByIata(String airportIata) {
         try {
+            log.info("Fetching airport from external API iata={}", airportIata);
             AirportApiResponse response = airportWebClient.get()
                     .uri(uriBuilder -> uriBuilder.path("/airports/Iata/{iata}")
                             .queryParam("withRunways", "false")
@@ -37,9 +46,14 @@ public class AirportApiClient implements AirportInfoPort {
                     .retrieve()
                     .bodyToMono(AirportApiResponse.class)
                     .block();
+            logJson("Airport API response payload iata=" + airportIata, response);
             return Optional.ofNullable(response).map(this::toDomain);
         } catch (WebClientResponseException.NotFound ex) {
+            log.warn("Airport not found in external API iata={}", airportIata);
             return Optional.empty();
+        } catch (WebClientResponseException ex) {
+            log.error("Airport API error status={} body={}", ex.getStatusCode().value(), ex.getResponseBodyAsString(), ex);
+            throw ex;
         }
     }
 
@@ -60,5 +74,17 @@ public class AirportApiClient implements AirportInfoPort {
                 response.timeZone(),
                 response.googleMaps() != null ? response.googleMaps().googleMaps() : null
         );
+    }
+
+    private void logJson(String message, Object payload) {
+        if (payload == null) {
+            log.info("{}: <null>", message);
+            return;
+        }
+        try {
+            log.info("{}: {}", message, objectMapper.writeValueAsString(payload));
+        } catch (JsonProcessingException ex) {
+            log.warn("{}: <failed to serialize payload>", message, ex);
+        }
     }
 }
