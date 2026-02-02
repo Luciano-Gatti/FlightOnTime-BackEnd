@@ -154,7 +154,7 @@ public class PredictController {
 
     @ExceptionHandler(WebClientResponseException.class)
     public ResponseEntity<ErrorResponse> handleModelError(WebClientResponseException ex) {
-        log.error("Model service error status={} body={}", ex.getRawStatusCode(), ex.getResponseBodyAsString(), ex);
+        log.error("Model service error status={} body={}", ex.getStatusCode().value(), ex.getResponseBodyAsString(), ex);
         return ResponseEntity.status(503).body(new ErrorResponse("Model service unavailable"));
     }
 

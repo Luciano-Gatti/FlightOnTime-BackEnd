@@ -52,7 +52,7 @@ public class AirportApiClient implements AirportInfoPort {
             log.warn("Airport not found in external API iata={}", airportIata);
             return Optional.empty();
         } catch (WebClientResponseException ex) {
-            log.error("Airport API error status={} body={}", ex.getRawStatusCode(), ex.getResponseBodyAsString(), ex);
+            log.error("Airport API error status={} body={}", ex.getStatusCode().value(), ex.getResponseBodyAsString(), ex);
             throw ex;
         }
     }
