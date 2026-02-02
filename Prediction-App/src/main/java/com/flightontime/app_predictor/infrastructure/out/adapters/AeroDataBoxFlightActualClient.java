@@ -1,7 +1,6 @@
 package com.flightontime.app_predictor.infrastructure.out.adapters;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.flightontime.app_predictor.domain.model.FlightActualResult;
 import com.flightontime.app_predictor.domain.ports.out.FlightActualPort;
@@ -15,6 +14,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 public class AeroDataBoxFlightActualClient implements FlightActualPort {

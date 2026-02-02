@@ -1,12 +1,13 @@
 package com.flightontime.app_predictor.infrastructure.out.dto;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
+
+import tools.jackson.databind.JsonDeserializer;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
+import org.springframework.boot.json.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
 
 public class FlexibleOffsetDateTimeDeserializer extends JsonDeserializer<OffsetDateTime> {
     private static final String[] DATE_FIELDS = {

@@ -1,8 +1,8 @@
 package com.flightontime.app_predictor.infrastructure.out.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.time.OffsetDateTime;
+import tools.jackson.databind.annotation.JsonDeserialize;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record AeroDataBoxFlightActualResponse(
