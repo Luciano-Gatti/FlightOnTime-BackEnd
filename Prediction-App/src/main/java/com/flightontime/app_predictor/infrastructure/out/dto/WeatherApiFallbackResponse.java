@@ -1,0 +1,30 @@
+package com.flightontime.app_predictor.infrastructure.out.dto;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record WeatherApiFallbackResponse(
+        Location location,
+        Current current
+) {
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Location(
+            String name,
+            String country,
+            @JsonProperty("lat") Double latitude,
+            @JsonProperty("lon") Double longitude,
+            @JsonProperty("localtime") String localtime
+    ) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Current(
+            @JsonProperty("temp_c") Double temperatureCelsius,
+            @JsonProperty("wind_kph") Double windSpeedKmh,
+            @JsonProperty("vis_km") Double visibilityKm,
+            @JsonProperty("precip_mm") Double precipitationMm,
+            @JsonProperty("last_updated") String lastUpdated
+    ) {
+    }
+}
