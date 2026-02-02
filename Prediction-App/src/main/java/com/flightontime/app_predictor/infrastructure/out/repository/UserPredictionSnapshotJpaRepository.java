@@ -40,4 +40,14 @@ public interface UserPredictionSnapshotJpaRepository extends JpaRepository<UserP
             @Param("userId") Long userId,
             @Param("flightRequestId") Long flightRequestId
     );
+
+    @Query("""
+            select prediction.flightRequestId, count(distinct userPrediction.userId)
+            from UserPredictionSnapshotEntity userPrediction
+            join FlightPredictionEntity prediction
+              on userPrediction.flightPredictionId = prediction.id
+            group by prediction.flightRequestId
+            order by count(distinct userPrediction.userId) desc
+            """)
+    List<Object[]> findTopRequestPopularity(Pageable pageable);
 }
