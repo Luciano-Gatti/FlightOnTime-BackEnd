@@ -29,7 +29,7 @@ public class WeatherFallbackClient {
 
     public WeatherApiResponse getWeatherForIata(String iata) {
         ensureApiKey();
-        String uri = UriComponentsBuilder.fromHttpUrl(baseUrl)
+        String uri = UriComponentsBuilder.fromUriString(baseUrl)
                 .queryParam("key", apiKey)
                 .queryParam("q", iata)
                 .toUriString();
