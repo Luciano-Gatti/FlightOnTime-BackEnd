@@ -10,10 +10,13 @@ import com.flightontime.app_predictor.infrastructure.in.dto.PredictRequestDTO;
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictResponseDTO;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class PredictFlightService implements PredictFlightUseCase {
+    private static final Logger log = LoggerFactory.getLogger(PredictFlightService.class);
     private final FlightRequestRepositoryPort flightRequestRepositoryPort;
     private final FlightFollowRepositoryPort flightFollowRepositoryPort;
     private final PredictionWorkflowService predictionWorkflowService;
@@ -31,6 +34,7 @@ public class PredictFlightService implements PredictFlightUseCase {
     @Override
     public PredictResponseDTO predict(PredictRequestDTO request, Long userId) {
         validateRequest(request);
+        log.info("Starting prediction workflow userId={} request={}", userId, request);
         var workflowResult = predictionWorkflowService.predict(
                 request.flightDateUtc(),
                 request.airlineCode(),
@@ -41,6 +45,10 @@ public class PredictFlightService implements PredictFlightUseCase {
                 false,
                 true
         );
+        log.info("Prediction workflow completed userId={} predictionId={} requestId={}",
+                userId,
+                workflowResult.prediction() != null ? workflowResult.prediction().id() : null,
+                workflowResult.flightRequest() != null ? workflowResult.flightRequest().id() : null);
         if (userId != null && workflowResult.prediction() != null && workflowResult.flightRequest() != null) {
             upsertFlightFollow(
                     userId,
@@ -62,6 +70,7 @@ public class PredictFlightService implements PredictFlightUseCase {
         if (userId == null) {
             throw new IllegalArgumentException("User is required");
         }
+        log.info("Fetching latest prediction userId={} requestId={}", userId, requestId);
         FlightRequest flightRequest = flightRequestRepositoryPort.findById(requestId)
                 .filter(request -> userId.equals(request.userId()))
                 .orElseThrow(() -> new IllegalArgumentException("Request not found"));
@@ -74,6 +83,8 @@ public class PredictFlightService implements PredictFlightUseCase {
                     RefreshMode.T72_REFRESH
             );
         }
+        log.info("Latest prediction resolved userId={} requestId={} predictionId={}",
+                userId, requestId, result.prediction() != null ? result.prediction().id() : null);
         return new PredictResponseDTO(
                 result.result().predictedStatus(),
                 result.result().predictedProbability(),
@@ -92,6 +103,9 @@ public class PredictFlightService implements PredictFlightUseCase {
         }
         if (request.destIata() == null || request.destIata().length() != 3) {
             throw new IllegalArgumentException("destIata must be length 3");
+        }
+        if (request.airlineCode() == null || request.airlineCode().isBlank()) {
+            throw new IllegalArgumentException("airlineCode is required");
         }
     }
 
