@@ -10,6 +10,20 @@ public record ModelPredictResponse(
         Double predictedProbability,
         @JsonAlias({"confianza", "confidence"})
         String confidence,
-        String modelVersion
+        String modelVersion,
+        @JsonAlias({"detalles", "details"})
+        ModelPredictDetails details
 ) {
+    public Double thresholdUsed() {
+        if (details == null) {
+            return null;
+        }
+        return details.thresholdUsed();
+    }
+
+    public record ModelPredictDetails(
+            @JsonAlias({"umbral_usado", "threshold_used", "thresholdUsed"})
+            Double thresholdUsed
+    ) {
+    }
 }

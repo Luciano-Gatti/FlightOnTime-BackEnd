@@ -60,6 +60,8 @@ public class PredictFlightService implements PredictFlightUseCase {
         return new PredictResponseDTO(
                 workflowResult.result().predictedStatus(),
                 workflowResult.result().predictedProbability(),
+                workflowResult.result().confidence(),
+                workflowResult.result().thresholdUsed(),
                 workflowResult.result().modelVersion(),
                 workflowResult.result().predictedAt()
         );
@@ -88,6 +90,8 @@ public class PredictFlightService implements PredictFlightUseCase {
         return new PredictResponseDTO(
                 result.result().predictedStatus(),
                 result.result().predictedProbability(),
+                result.result().confidence(),
+                result.result().thresholdUsed(),
                 result.result().modelVersion(),
                 result.result().predictedAt()
         );

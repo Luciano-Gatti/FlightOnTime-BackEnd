@@ -73,6 +73,8 @@ public class PredictionWorkflowService {
             PredictionResult result = new PredictionResult(
                     prediction.predictedStatus(),
                     prediction.predictedProbability(),
+                    prediction.confidence(),
+                    prediction.thresholdUsed(),
                     prediction.modelVersion(),
                     now
             );
@@ -97,6 +99,8 @@ public class PredictionWorkflowService {
         PredictionResult result = new PredictionResult(
                 prediction.predictedStatus(),
                 prediction.predictedProbability(),
+                prediction.confidence(),
+                prediction.thresholdUsed(),
                 prediction.modelVersion(),
                 prediction.predictedAt()
         );
@@ -120,6 +124,8 @@ public class PredictionWorkflowService {
         PredictionResult result = new PredictionResult(
                 prediction.predictedStatus(),
                 prediction.predictedProbability(),
+                prediction.confidence(),
+                prediction.thresholdUsed(),
                 prediction.modelVersion(),
                 prediction.predictedAt()
         );
@@ -185,6 +191,8 @@ public class PredictionWorkflowService {
                 flightRequestId,
                 modelPrediction.predictedStatus(),
                 modelPrediction.predictedProbability(),
+                modelPrediction.confidence(),
+                modelPrediction.thresholdUsed(),
                 modelPrediction.modelVersion(),
                 now,
                 now

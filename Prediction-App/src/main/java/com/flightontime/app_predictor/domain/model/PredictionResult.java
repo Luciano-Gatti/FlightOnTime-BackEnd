@@ -4,7 +4,9 @@ import java.time.OffsetDateTime;
 
 public record PredictionResult(
         String predictedStatus,
-        double predictedProbability,
+        Double predictedProbability,
+        String confidence,
+        Double thresholdUsed,
         String modelVersion,
         OffsetDateTime predictedAt
 ) {

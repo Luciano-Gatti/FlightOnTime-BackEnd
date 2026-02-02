@@ -60,6 +60,8 @@ public class FastApiModelClient implements ModelPredictionPort {
         return new ModelPrediction(
                 normalizeStatus(safeResponse.predictedStatus()),
                 safeResponse.predictedProbability(),
+                safeResponse.confidence(),
+                safeResponse.thresholdUsed(),
                 safeResponse.modelVersion()
         );
     }
