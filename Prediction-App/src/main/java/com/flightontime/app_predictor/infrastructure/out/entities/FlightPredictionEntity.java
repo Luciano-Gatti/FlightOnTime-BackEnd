@@ -32,7 +32,7 @@ public class FlightPredictionEntity {
     @Column(name = "threshold_used")
     private Double thresholdUsed;
 
-    @Column(name = "model_version", nullable = false)
+    @Column(name = "model_version")
     private String modelVersion;
 
     @Column(name = "predicted_at", nullable = false)
