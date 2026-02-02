@@ -9,6 +9,8 @@ import com.flightontime.app_predictor.infrastructure.in.dto.PredictHistoryDetail
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictHistoryItemDTO;
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictRequestDTO;
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictResponseDTO;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.MediaType;
@@ -30,6 +32,8 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 @RestController
 @RequestMapping("/predict")
+@SecurityRequirement(name = "bearer-key")
+@Tag(name = "Predicciones", description = "Endpoints para generar predicciones y consultar historiales")
 @Validated
 public class PredictController {
     private final PredictFlightUseCase predictFlightUseCase;
