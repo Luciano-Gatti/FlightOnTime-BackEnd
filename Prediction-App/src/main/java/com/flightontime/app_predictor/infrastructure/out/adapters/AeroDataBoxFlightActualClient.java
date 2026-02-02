@@ -16,6 +16,7 @@ import org.springframework.boot.json.JsonParserFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 public class AeroDataBoxFlightActualClient implements FlightActualPort {
@@ -23,11 +24,14 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
     private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
     private final WebClient aeroDataBoxWebClient;
+    private final ObjectMapper objectMapper;
 
     public AeroDataBoxFlightActualClient(
-            @Qualifier("aeroDataBoxWebClient") WebClient aeroDataBoxWebClient
+            @Qualifier("aeroDataBoxWebClient") WebClient aeroDataBoxWebClient,
+            ObjectMapper objectMapper
     ) {
         this.aeroDataBoxWebClient = aeroDataBoxWebClient;
+        this.objectMapper = objectMapper;
     }
 
     @Override
