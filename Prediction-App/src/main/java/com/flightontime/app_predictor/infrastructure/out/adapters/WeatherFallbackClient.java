@@ -2,6 +2,7 @@ package com.flightontime.app_predictor.infrastructure.out.adapters;
 
 import com.flightontime.app_predictor.infrastructure.out.dto.WeatherApiResponse;
 import java.time.Duration;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -16,7 +17,7 @@ public class WeatherFallbackClient {
     private final Duration readTimeout;
 
     public WeatherFallbackClient(
-            WebClient fallbackWebClient,
+            @Qualifier("fallbackWeatherWebClient") WebClient fallbackWebClient,
             @Value("${weather.fallback.api-key:}") String apiKey,
             @Value("${weather.fallback.base-url}") String baseUrl,
             @Value("${weather.fallback.timeout.read}") Duration readTimeout
