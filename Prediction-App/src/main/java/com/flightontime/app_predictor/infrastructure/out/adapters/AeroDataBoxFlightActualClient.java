@@ -1,16 +1,18 @@
 package com.flightontime.app_predictor.infrastructure.out.adapters;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.flightontime.app_predictor.domain.model.FlightActualResult;
 import com.flightontime.app_predictor.domain.ports.out.FlightActualPort;
 import com.flightontime.app_predictor.infrastructure.out.dto.AeroDataBoxFlightActualResponse;
-import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.json.JsonParser;
+import org.springframework.boot.json.JsonParserFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -82,33 +84,33 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
         if (responseBody == null || responseBody.isBlank()) {
             return Optional.empty();
         }
-        try {
-            AeroDataBoxFlightActualResponse response = objectMapper.readValue(
-                    responseBody,
-                    AeroDataBoxFlightActualResponse.class
-            );
-            return toFlightActualResult(response);
-        } catch (MismatchedInputException ex) {
-            return parseFlightActualResponseList(responseBody);
-        } catch (IOException ex) {
-            return Optional.empty();
-        }
-    }
-
-    private Optional<FlightActualResult> parseFlightActualResponseList(String responseBody) {
-        try {
-            List<AeroDataBoxFlightActualResponse> responses = objectMapper.readValue(
-                    responseBody,
-                    new TypeReference<List<AeroDataBoxFlightActualResponse>>() {
-                    }
-            );
-            if (responses == null || responses.isEmpty()) {
+        JsonParser parser = JsonParserFactory.getJsonParser();
+        Object parsed = parsePayload(parser, responseBody);
+        if (parsed instanceof List<?> list) {
+            if (list.isEmpty()) {
                 return Optional.empty();
             }
-            return toFlightActualResult(responses.getFirst());
-        } catch (IOException ex) {
+            Object first = list.getFirst();
+            if (first instanceof Map<?, ?> map) {
+                return toFlightActualResult(toResponse(map));
+            }
             return Optional.empty();
         }
+        if (parsed instanceof Map<?, ?> map) {
+            return toFlightActualResult(toResponse(map));
+        }
+        return Optional.empty();
+    }
+
+    private Object parsePayload(JsonParser parser, String responseBody) {
+        String trimmed = responseBody.trim();
+        if (trimmed.startsWith("[")) {
+            return parser.parseList(trimmed);
+        }
+        if (trimmed.startsWith("{")) {
+            return parser.parseMap(trimmed);
+        }
+        return Collections.emptyList();
     }
 
     private Optional<FlightActualResult> toFlightActualResult(AeroDataBoxFlightActualResponse response) {
@@ -123,5 +125,70 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
 
     private OffsetDateTime firstNonNull(OffsetDateTime primary, OffsetDateTime fallback) {
         return primary != null ? primary : fallback;
+    }
+
+    private AeroDataBoxFlightActualResponse toResponse(Map<?, ?> map) {
+        String status = readString(map.get("status"));
+        String statusCode = readString(map.get("statusCode"));
+        OffsetDateTime actualDeparture = readOffsetDateTime(map.get("actualDeparture"));
+        OffsetDateTime actualArrival = readOffsetDateTime(map.get("actualArrival"));
+        OffsetDateTime departure = readOffsetDateTime(map.get("departure"));
+        OffsetDateTime arrival = readOffsetDateTime(map.get("arrival"));
+        return new AeroDataBoxFlightActualResponse(
+                status,
+                statusCode,
+                actualDeparture,
+                actualArrival,
+                departure,
+                arrival
+        );
+    }
+
+    private OffsetDateTime readOffsetDateTime(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof String text) {
+            return parseOffsetDateTime(text);
+        }
+        if (value instanceof Map<?, ?> map) {
+            OffsetDateTime utc = parseOffsetDateTime(readString(map.get("utc")));
+            if (utc != null) {
+                return utc;
+            }
+            OffsetDateTime primary = parseOffsetDateTime(readString(map.get("actualDeparture")));
+            if (primary != null) {
+                return primary;
+            }
+            OffsetDateTime arrival = parseOffsetDateTime(readString(map.get("actualArrival")));
+            if (arrival != null) {
+                return arrival;
+            }
+            OffsetDateTime departure = parseOffsetDateTime(readString(map.get("departure")));
+            if (departure != null) {
+                return departure;
+            }
+            return parseOffsetDateTime(readString(map.get("arrival")));
+        }
+        return null;
+    }
+
+    private OffsetDateTime parseOffsetDateTime(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return OffsetDateTime.parse(value);
+        } catch (DateTimeParseException ex) {
+            return null;
+        }
+    }
+
+    private String readString(Object value) {
+        if (value == null) {
+            return null;
+        }
+        String text = value.toString();
+        return text == null || text.isBlank() ? null : text;
     }
 }
