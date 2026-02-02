@@ -50,21 +50,21 @@ public class ActualsFetchJobService {
             return;
         }
         FlightActualResult result = actualResult.get();
-        if (!isPersistableStatus(result.status())) {
+        if (!isPersistableStatus(result.actualStatus())) {
             closeIfExpired(request, nowUtc);
             return;
         }
         FlightActual actual = new FlightActual(
                 null,
                 request.id(),
-                toUtc(request.flightDate()),
-                request.carrier(),
-                request.origin(),
-                request.destination(),
+                toUtc(request.flightDateUtc()),
+                request.airlineCode(),
+                request.originIata(),
+                request.destIata(),
                 request.flightNumber(),
                 toUtc(result.actualDeparture()),
                 toUtc(result.actualArrival()),
-                result.status(),
+                result.actualStatus(),
                 nowUtc
         );
         flightActualRepositoryPort.save(actual);
@@ -72,22 +72,22 @@ public class ActualsFetchJobService {
     }
 
     private Optional<FlightActualResult> fetchActualResult(FlightRequest request) {
-        if (request == null || request.flightDate() == null) {
+        if (request == null || request.flightDateUtc() == null) {
             return Optional.empty();
         }
         if (hasFlightNumber(request.flightNumber())) {
             Optional<FlightActualResult> byNumber = flightActualPort
-                    .fetchByFlightNumber(request.flightNumber(), toUtc(request.flightDate()));
+                    .fetchByFlightNumber(request.flightNumber(), toUtc(request.flightDateUtc()));
             if (byNumber.isPresent()) {
                 return byNumber;
             }
         }
-        OffsetDateTime flightDateUtc = toUtc(request.flightDate());
+        OffsetDateTime flightDateUtc = toUtc(request.flightDateUtc());
         OffsetDateTime windowStart = flightDateUtc.minusHours(3);
         OffsetDateTime windowEnd = flightDateUtc.plusHours(3);
         return flightActualPort.fetchByRouteAndWindow(
-                request.origin(),
-                request.destination(),
+                request.originIata(),
+                request.destIata(),
                 windowStart,
                 windowEnd
         );
@@ -114,17 +114,17 @@ public class ActualsFetchJobService {
     }
 
     private void closeIfExpired(FlightRequest request, OffsetDateTime nowUtc) {
-        if (request == null || request.flightDate() == null || !request.active()) {
+        if (request == null || request.flightDateUtc() == null || !request.active()) {
             return;
         }
-        if (request.flightDate().isBefore(nowUtc)) {
+        if (request.flightDateUtc().isBefore(nowUtc)) {
             FlightRequest closedRequest = new FlightRequest(
                     request.id(),
                     request.userId(),
-                    request.flightDate(),
-                    request.carrier(),
-                    request.origin(),
-                    request.destination(),
+                    request.flightDateUtc(),
+                    request.airlineCode(),
+                    request.originIata(),
+                    request.destIata(),
                     request.flightNumber(),
                     request.createdAt(),
                     false,

@@ -20,8 +20,8 @@ public class UserPredictionSnapshotEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "prediction_id", nullable = false)
-    private Long predictionId;
+    @Column(name = "flight_prediction_id", nullable = false)
+    private Long flightPredictionId;
 
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
@@ -49,12 +49,12 @@ public class UserPredictionSnapshotEntity {
         this.userId = userId;
     }
 
-    public Long getPredictionId() {
-        return predictionId;
+    public Long getFlightPredictionId() {
+        return flightPredictionId;
     }
 
-    public void setPredictionId(Long predictionId) {
-        this.predictionId = predictionId;
+    public void setFlightPredictionId(Long flightPredictionId) {
+        this.flightPredictionId = flightPredictionId;
     }
 
     public OffsetDateTime getCreatedAt() {

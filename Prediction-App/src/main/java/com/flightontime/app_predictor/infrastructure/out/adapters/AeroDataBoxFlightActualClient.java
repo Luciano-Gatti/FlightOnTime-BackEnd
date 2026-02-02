@@ -46,12 +46,12 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
 
     @Override
     public Optional<FlightActualResult> fetchByRouteAndWindow(
-            String origin,
-            String destination,
+            String originIata,
+            String destIata,
             OffsetDateTime windowStart,
             OffsetDateTime windowEnd
     ) {
-        if (origin == null || destination == null || windowStart == null || windowEnd == null) {
+        if (originIata == null || destIata == null || windowStart == null || windowEnd == null) {
             return Optional.empty();
         }
         try {
@@ -60,7 +60,7 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
                             .path("/flights/route/{origin}/{destination}")
                             .queryParam("from", DATE_TIME_FORMAT.format(windowStart))
                             .queryParam("to", DATE_TIME_FORMAT.format(windowEnd))
-                            .build(origin, destination))
+                            .build(originIata, destIata))
                     .retrieve()
                     .bodyToMono(JsonNode.class)
                     .block();

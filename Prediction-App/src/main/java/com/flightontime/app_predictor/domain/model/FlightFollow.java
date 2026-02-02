@@ -5,9 +5,9 @@ import java.time.OffsetDateTime;
 public record FlightFollow(
         Long id,
         Long userId,
-        Long requestId,
+        Long flightRequestId,
         RefreshMode refreshMode,
-        Long baselinePredictionId,
+        Long baselineFlightPredictionId,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
 ) {

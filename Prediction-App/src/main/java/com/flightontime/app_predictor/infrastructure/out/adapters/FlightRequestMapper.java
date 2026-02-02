@@ -13,10 +13,10 @@ public class FlightRequestMapper {
         return new FlightRequest(
                 entity.getId(),
                 entity.getUserId(),
-                entity.getFlightDate(),
-                entity.getCarrier(),
-                entity.getOrigin(),
-                entity.getDestination(),
+                entity.getFlightDateUtc(),
+                entity.getAirlineCode(),
+                entity.getOriginIata(),
+                entity.getDestIata(),
                 entity.getFlightNumber(),
                 entity.getCreatedAt(),
                 entity.getActive() == null || entity.getActive(),
@@ -30,10 +30,10 @@ public class FlightRequestMapper {
         }
         FlightRequestEntity target = entity == null ? new FlightRequestEntity() : entity;
         target.setUserId(request.userId());
-        target.setFlightDate(toUtc(request.flightDate()));
-        target.setCarrier(request.carrier());
-        target.setOrigin(request.origin());
-        target.setDestination(request.destination());
+        target.setFlightDateUtc(toUtc(request.flightDateUtc()));
+        target.setAirlineCode(request.airlineCode());
+        target.setOriginIata(request.originIata());
+        target.setDestIata(request.destIata());
         target.setFlightNumber(request.flightNumber());
         target.setActive(request.active());
         target.setClosedAt(toUtc(request.closedAt()));

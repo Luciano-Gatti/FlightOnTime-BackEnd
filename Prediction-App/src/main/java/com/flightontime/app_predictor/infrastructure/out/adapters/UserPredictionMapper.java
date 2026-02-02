@@ -13,7 +13,7 @@ public class UserPredictionMapper {
         return new UserPrediction(
                 entity.getId(),
                 entity.getUserId(),
-                entity.getPredictionId(),
+                entity.getFlightPredictionId(),
                 entity.getCreatedAt()
         );
     }
@@ -24,7 +24,7 @@ public class UserPredictionMapper {
         }
         UserPredictionSnapshotEntity target = entity == null ? new UserPredictionSnapshotEntity() : entity;
         target.setUserId(userPrediction.userId());
-        target.setPredictionId(userPrediction.predictionId());
+        target.setFlightPredictionId(userPrediction.flightPredictionId());
         if (userPrediction.createdAt() != null) {
             target.setCreatedAt(toUtc(userPrediction.createdAt()));
         }

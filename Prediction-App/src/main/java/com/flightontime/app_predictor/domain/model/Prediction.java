@@ -4,9 +4,9 @@ import java.time.OffsetDateTime;
 
 public record Prediction(
         Long id,
-        Long requestId,
-        String status,
-        Double probability,
+        Long flightRequestId,
+        String predictedStatus,
+        Double predictedProbability,
         String modelVersion,
         OffsetDateTime predictedAt,
         OffsetDateTime createdAt

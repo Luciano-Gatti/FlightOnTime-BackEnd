@@ -38,20 +38,20 @@ public class PredictionJpaAdapter implements PredictionRepositoryPort {
 
     @Override
     public Optional<Prediction> findByRequestIdAndPredictedAtBetween(
-            Long requestId,
+            Long flightRequestId,
             OffsetDateTime start,
             OffsetDateTime end
     ) {
-        return flightPredictionJpaRepository.findFirstByRequestIdAndPredictedAtBetweenOrderByPredictedAtDesc(
-                requestId,
+        return flightPredictionJpaRepository.findFirstByFlightRequestIdAndPredictedAtBetweenOrderByPredictedAtDesc(
+                flightRequestId,
                 start,
                 end
         ).map(predictionMapper::toDomain);
     }
 
     @Override
-    public List<Prediction> findByRequestIdAndUserId(Long requestId, Long userId) {
-        return flightPredictionJpaRepository.findByRequestIdAndUserId(requestId, userId)
+    public List<Prediction> findByRequestIdAndUserId(Long flightRequestId, Long userId) {
+        return flightPredictionJpaRepository.findByFlightRequestIdAndUserId(flightRequestId, userId)
                 .stream()
                 .map(predictionMapper::toDomain)
                 .collect(Collectors.toList());
@@ -63,8 +63,8 @@ public class PredictionJpaAdapter implements PredictionRepositoryPort {
     }
 
     @Override
-    public long countByStatus(String status) {
-        return flightPredictionJpaRepository.countByStatus(status);
+    public long countByStatus(String predictedStatus) {
+        return flightPredictionJpaRepository.countByPredictedStatus(predictedStatus);
     }
 
     @Override
@@ -72,7 +72,7 @@ public class PredictionJpaAdapter implements PredictionRepositoryPort {
         return flightPredictionJpaRepository.findAccuracySamplesExcludingCancelled()
                 .stream()
                 .map(view -> new PredictionAccuracySample(
-                        view.getFlightDate(),
+                        view.getFlightDateUtc(),
                         view.getPredictedAt(),
                         view.getPredictedStatus(),
                         view.getActualStatus()

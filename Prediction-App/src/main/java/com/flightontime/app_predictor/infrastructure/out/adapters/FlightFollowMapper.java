@@ -11,9 +11,9 @@ public class FlightFollowMapper {
         return new FlightFollow(
                 entity.getId(),
                 entity.getUserId(),
-                entity.getRequestId(),
+                entity.getFlightRequestId(),
                 entity.getRefreshMode(),
-                entity.getBaselinePredictionId(),
+                entity.getBaselineFlightPredictionId(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
         );
@@ -22,9 +22,9 @@ public class FlightFollowMapper {
     public FlightSubscriptionEntity toEntity(FlightFollow flightFollow, FlightSubscriptionEntity entity) {
         FlightSubscriptionEntity target = entity == null ? new FlightSubscriptionEntity() : entity;
         target.setUserId(flightFollow.userId());
-        target.setRequestId(flightFollow.requestId());
+        target.setFlightRequestId(flightFollow.flightRequestId());
         target.setRefreshMode(flightFollow.refreshMode());
-        target.setBaselinePredictionId(flightFollow.baselinePredictionId());
+        target.setBaselineFlightPredictionId(flightFollow.baselineFlightPredictionId());
         target.setCreatedAt(flightFollow.createdAt());
         target.setUpdatedAt(flightFollow.updatedAt());
         return target;

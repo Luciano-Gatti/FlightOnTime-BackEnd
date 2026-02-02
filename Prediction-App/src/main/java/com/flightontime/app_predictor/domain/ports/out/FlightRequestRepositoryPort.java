@@ -12,10 +12,10 @@ public interface FlightRequestRepositoryPort {
 
     Optional<FlightRequest> findByUserAndFlight(
             Long userId,
-            OffsetDateTime flightDate,
-            String carrier,
-            String origin,
-            String destination,
+            OffsetDateTime flightDateUtc,
+            String airlineCode,
+            String originIata,
+            String destIata,
             String flightNumber
     );
 

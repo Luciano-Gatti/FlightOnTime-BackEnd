@@ -9,8 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface FlightPredictionJpaRepository extends JpaRepository<FlightPredictionEntity, Long> {
-    Optional<FlightPredictionEntity> findFirstByRequestIdAndPredictedAtBetweenOrderByPredictedAtDesc(
-            Long requestId,
+    Optional<FlightPredictionEntity> findFirstByFlightRequestIdAndPredictedAtBetweenOrderByPredictedAtDesc(
+            Long flightRequestId,
             OffsetDateTime start,
             OffsetDateTime end
     );
@@ -19,29 +19,29 @@ public interface FlightPredictionJpaRepository extends JpaRepository<FlightPredi
             select prediction
             from FlightPredictionEntity prediction
             join UserPredictionSnapshotEntity userPrediction
-              on userPrediction.predictionId = prediction.id
-            where prediction.requestId = :requestId
+              on userPrediction.flightPredictionId = prediction.id
+            where prediction.flightRequestId = :flightRequestId
               and userPrediction.userId = :userId
             order by prediction.predictedAt desc
             """)
-    List<FlightPredictionEntity> findByRequestIdAndUserId(
-            @Param("requestId") Long requestId,
+    List<FlightPredictionEntity> findByFlightRequestIdAndUserId(
+            @Param("flightRequestId") Long flightRequestId,
             @Param("userId") Long userId
     );
 
-    long countByStatus(String status);
+    long countByPredictedStatus(String predictedStatus);
 
     @Query("""
-            select request.flightDate as flightDate,
+            select request.flightDateUtc as flightDateUtc,
                    prediction.predictedAt as predictedAt,
-                   prediction.status as predictedStatus,
-                   actual.status as actualStatus
+                   prediction.predictedStatus as predictedStatus,
+                   actual.actualStatus as actualStatus
             from FlightPredictionEntity prediction
             join FlightRequestEntity request
-              on prediction.requestId = request.id
+              on prediction.flightRequestId = request.id
             join FlightOutcomeEntity actual
-              on actual.requestId = request.id
-            where actual.status <> 'CANCELLED'
+              on actual.flightRequestId = request.id
+            where actual.actualStatus <> 'CANCELLED'
             """)
     List<PredictionAccuracyView> findAccuracySamplesExcludingCancelled();
 }

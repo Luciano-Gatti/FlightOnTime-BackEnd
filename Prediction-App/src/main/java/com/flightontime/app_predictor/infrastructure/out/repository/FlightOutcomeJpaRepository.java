@@ -4,5 +4,5 @@ import com.flightontime.app_predictor.infrastructure.out.entities.FlightOutcomeE
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface FlightOutcomeJpaRepository extends JpaRepository<FlightOutcomeEntity, Long> {
-    long countByStatus(String status);
+    long countByActualStatus(String actualStatus);
 }

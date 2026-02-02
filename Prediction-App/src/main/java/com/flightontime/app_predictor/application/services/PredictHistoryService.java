@@ -53,10 +53,10 @@ public class PredictHistoryService implements PredictHistoryUseCase {
                 .collect(Collectors.toList());
         return new PredictHistoryDetailDTO(
                 request.id(),
-                request.flightDate(),
-                request.carrier(),
-                request.origin(),
-                request.destination(),
+                request.flightDateUtc(),
+                request.airlineCode(),
+                request.originIata(),
+                request.destIata(),
                 request.flightNumber(),
                 uniqueUsersCount,
                 predictions
@@ -71,13 +71,13 @@ public class PredictHistoryService implements PredictHistoryUseCase {
         long uniqueUsersCount = userPredictionRepositoryPort.countDistinctUsersByRequestId(request.id());
         return new PredictHistoryItemDTO(
                 request.id(),
-                request.flightDate(),
-                request.carrier(),
-                request.origin(),
-                request.destination(),
+                request.flightDateUtc(),
+                request.airlineCode(),
+                request.originIata(),
+                request.destIata(),
                 request.flightNumber(),
-                latest.map(Prediction::status).orElse(null),
-                latest.map(Prediction::probability).orElse(null),
+                latest.map(Prediction::predictedStatus).orElse(null),
+                latest.map(Prediction::predictedProbability).orElse(null),
                 latest.map(Prediction::modelVersion).orElse(null),
                 latest.map(Prediction::predictedAt).orElse(null),
                 uniqueUsersCount
@@ -86,8 +86,8 @@ public class PredictHistoryService implements PredictHistoryUseCase {
 
     private PredictHistoryPredictionDTO toPredictionDto(Prediction prediction) {
         return new PredictHistoryPredictionDTO(
-                prediction.status(),
-                prediction.probability(),
+                prediction.predictedStatus(),
+                prediction.predictedProbability(),
                 prediction.modelVersion(),
                 prediction.predictedAt()
         );

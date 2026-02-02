@@ -17,7 +17,7 @@ import java.time.ZoneOffset;
 
 @Entity
 @Table(name = "flight_subscription", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"user_id", "request_id"})
+        @UniqueConstraint(columnNames = {"user_id", "flight_request_id"})
 })
 public class FlightSubscriptionEntity {
     @Id
@@ -27,15 +27,15 @@ public class FlightSubscriptionEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "request_id", nullable = false)
-    private Long requestId;
+    @Column(name = "flight_request_id", nullable = false)
+    private Long flightRequestId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "refresh_mode", nullable = false)
     private RefreshMode refreshMode;
 
-    @Column(name = "baseline_prediction_id")
-    private Long baselinePredictionId;
+    @Column(name = "baseline_flight_prediction_id")
+    private Long baselineFlightPredictionId;
 
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
@@ -75,12 +75,12 @@ public class FlightSubscriptionEntity {
         this.userId = userId;
     }
 
-    public Long getRequestId() {
-        return requestId;
+    public Long getFlightRequestId() {
+        return flightRequestId;
     }
 
-    public void setRequestId(Long requestId) {
-        this.requestId = requestId;
+    public void setFlightRequestId(Long flightRequestId) {
+        this.flightRequestId = flightRequestId;
     }
 
     public RefreshMode getRefreshMode() {
@@ -91,12 +91,12 @@ public class FlightSubscriptionEntity {
         this.refreshMode = refreshMode;
     }
 
-    public Long getBaselinePredictionId() {
-        return baselinePredictionId;
+    public Long getBaselineFlightPredictionId() {
+        return baselineFlightPredictionId;
     }
 
-    public void setBaselinePredictionId(Long baselinePredictionId) {
-        this.baselinePredictionId = baselinePredictionId;
+    public void setBaselineFlightPredictionId(Long baselineFlightPredictionId) {
+        this.baselineFlightPredictionId = baselineFlightPredictionId;
     }
 
     public OffsetDateTime getCreatedAt() {
