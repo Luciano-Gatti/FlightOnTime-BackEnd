@@ -47,22 +47,22 @@ public class T72hRefreshJobService {
     }
 
     private PredictFlightCommand buildCommand(FlightRequest request) {
-        double distance = distanceUseCase.calculateDistance(request.origin(), request.destination());
+        double distance = distanceUseCase.calculateDistance(request.originIata(), request.destIata());
         return new PredictFlightCommand(
-                toUtc(request.flightDate()),
-                request.carrier(),
-                request.origin(),
-                request.destination(),
+                toUtc(request.flightDateUtc()),
+                request.airlineCode(),
+                request.originIata(),
+                request.destIata(),
                 request.flightNumber(),
                 distance
         );
     }
 
-    private Prediction getOrCreatePrediction(Long requestId, PredictFlightCommand command, OffsetDateTime now) {
+    private Prediction getOrCreatePrediction(Long flightRequestId, PredictFlightCommand command, OffsetDateTime now) {
         OffsetDateTime bucketStart = resolveBucketStart(now);
         OffsetDateTime bucketEnd = bucketStart.plusHours(3);
         Optional<Prediction> cached = predictionRepositoryPort.findByRequestIdAndPredictedAtBetween(
-                requestId,
+                flightRequestId,
                 bucketStart,
                 bucketEnd
         );
@@ -72,9 +72,9 @@ public class T72hRefreshJobService {
         var modelPrediction = modelPredictionPort.requestPrediction(command);
         Prediction prediction = new Prediction(
                 null,
-                requestId,
-                modelPrediction.status(),
-                modelPrediction.probability(),
+                flightRequestId,
+                modelPrediction.predictedStatus(),
+                modelPrediction.predictedProbability(),
                 modelPrediction.modelVersion(),
                 now,
                 now
@@ -96,17 +96,17 @@ public class T72hRefreshJobService {
     }
 
     private boolean closeIfExpired(FlightRequest request, OffsetDateTime nowUtc) {
-        if (request == null || request.flightDate() == null || !request.active()) {
+        if (request == null || request.flightDateUtc() == null || !request.active()) {
             return true;
         }
-        if (request.flightDate().isBefore(nowUtc)) {
+        if (request.flightDateUtc().isBefore(nowUtc)) {
             FlightRequest closedRequest = new FlightRequest(
                     request.id(),
                     request.userId(),
-                    request.flightDate(),
-                    request.carrier(),
-                    request.origin(),
-                    request.destination(),
+                    request.flightDateUtc(),
+                    request.airlineCode(),
+                    request.originIata(),
+                    request.destIata(),
                     request.flightNumber(),
                     request.createdAt(),
                     false,

@@ -8,8 +8,8 @@ public interface FlightActualPort {
     Optional<FlightActualResult> fetchByFlightNumber(String flightNumber, OffsetDateTime flightDate);
 
     Optional<FlightActualResult> fetchByRouteAndWindow(
-            String origin,
-            String destination,
+            String originIata,
+            String destIata,
             OffsetDateTime windowStart,
             OffsetDateTime windowEnd
     );

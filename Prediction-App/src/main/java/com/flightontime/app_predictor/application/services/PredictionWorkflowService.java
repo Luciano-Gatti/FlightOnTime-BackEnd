@@ -44,21 +44,21 @@ public class PredictionWorkflowService {
     }
 
     public PredictionWorkflowResult predict(
-            OffsetDateTime flightDate,
-            String carrier,
-            String origin,
-            String dest,
+            OffsetDateTime flightDateUtc,
+            String airlineCode,
+            String originIata,
+            String destIata,
             String flightNumber,
             Long userId,
             boolean persistWhenAnonymous,
             boolean createUserPrediction
     ) {
-        double distance = distanceUseCase.calculateDistance(origin, dest);
+        double distance = distanceUseCase.calculateDistance(originIata, destIata);
         PredictFlightCommand command = new PredictFlightCommand(
-                flightDate,
-                carrier,
-                origin,
-                dest,
+                flightDateUtc,
+                airlineCode,
+                originIata,
+                destIata,
                 flightNumber,
                 distance
         );
@@ -66,8 +66,8 @@ public class PredictionWorkflowService {
         if (userId == null && !persistWhenAnonymous) {
             var prediction = modelPredictionPort.requestPrediction(command);
             PredictionResult result = new PredictionResult(
-                    prediction.status(),
-                    prediction.probability(),
+                    prediction.predictedStatus(),
+                    prediction.predictedProbability(),
                     prediction.modelVersion(),
                     now
             );
@@ -75,10 +75,10 @@ public class PredictionWorkflowService {
         }
         FlightRequest flightRequest = getOrCreateFlightRequest(
                 userId,
-                flightDate,
-                carrier,
-                origin,
-                dest,
+                flightDateUtc,
+                airlineCode,
+                originIata,
+                destIata,
                 flightNumber,
                 now
         );
@@ -87,8 +87,8 @@ public class PredictionWorkflowService {
             userPredictionRepositoryPort.save(new UserPrediction(null, userId, prediction.id(), now));
         }
         PredictionResult result = new PredictionResult(
-                prediction.status(),
-                prediction.probability(),
+                prediction.predictedStatus(),
+                prediction.predictedProbability(),
                 prediction.modelVersion(),
                 prediction.predictedAt()
         );
@@ -96,20 +96,20 @@ public class PredictionWorkflowService {
     }
 
     public PredictionWorkflowResult getOrCreatePredictionForRequest(FlightRequest flightRequest) {
-        double distance = distanceUseCase.calculateDistance(flightRequest.origin(), flightRequest.destination());
+        double distance = distanceUseCase.calculateDistance(flightRequest.originIata(), flightRequest.destIata());
         PredictFlightCommand command = new PredictFlightCommand(
-                flightRequest.flightDate(),
-                flightRequest.carrier(),
-                flightRequest.origin(),
-                flightRequest.destination(),
+                flightRequest.flightDateUtc(),
+                flightRequest.airlineCode(),
+                flightRequest.originIata(),
+                flightRequest.destIata(),
                 flightRequest.flightNumber(),
                 distance
         );
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         Prediction prediction = getOrCreatePrediction(flightRequest.id(), command, now);
         PredictionResult result = new PredictionResult(
-                prediction.status(),
-                prediction.probability(),
+                prediction.predictedStatus(),
+                prediction.predictedProbability(),
                 prediction.modelVersion(),
                 prediction.predictedAt()
         );
@@ -118,20 +118,20 @@ public class PredictionWorkflowService {
 
     private FlightRequest getOrCreateFlightRequest(
             Long userId,
-            OffsetDateTime flightDate,
-            String carrier,
-            String origin,
-            String dest,
+            OffsetDateTime flightDateUtc,
+            String airlineCode,
+            String originIata,
+            String destIata,
             String flightNumber,
             OffsetDateTime now
     ) {
-        OffsetDateTime flightDateUtc = toUtc(flightDate);
+        OffsetDateTime normalizedFlightDateUtc = toUtc(flightDateUtc);
         Optional<FlightRequest> existing = flightRequestRepositoryPort.findByUserAndFlight(
                 userId,
-                flightDateUtc,
-                carrier,
-                origin,
-                dest,
+                normalizedFlightDateUtc,
+                airlineCode,
+                originIata,
+                destIata,
                 flightNumber
         );
         if (existing.isPresent()) {
@@ -140,21 +140,21 @@ public class PredictionWorkflowService {
         FlightRequest flightRequest = new FlightRequest(
                 null,
                 userId,
-                flightDateUtc,
-                carrier,
-                origin,
-                dest,
+                normalizedFlightDateUtc,
+                airlineCode,
+                originIata,
+                destIata,
                 flightNumber,
                 now
         );
         return flightRequestRepositoryPort.save(flightRequest);
     }
 
-    private Prediction getOrCreatePrediction(Long requestId, PredictFlightCommand command, OffsetDateTime now) {
+    private Prediction getOrCreatePrediction(Long flightRequestId, PredictFlightCommand command, OffsetDateTime now) {
         OffsetDateTime bucketStart = resolveBucketStart(now);
         OffsetDateTime bucketEnd = bucketStart.plusHours(3);
         Optional<Prediction> cached = predictionRepositoryPort.findByRequestIdAndPredictedAtBetween(
-                requestId,
+                flightRequestId,
                 bucketStart,
                 bucketEnd
         );
@@ -164,9 +164,9 @@ public class PredictionWorkflowService {
         var modelPrediction = modelPredictionPort.requestPrediction(command);
         Prediction prediction = new Prediction(
                 null,
-                requestId,
-                modelPrediction.status(),
-                modelPrediction.probability(),
+                flightRequestId,
+                modelPrediction.predictedStatus(),
+                modelPrediction.predictedProbability(),
                 modelPrediction.modelVersion(),
                 now,
                 now

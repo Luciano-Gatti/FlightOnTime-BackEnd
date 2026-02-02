@@ -43,7 +43,7 @@ public class StatsSummaryService implements StatsSummaryUseCase {
         long totalOnTimePredicted = predictionRepositoryPort.countByStatus("ON_TIME");
         long totalDelayedPredicted = predictionRepositoryPort.countByStatus("DELAYED");
         long totalFlightsWithActual = flightActualRepositoryPort.countAll();
-        long totalCancelled = flightActualRepositoryPort.countByStatus("CANCELLED");
+        long totalCancelled = flightActualRepositoryPort.countByActualStatus("CANCELLED");
         List<StatsTopFlightDTO> topFlights = resolveTopFlights(topN);
         return new StatsSummaryResponseDTO(
                 totalPredictions,
@@ -64,7 +64,7 @@ public class StatsSummaryService implements StatsSummaryUseCase {
             return Collections.emptyList();
         }
         List<Long> requestIds = popularity.stream()
-                .map(FlightRequestPopularity::requestId)
+                .map(FlightRequestPopularity::flightRequestId)
                 .collect(Collectors.toList());
         List<FlightRequest> requests = flightRequestRepositoryPort.findByIds(requestIds);
         Map<Long, FlightRequest> requestMap = new HashMap<>();
@@ -72,7 +72,7 @@ public class StatsSummaryService implements StatsSummaryUseCase {
             requestMap.put(request.id(), request);
         }
         return popularity.stream()
-                .map(item -> toTopFlight(item, requestMap.get(item.requestId())))
+                .map(item -> toTopFlight(item, requestMap.get(item.flightRequestId())))
                 .filter(item -> item != null)
                 .collect(Collectors.toList());
     }
@@ -83,10 +83,10 @@ public class StatsSummaryService implements StatsSummaryUseCase {
         }
         return new StatsTopFlightDTO(
                 request.id(),
-                toUtc(request.flightDate()),
-                request.carrier(),
-                request.origin(),
-                request.destination(),
+                toUtc(request.flightDateUtc()),
+                request.airlineCode(),
+                request.originIata(),
+                request.destIata(),
                 request.flightNumber(),
                 popularity.uniqueUsers()
         );

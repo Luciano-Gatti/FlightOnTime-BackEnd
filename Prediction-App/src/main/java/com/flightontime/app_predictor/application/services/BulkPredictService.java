@@ -61,15 +61,15 @@ public class BulkPredictService implements BulkPredictUseCase {
 
         for (CsvParser.CsvRow row : parseResult.rows()) {
             List<String> fields = row.fields();
-            String flDateRaw = fields.get(0);
-            String carrier = fields.get(1);
-            String origin = fields.get(2);
-            String dest = fields.get(3);
+            String flightDateRaw = fields.get(0);
+            String airlineCode = fields.get(1);
+            String originIata = fields.get(2);
+            String destIata = fields.get(3);
             String flightNumber = fields.get(4);
 
             OffsetDateTime flightDate;
             try {
-                flightDate = OffsetDateTime.parse(flDateRaw);
+                flightDate = OffsetDateTime.parse(flightDateRaw);
             } catch (DateTimeParseException ex) {
                 rejected++;
                 errors.add(new BulkPredictError(
@@ -98,7 +98,7 @@ public class BulkPredictService implements BulkPredictUseCase {
                 ));
                 continue;
             }
-            if (carrier.isBlank()) {
+            if (airlineCode.isBlank()) {
                 rejected++;
                 errors.add(new BulkPredictError(
                         row.rowNumber(),
@@ -107,7 +107,7 @@ public class BulkPredictService implements BulkPredictUseCase {
                 ));
                 continue;
             }
-            if (origin.length() != 3) {
+            if (originIata.length() != 3) {
                 rejected++;
                 errors.add(new BulkPredictError(
                         row.rowNumber(),
@@ -116,7 +116,7 @@ public class BulkPredictService implements BulkPredictUseCase {
                 ));
                 continue;
             }
-            if (dest.length() != 3) {
+            if (destIata.length() != 3) {
                 rejected++;
                 errors.add(new BulkPredictError(
                         row.rowNumber(),
@@ -129,9 +129,9 @@ public class BulkPredictService implements BulkPredictUseCase {
             if (!dryRun) {
                 var workflowResult = predictionWorkflowService.predict(
                         flightDate,
-                        carrier,
-                        origin,
-                        dest,
+                        airlineCode,
+                        originIata,
+                        destIata,
                         flightNumber.isBlank() ? null : flightNumber,
                         userId,
                         true,
@@ -152,25 +152,30 @@ public class BulkPredictService implements BulkPredictUseCase {
         return new BulkPredictResult(accepted, rejected, errors);
     }
 
-    private void upsertFlightFollow(Long userId, Long requestId, Long baselinePredictionId, RefreshMode refreshMode) {
+    private void upsertFlightFollow(
+            Long userId,
+            Long flightRequestId,
+            Long baselineFlightPredictionId,
+            RefreshMode refreshMode
+    ) {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         FlightFollow flightFollow = flightFollowRepositoryPort
-                .findByUserIdAndRequestId(userId, requestId)
+                .findByUserIdAndFlightRequestId(userId, flightRequestId)
                 .map(existing -> new FlightFollow(
                         existing.id(),
                         userId,
-                        requestId,
+                        flightRequestId,
                         refreshMode,
-                        baselinePredictionId,
+                        baselineFlightPredictionId,
                         existing.createdAt(),
                         now
                 ))
                 .orElseGet(() -> new FlightFollow(
                         null,
                         userId,
-                        requestId,
+                        flightRequestId,
                         refreshMode,
-                        baselinePredictionId,
+                        baselineFlightPredictionId,
                         now,
                         now
                 ));

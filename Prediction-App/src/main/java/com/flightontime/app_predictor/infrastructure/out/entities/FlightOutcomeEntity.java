@@ -17,20 +17,20 @@ public class FlightOutcomeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "request_id")
-    private Long requestId;
+    @Column(name = "flight_request_id")
+    private Long flightRequestId;
 
-    @Column(name = "flight_date", nullable = false)
-    private OffsetDateTime flightDate;
+    @Column(name = "flight_date_utc", nullable = false)
+    private OffsetDateTime flightDateUtc;
 
-    @Column(name = "carrier", nullable = false)
-    private String carrier;
+    @Column(name = "airline_code", nullable = false)
+    private String airlineCode;
 
-    @Column(name = "origin", nullable = false, length = 3)
-    private String origin;
+    @Column(name = "origin_iata", nullable = false, length = 3)
+    private String originIata;
 
-    @Column(name = "destination", nullable = false, length = 3)
-    private String destination;
+    @Column(name = "dest_iata", nullable = false, length = 3)
+    private String destIata;
 
     @Column(name = "flight_number")
     private String flightNumber;
@@ -41,8 +41,8 @@ public class FlightOutcomeEntity {
     @Column(name = "actual_arrival")
     private OffsetDateTime actualArrival;
 
-    @Column(name = "status")
-    private String status;
+    @Column(name = "actual_status")
+    private String actualStatus;
 
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
@@ -62,44 +62,44 @@ public class FlightOutcomeEntity {
         this.id = id;
     }
 
-    public Long getRequestId() {
-        return requestId;
+    public Long getFlightRequestId() {
+        return flightRequestId;
     }
 
-    public void setRequestId(Long requestId) {
-        this.requestId = requestId;
+    public void setFlightRequestId(Long flightRequestId) {
+        this.flightRequestId = flightRequestId;
     }
 
-    public OffsetDateTime getFlightDate() {
-        return flightDate;
+    public OffsetDateTime getFlightDateUtc() {
+        return flightDateUtc;
     }
 
-    public void setFlightDate(OffsetDateTime flightDate) {
-        this.flightDate = flightDate;
+    public void setFlightDateUtc(OffsetDateTime flightDateUtc) {
+        this.flightDateUtc = flightDateUtc;
     }
 
-    public String getCarrier() {
-        return carrier;
+    public String getAirlineCode() {
+        return airlineCode;
     }
 
-    public void setCarrier(String carrier) {
-        this.carrier = carrier;
+    public void setAirlineCode(String airlineCode) {
+        this.airlineCode = airlineCode;
     }
 
-    public String getOrigin() {
-        return origin;
+    public String getOriginIata() {
+        return originIata;
     }
 
-    public void setOrigin(String origin) {
-        this.origin = origin;
+    public void setOriginIata(String originIata) {
+        this.originIata = originIata;
     }
 
-    public String getDestination() {
-        return destination;
+    public String getDestIata() {
+        return destIata;
     }
 
-    public void setDestination(String destination) {
-        this.destination = destination;
+    public void setDestIata(String destIata) {
+        this.destIata = destIata;
     }
 
     public String getFlightNumber() {
@@ -126,12 +126,12 @@ public class FlightOutcomeEntity {
         this.actualArrival = actualArrival;
     }
 
-    public String getStatus() {
-        return status;
+    public String getActualStatus() {
+        return actualStatus;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setActualStatus(String actualStatus) {
+        this.actualStatus = actualStatus;
     }
 
     public OffsetDateTime getCreatedAt() {

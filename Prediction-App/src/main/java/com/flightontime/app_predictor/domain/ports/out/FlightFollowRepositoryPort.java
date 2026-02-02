@@ -9,7 +9,7 @@ import java.util.Optional;
 public interface FlightFollowRepositoryPort {
     FlightFollow save(FlightFollow flightFollow);
 
-    Optional<FlightFollow> findByUserIdAndRequestId(Long userId, Long requestId);
+    Optional<FlightFollow> findByUserIdAndFlightRequestId(Long userId, Long flightRequestId);
 
     List<FlightFollow> findByRefreshModeAndFlightDateBetween(
             RefreshMode refreshMode,

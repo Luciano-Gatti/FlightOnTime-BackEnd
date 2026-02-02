@@ -1,6 +1,7 @@
 package com.flightontime.app_predictor.infrastructure.in.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -11,15 +12,19 @@ public record PredictRequestDTO(
         @NotNull
         @Future
         @JsonFormat(shape = JsonFormat.Shape.STRING)
-        OffsetDateTime flDate,
+        @JsonProperty("flDate")
+        OffsetDateTime flightDateUtc,
         @NotBlank
-        String carrier,
+        @JsonProperty("carrier")
+        String airlineCode,
         @NotBlank
         @Size(min = 3, max = 3)
-        String origin,
+        @JsonProperty("origin")
+        String originIata,
         @NotBlank
         @Size(min = 3, max = 3)
-        String dest,
+        @JsonProperty("dest")
+        String destIata,
         String flightNumber
 ) {
 }

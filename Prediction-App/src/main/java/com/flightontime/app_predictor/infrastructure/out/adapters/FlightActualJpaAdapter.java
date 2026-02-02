@@ -38,8 +38,8 @@ public class FlightActualJpaAdapter implements FlightActualRepositoryPort {
     }
 
     @Override
-    public long countByStatus(String status) {
-        return flightOutcomeJpaRepository.countByStatus(status);
+    public long countByActualStatus(String actualStatus) {
+        return flightOutcomeJpaRepository.countByActualStatus(actualStatus);
     }
 
     private FlightOutcomeEntity resolveEntity(Long id) {

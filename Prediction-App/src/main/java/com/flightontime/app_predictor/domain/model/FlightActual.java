@@ -4,15 +4,15 @@ import java.time.OffsetDateTime;
 
 public record FlightActual(
         Long id,
-        Long requestId,
-        OffsetDateTime flightDate,
-        String carrier,
-        String origin,
-        String destination,
+        Long flightRequestId,
+        OffsetDateTime flightDateUtc,
+        String airlineCode,
+        String originIata,
+        String destIata,
         String flightNumber,
         OffsetDateTime actualDeparture,
         OffsetDateTime actualArrival,
-        String status,
+        String actualStatus,
         OffsetDateTime createdAt
 ) {
 }

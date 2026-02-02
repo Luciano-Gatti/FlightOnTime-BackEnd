@@ -13,31 +13,31 @@ public interface UserPredictionSnapshotJpaRepository extends JpaRepository<UserP
             select count(distinct userPrediction.userId)
             from UserPredictionSnapshotEntity userPrediction
             join FlightPredictionEntity prediction
-              on userPrediction.predictionId = prediction.id
-            where prediction.requestId = :requestId
+              on userPrediction.flightPredictionId = prediction.id
+            where prediction.flightRequestId = :flightRequestId
             """)
-    long countDistinctUsersByRequestId(@Param("requestId") Long requestId);
+    long countDistinctUsersByRequestId(@Param("flightRequestId") Long flightRequestId);
 
     @Query("""
             select distinct userPrediction.userId
             from UserPredictionSnapshotEntity userPrediction
             join FlightPredictionEntity prediction
-              on userPrediction.predictionId = prediction.id
-            where prediction.requestId = :requestId
+              on userPrediction.flightPredictionId = prediction.id
+            where prediction.flightRequestId = :flightRequestId
             """)
-    List<Long> findDistinctUserIdsByRequestId(@Param("requestId") Long requestId);
+    List<Long> findDistinctUserIdsByRequestId(@Param("flightRequestId") Long flightRequestId);
 
     @Query("""
             select userPrediction
             from UserPredictionSnapshotEntity userPrediction
             join FlightPredictionEntity prediction
-              on userPrediction.predictionId = prediction.id
+              on userPrediction.flightPredictionId = prediction.id
             where userPrediction.userId = :userId
-              and prediction.requestId = :requestId
+              and prediction.flightRequestId = :flightRequestId
             order by userPrediction.createdAt desc
             """)
-    Optional<UserPredictionSnapshotEntity> findTopByUserIdAndRequestIdOrderByCreatedAtDesc(
+    Optional<UserPredictionSnapshotEntity> findTopByUserIdAndFlightRequestIdOrderByCreatedAtDesc(
             @Param("userId") Long userId,
-            @Param("requestId") Long requestId
+            @Param("flightRequestId") Long flightRequestId
     );
 }

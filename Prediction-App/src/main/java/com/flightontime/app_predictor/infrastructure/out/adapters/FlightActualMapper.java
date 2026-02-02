@@ -12,15 +12,15 @@ public class FlightActualMapper {
         }
         return new FlightActual(
                 entity.getId(),
-                entity.getRequestId(),
-                entity.getFlightDate(),
-                entity.getCarrier(),
-                entity.getOrigin(),
-                entity.getDestination(),
+                entity.getFlightRequestId(),
+                entity.getFlightDateUtc(),
+                entity.getAirlineCode(),
+                entity.getOriginIata(),
+                entity.getDestIata(),
                 entity.getFlightNumber(),
                 entity.getActualDeparture(),
                 entity.getActualArrival(),
-                entity.getStatus(),
+                entity.getActualStatus(),
                 entity.getCreatedAt()
         );
     }
@@ -30,15 +30,15 @@ public class FlightActualMapper {
             return entity;
         }
         FlightOutcomeEntity target = entity == null ? new FlightOutcomeEntity() : entity;
-        target.setRequestId(flightActual.requestId());
-        target.setFlightDate(toUtc(flightActual.flightDate()));
-        target.setCarrier(flightActual.carrier());
-        target.setOrigin(flightActual.origin());
-        target.setDestination(flightActual.destination());
+        target.setFlightRequestId(flightActual.flightRequestId());
+        target.setFlightDateUtc(toUtc(flightActual.flightDateUtc()));
+        target.setAirlineCode(flightActual.airlineCode());
+        target.setOriginIata(flightActual.originIata());
+        target.setDestIata(flightActual.destIata());
         target.setFlightNumber(flightActual.flightNumber());
         target.setActualDeparture(toUtc(flightActual.actualDeparture()));
         target.setActualArrival(toUtc(flightActual.actualArrival()));
-        target.setStatus(flightActual.status());
+        target.setActualStatus(flightActual.actualStatus());
         if (flightActual.createdAt() != null) {
             target.setCreatedAt(toUtc(flightActual.createdAt()));
         }

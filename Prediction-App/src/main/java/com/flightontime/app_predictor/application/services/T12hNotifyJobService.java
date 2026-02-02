@@ -88,19 +88,22 @@ public class T12hNotifyJobService {
             return;
         }
         Optional<Prediction> baselinePrediction = predictionRepositoryPort
-                .findById(baselineUserPrediction.get().predictionId());
+                .findById(baselineUserPrediction.get().flightPredictionId());
         if (baselinePrediction.isEmpty()) {
             return;
         }
         Prediction currentPrediction = getOrCreateCurrentPrediction(request, now);
-        if (!isRelevantStatusChange(baselinePrediction.get().status(), currentPrediction.status())) {
+        if (!isRelevantStatusChange(
+                baselinePrediction.get().predictedStatus(),
+                currentPrediction.predictedStatus()
+        )) {
             return;
         }
         NotificationCandidate candidate = new NotificationCandidate(
                 userId,
                 request,
                 baselineUserPrediction.get().id(),
-                currentPrediction.status(),
+                currentPrediction.predictedStatus(),
                 buildMessage(request, baselinePrediction.get(), currentPrediction)
         );
         notificationsByUser
@@ -129,7 +132,7 @@ public class T12hNotifyJobService {
                         NOTIFICATION_TYPE,
                         candidate.userPredictionId(),
                         CHANNEL,
-                        candidate.status(),
+                        candidate.predictedStatus(),
                         candidate.message(),
                         now,
                         now
@@ -143,7 +146,8 @@ public class T12hNotifyJobService {
         String flightLabel = hasFlightNumber(request.flightNumber())
                 ? request.flightNumber()
                 : "Request " + request.id();
-        return "Flight " + flightLabel + " cambió de " + baseline.status() + " a " + current.status();
+        return "Flight " + flightLabel + " cambió de " + baseline.predictedStatus()
+                + " a " + current.predictedStatus();
     }
 
     private boolean isRelevantStatusChange(String baselineStatus, String currentStatus) {
@@ -164,17 +168,17 @@ public class T12hNotifyJobService {
     }
 
     private boolean closeIfExpired(FlightRequest request, OffsetDateTime nowUtc) {
-        if (request == null || request.flightDate() == null || !request.active()) {
+        if (request == null || request.flightDateUtc() == null || !request.active()) {
             return true;
         }
-        if (request.flightDate().isBefore(nowUtc)) {
+        if (request.flightDateUtc().isBefore(nowUtc)) {
             FlightRequest closedRequest = new FlightRequest(
                     request.id(),
                     request.userId(),
-                    request.flightDate(),
-                    request.carrier(),
-                    request.origin(),
-                    request.destination(),
+                    request.flightDateUtc(),
+                    request.airlineCode(),
+                    request.originIata(),
+                    request.destIata(),
                     request.flightNumber(),
                     request.createdAt(),
                     false,
@@ -202,8 +206,8 @@ public class T12hNotifyJobService {
         Prediction prediction = new Prediction(
                 null,
                 request.id(),
-                modelPrediction.status(),
-                modelPrediction.probability(),
+                modelPrediction.predictedStatus(),
+                modelPrediction.predictedProbability(),
                 modelPrediction.modelVersion(),
                 now,
                 now
@@ -212,12 +216,12 @@ public class T12hNotifyJobService {
     }
 
     private PredictFlightCommand buildCommand(FlightRequest request) {
-        double distance = distanceUseCase.calculateDistance(request.origin(), request.destination());
+        double distance = distanceUseCase.calculateDistance(request.originIata(), request.destIata());
         return new PredictFlightCommand(
-                toUtc(request.flightDate()),
-                request.carrier(),
-                request.origin(),
-                request.destination(),
+                toUtc(request.flightDateUtc()),
+                request.airlineCode(),
+                request.originIata(),
+                request.destIata(),
                 request.flightNumber(),
                 distance
         );
@@ -240,7 +244,7 @@ public class T12hNotifyJobService {
             Long userId,
             FlightRequest request,
             Long userPredictionId,
-            String status,
+            String predictedStatus,
             String message
     ) {
     }

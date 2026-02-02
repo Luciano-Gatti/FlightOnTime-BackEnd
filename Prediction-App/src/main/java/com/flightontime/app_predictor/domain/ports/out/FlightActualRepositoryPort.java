@@ -10,5 +10,5 @@ public interface FlightActualRepositoryPort {
 
     long countAll();
 
-    long countByStatus(String status);
+    long countByActualStatus(String actualStatus);
 }

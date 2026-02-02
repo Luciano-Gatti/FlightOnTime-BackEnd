@@ -17,14 +17,14 @@ public class FlightPredictionEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "request_id")
-    private Long requestId;
+    @Column(name = "flight_request_id")
+    private Long flightRequestId;
 
-    @Column(name = "status", nullable = false)
-    private String status;
+    @Column(name = "predicted_status", nullable = false)
+    private String predictedStatus;
 
-    @Column(name = "probability", nullable = false)
-    private Double probability;
+    @Column(name = "predicted_probability", nullable = false)
+    private Double predictedProbability;
 
     @Column(name = "model_version", nullable = false)
     private String modelVersion;
@@ -50,28 +50,28 @@ public class FlightPredictionEntity {
         this.id = id;
     }
 
-    public Long getRequestId() {
-        return requestId;
+    public Long getFlightRequestId() {
+        return flightRequestId;
     }
 
-    public void setRequestId(Long requestId) {
-        this.requestId = requestId;
+    public void setFlightRequestId(Long flightRequestId) {
+        this.flightRequestId = flightRequestId;
     }
 
-    public String getStatus() {
-        return status;
+    public String getPredictedStatus() {
+        return predictedStatus;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setPredictedStatus(String predictedStatus) {
+        this.predictedStatus = predictedStatus;
     }
 
-    public Double getProbability() {
-        return probability;
+    public Double getPredictedProbability() {
+        return predictedProbability;
     }
 
-    public void setProbability(Double probability) {
-        this.probability = probability;
+    public void setPredictedProbability(Double predictedProbability) {
+        this.predictedProbability = predictedProbability;
     }
 
     public String getModelVersion() {

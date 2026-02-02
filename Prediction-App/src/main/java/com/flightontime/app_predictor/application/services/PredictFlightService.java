@@ -32,10 +32,10 @@ public class PredictFlightService implements PredictFlightUseCase {
     public PredictResponseDTO predict(PredictRequestDTO request, Long userId) {
         validateRequest(request);
         var workflowResult = predictionWorkflowService.predict(
-                request.flDate(),
-                request.carrier(),
-                request.origin(),
-                request.dest(),
+                request.flightDateUtc(),
+                request.airlineCode(),
+                request.originIata(),
+                request.destIata(),
                 request.flightNumber(),
                 userId,
                 false,
@@ -50,8 +50,8 @@ public class PredictFlightService implements PredictFlightUseCase {
             );
         }
         return new PredictResponseDTO(
-                workflowResult.result().status(),
-                workflowResult.result().probability(),
+                workflowResult.result().predictedStatus(),
+                workflowResult.result().predictedProbability(),
                 workflowResult.result().modelVersion(),
                 workflowResult.result().predictedAt()
         );
@@ -75,8 +75,8 @@ public class PredictFlightService implements PredictFlightUseCase {
             );
         }
         return new PredictResponseDTO(
-                result.result().status(),
-                result.result().probability(),
+                result.result().predictedStatus(),
+                result.result().predictedProbability(),
                 result.result().modelVersion(),
                 result.result().predictedAt()
         );
@@ -84,73 +84,45 @@ public class PredictFlightService implements PredictFlightUseCase {
 
     private void validateRequest(PredictRequestDTO request) {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        if (request.flDate() == null || !request.flDate().isAfter(now)) {
-            throw new IllegalArgumentException("flDate must be in the future");
+        if (request.flightDateUtc() == null || !request.flightDateUtc().isAfter(now)) {
+            throw new IllegalArgumentException("flightDateUtc must be in the future");
         }
-        if (request.origin() == null || request.origin().length() != 3) {
-            throw new IllegalArgumentException("origin must be length 3");
+        if (request.originIata() == null || request.originIata().length() != 3) {
+            throw new IllegalArgumentException("originIata must be length 3");
         }
-        if (request.dest() == null || request.dest().length() != 3) {
-            throw new IllegalArgumentException("dest must be length 3");
+        if (request.destIata() == null || request.destIata().length() != 3) {
+            throw new IllegalArgumentException("destIata must be length 3");
         }
     }
 
-    private FlightRequest getOrCreateFlightRequest(PredictRequestDTO request, Long userId, OffsetDateTime now) {
-        OffsetDateTime flightDateUtc = toUtc(request.flDate());
-        Optional<FlightRequest> existing = flightRequestRepositoryPort.findByUserAndFlight(
-                userId,
-                flightDateUtc,
-                request.carrier(),
-                request.origin(),
-                request.dest(),
-                request.flightNumber()
-        );
-        if (existing.isPresent()) {
-            return existing.get();
-        }
-        FlightRequest flightRequest = new FlightRequest(
-                null,
-                userId,
-                flightDateUtc,
-                request.carrier(),
-                request.origin(),
-                request.dest(),
-                request.flightNumber(),
-                now,
-                true,
-                null
-        );
-        return flightRequestRepositoryPort.save(flightRequest);
-    }
-
-    private Prediction getOrCreatePrediction(Long requestId, PredictFlightCommand command, OffsetDateTime now) {
-        OffsetDateTime bucketStart = resolveBucketStart(now);
-        OffsetDateTime bucketEnd = bucketStart.plusHours(3);
-        Optional<Prediction> cached = predictionRepositoryPort.findByRequestIdAndPredictedAtBetween(
-                requestId,
-                bucketStart,
-                bucketEnd
-        );
-        if (cached.isPresent()) {
-            return cached.get();
-        }
-        var modelPrediction = modelPredictionPort.requestPrediction(command);
-        Prediction prediction = new Prediction(
-                null,
-                requestId,
-                modelPrediction.status(),
-                modelPrediction.probability(),
-                modelPrediction.modelVersion(),
-                now,
-                now
-        );
-        return predictionRepositoryPort.save(prediction);
-    }
-
-    private OffsetDateTime resolveBucketStart(OffsetDateTime timestamp) {
-        OffsetDateTime normalized = timestamp.withMinute(0).withSecond(0).withNano(0);
-        int offset = normalized.getHour() % 3;
-        return normalized.minusHours(offset);
+    private void upsertFlightFollow(
+            Long userId,
+            Long flightRequestId,
+            Long baselineFlightPredictionId,
+            RefreshMode refreshMode
+    ) {
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        FlightFollow flightFollow = flightFollowRepositoryPort
+                .findByUserIdAndFlightRequestId(userId, flightRequestId)
+                .map(existing -> new FlightFollow(
+                        existing.id(),
+                        userId,
+                        flightRequestId,
+                        refreshMode,
+                        baselineFlightPredictionId,
+                        existing.createdAt(),
+                        now
+                ))
+                .orElseGet(() -> new FlightFollow(
+                        null,
+                        userId,
+                        flightRequestId,
+                        refreshMode,
+                        baselineFlightPredictionId,
+                        now,
+                        now
+                ));
+        flightFollowRepositoryPort.save(flightFollow);
     }
 
 }

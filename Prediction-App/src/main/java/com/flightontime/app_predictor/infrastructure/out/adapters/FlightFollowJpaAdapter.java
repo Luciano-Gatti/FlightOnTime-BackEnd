@@ -31,8 +31,8 @@ public class FlightFollowJpaAdapter implements FlightFollowRepositoryPort {
     }
 
     @Override
-    public Optional<FlightFollow> findByUserIdAndRequestId(Long userId, Long requestId) {
-        return flightSubscriptionJpaRepository.findFirstByUserIdAndRequestId(userId, requestId)
+    public Optional<FlightFollow> findByUserIdAndFlightRequestId(Long userId, Long flightRequestId) {
+        return flightSubscriptionJpaRepository.findFirstByUserIdAndFlightRequestId(userId, flightRequestId)
                 .map(flightFollowMapper::toDomain);
     }
 

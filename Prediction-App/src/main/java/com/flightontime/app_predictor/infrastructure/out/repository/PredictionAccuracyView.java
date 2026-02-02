@@ -3,7 +3,7 @@ package com.flightontime.app_predictor.infrastructure.out.repository;
 import java.time.OffsetDateTime;
 
 public interface PredictionAccuracyView {
-    OffsetDateTime getFlightDate();
+    OffsetDateTime getFlightDateUtc();
 
     OffsetDateTime getPredictedAt();
 

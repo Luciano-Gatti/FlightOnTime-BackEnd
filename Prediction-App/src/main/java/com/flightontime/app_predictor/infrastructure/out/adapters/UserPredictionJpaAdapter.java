@@ -37,18 +37,21 @@ public class UserPredictionJpaAdapter implements UserPredictionRepositoryPort {
     }
 
     @Override
-    public long countDistinctUsersByRequestId(Long requestId) {
-        return userPredictionSnapshotJpaRepository.countDistinctUsersByRequestId(requestId);
+    public long countDistinctUsersByRequestId(Long flightRequestId) {
+        return userPredictionSnapshotJpaRepository.countDistinctUsersByRequestId(flightRequestId);
     }
 
     @Override
-    public List<Long> findDistinctUserIdsByRequestId(Long requestId) {
-        return userPredictionSnapshotJpaRepository.findDistinctUserIdsByRequestId(requestId);
+    public List<Long> findDistinctUserIdsByRequestId(Long flightRequestId) {
+        return userPredictionSnapshotJpaRepository.findDistinctUserIdsByRequestId(flightRequestId);
     }
 
     @Override
-    public Optional<UserPrediction> findLatestByUserIdAndRequestId(Long userId, Long requestId) {
-        return userPredictionSnapshotJpaRepository.findTopByUserIdAndRequestIdOrderByCreatedAtDesc(userId, requestId)
+    public Optional<UserPrediction> findLatestByUserIdAndRequestId(Long userId, Long flightRequestId) {
+        return userPredictionSnapshotJpaRepository.findTopByUserIdAndFlightRequestIdOrderByCreatedAtDesc(
+                userId,
+                flightRequestId
+        )
                 .map(userPredictionMapper::toDomain);
     }
 

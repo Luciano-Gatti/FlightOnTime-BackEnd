@@ -12,16 +12,16 @@ public interface PredictionRepositoryPort {
     Optional<Prediction> findById(Long id);
 
     Optional<Prediction> findByRequestIdAndPredictedAtBetween(
-            Long requestId,
+            Long flightRequestId,
             OffsetDateTime start,
             OffsetDateTime end
     );
 
-    List<Prediction> findByRequestIdAndUserId(Long requestId, Long userId);
+    List<Prediction> findByRequestIdAndUserId(Long flightRequestId, Long userId);
 
     long countAll();
 
-    long countByStatus(String status);
+    long countByStatus(String predictedStatus);
 
     List<PredictionAccuracySample> findAccuracySamplesExcludingCancelled();
 }

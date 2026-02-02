@@ -9,9 +9,9 @@ public interface UserPredictionRepositoryPort {
 
     Optional<UserPrediction> findById(Long id);
 
-    long countDistinctUsersByRequestId(Long requestId);
+    long countDistinctUsersByRequestId(Long flightRequestId);
 
-    List<Long> findDistinctUserIdsByRequestId(Long requestId);
+    List<Long> findDistinctUserIdsByRequestId(Long flightRequestId);
 
-    Optional<UserPrediction> findLatestByUserIdAndRequestId(Long userId, Long requestId);
+    Optional<UserPrediction> findLatestByUserIdAndRequestId(Long userId, Long flightRequestId);
 }

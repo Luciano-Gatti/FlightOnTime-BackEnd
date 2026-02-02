@@ -12,9 +12,9 @@ public class PredictionMapper {
         }
         return new Prediction(
                 entity.getId(),
-                entity.getRequestId(),
-                entity.getStatus(),
-                entity.getProbability(),
+                entity.getFlightRequestId(),
+                entity.getPredictedStatus(),
+                entity.getPredictedProbability(),
                 entity.getModelVersion(),
                 entity.getPredictedAt(),
                 entity.getCreatedAt()
@@ -26,9 +26,9 @@ public class PredictionMapper {
             return entity;
         }
         FlightPredictionEntity target = entity == null ? new FlightPredictionEntity() : entity;
-        target.setRequestId(prediction.requestId());
-        target.setStatus(prediction.status());
-        target.setProbability(prediction.probability());
+        target.setFlightRequestId(prediction.flightRequestId());
+        target.setPredictedStatus(prediction.predictedStatus());
+        target.setPredictedProbability(prediction.predictedProbability());
         target.setModelVersion(prediction.modelVersion());
         target.setPredictedAt(toUtc(prediction.predictedAt()));
         if (prediction.createdAt() != null) {

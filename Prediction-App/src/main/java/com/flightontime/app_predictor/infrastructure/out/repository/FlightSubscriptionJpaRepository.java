@@ -10,15 +10,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface FlightSubscriptionJpaRepository extends JpaRepository<FlightSubscriptionEntity, Long> {
-    Optional<FlightSubscriptionEntity> findFirstByUserIdAndRequestId(Long userId, Long requestId);
+    Optional<FlightSubscriptionEntity> findFirstByUserIdAndFlightRequestId(Long userId, Long flightRequestId);
 
     @Query("""
             select follow
             from FlightSubscriptionEntity follow
             join FlightRequestEntity request
-              on request.id = follow.requestId
+              on request.id = follow.flightRequestId
             where follow.refreshMode = :refreshMode
-              and request.flightDate between :start and :end
+              and request.flightDateUtc between :start and :end
             """)
     List<FlightSubscriptionEntity> findByRefreshModeAndFlightDateBetween(
             @Param("refreshMode") RefreshMode refreshMode,
@@ -30,8 +30,8 @@ public interface FlightSubscriptionJpaRepository extends JpaRepository<FlightSub
             select follow
             from FlightSubscriptionEntity follow
             join FlightRequestEntity request
-              on request.id = follow.requestId
-            where request.flightDate between :start and :end
+              on request.id = follow.flightRequestId
+            where request.flightDateUtc between :start and :end
             """)
     List<FlightSubscriptionEntity> findByFlightDateBetween(
             @Param("start") OffsetDateTime start,

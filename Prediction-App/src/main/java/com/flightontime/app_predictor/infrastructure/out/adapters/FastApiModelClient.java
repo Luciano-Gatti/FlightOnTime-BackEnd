@@ -21,10 +21,10 @@ public class FastApiModelClient implements ModelPredictionPort {
     @Override
     public ModelPrediction requestPrediction(PredictFlightCommand command) {
         ModelPredictRequest request = new ModelPredictRequest(
-                command.flDate(),
-                command.carrier(),
-                command.origin(),
-                command.dest(),
+                command.flightDateUtc(),
+                command.airlineCode(),
+                command.originIata(),
+                command.destIata(),
                 command.flightNumber(),
                 command.distance()
         );
@@ -36,8 +36,8 @@ public class FastApiModelClient implements ModelPredictionPort {
                 .block();
         ModelPredictResponse safeResponse = Objects.requireNonNull(response, "Model response is required");
         return new ModelPrediction(
-                safeResponse.status(),
-                safeResponse.probability(),
+                safeResponse.predictedStatus(),
+                safeResponse.predictedProbability(),
                 safeResponse.modelVersion()
         );
     }

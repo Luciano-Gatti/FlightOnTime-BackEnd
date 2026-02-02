@@ -9,12 +9,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface FlightRequestJpaRepository extends JpaRepository<FlightRequestEntity, Long> {
-    Optional<FlightRequestEntity> findFirstByUserIdAndFlightDateAndCarrierAndOriginAndDestinationAndFlightNumber(
+    Optional<FlightRequestEntity> findFirstByUserIdAndFlightDateUtcAndAirlineCodeAndOriginIataAndDestIataAndFlightNumber(
             Long userId,
-            OffsetDateTime flightDate,
-            String carrier,
-            String origin,
-            String destination,
+            OffsetDateTime flightDateUtc,
+            String airlineCode,
+            String originIata,
+            String destIata,
             String flightNumber
     );
 
@@ -23,14 +23,14 @@ public interface FlightRequestJpaRepository extends JpaRepository<FlightRequestE
     @Query("""
             select request
             from FlightRequestEntity request
-            where request.flightDate between :start and :end
+            where request.flightDateUtc between :start and :end
               and request.active = true
               and exists (
                 select 1
                 from UserPredictionSnapshotEntity userPrediction
                 join FlightPredictionEntity prediction
-                  on userPrediction.predictionId = prediction.id
-                where prediction.requestId = request.id
+                  on userPrediction.flightPredictionId = prediction.id
+                where prediction.flightRequestId = request.id
               )
             """)
     List<FlightRequestEntity> findByFlightDateBetweenWithUserPredictions(
@@ -41,12 +41,12 @@ public interface FlightRequestJpaRepository extends JpaRepository<FlightRequestE
     @Query("""
             select request
             from FlightRequestEntity request
-            where request.flightDate between :start and :end
+            where request.flightDateUtc between :start and :end
               and request.active = true
               and not exists (
                 select 1
                 from FlightOutcomeEntity actual
-                where actual.requestId = request.id
+                where actual.flightRequestId = request.id
               )
             """)
     List<FlightRequestEntity> findByFlightDateBetweenWithoutActuals(
@@ -57,7 +57,7 @@ public interface FlightRequestJpaRepository extends JpaRepository<FlightRequestE
     @Query("""
             select request
             from FlightRequestEntity request
-            where request.flightDate < :cutoff
+            where request.flightDateUtc < :cutoff
               and request.active = true
             """)
     List<FlightRequestEntity> findByFlightDateBeforeAndActive(@Param("cutoff") OffsetDateTime cutoff);
