@@ -29,11 +29,14 @@ public class JwtTokenProvider {
 
     private final Key signingKey;
     private final long expirationMinutes;
+    private final boolean secretBase64;
 
     public JwtTokenProvider(
             @Value("${security.jwt.secret}") String secret,
-            @Value("${security.jwt.expiration-minutes}") long expirationMinutes
+            @Value("${security.jwt.expiration-minutes}") long expirationMinutes,
+            @Value("${security.jwt.secret-base64:false}") boolean secretBase64
     ) {
+        this.secretBase64 = secretBase64;
         this.signingKey = buildSigningKey(secret);
         this.expirationMinutes = expirationMinutes;
     }
@@ -104,11 +107,14 @@ public class JwtTokenProvider {
             throw new IllegalArgumentException("JWT secret is required");
         }
         String trimmed = secret.trim();
-        byte[] keyBytes;
-        if (isBase64(trimmed)) {
-            keyBytes = Decoders.BASE64.decode(trimmed);
-        } else {
-            keyBytes = trimmed.getBytes(StandardCharsets.UTF_8);
+        byte[] keyBytes = secretBase64
+                ? Decoders.BASE64.decode(trimmed)
+                : trimmed.getBytes(StandardCharsets.UTF_8);
+        if (keyBytes.length < 32) {
+            throw new IllegalArgumentException(
+                    "JWT secret too short: must be at least 32 bytes (256 bits) for HS256. Current: "
+                            + keyBytes.length + " bytes."
+            );
         }
         return Keys.hmacShaKeyFor(keyBytes);
     }
@@ -121,12 +127,4 @@ public class JwtTokenProvider {
                 .getBody();
     }
 
-    private boolean isBase64(String value) {
-        try {
-            Decoders.BASE64.decode(value);
-            return true;
-        } catch (IllegalArgumentException ex) {
-            return false;
-        }
-    }
 }
