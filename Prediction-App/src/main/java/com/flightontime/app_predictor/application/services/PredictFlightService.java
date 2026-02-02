@@ -42,7 +42,7 @@ public class PredictFlightService implements PredictFlightUseCase {
                 request.destIata(),
                 request.flightNumber(),
                 userId,
-                false,
+                true,
                 true
         );
         log.info("Prediction workflow completed userId={} predictionId={} requestId={}",
