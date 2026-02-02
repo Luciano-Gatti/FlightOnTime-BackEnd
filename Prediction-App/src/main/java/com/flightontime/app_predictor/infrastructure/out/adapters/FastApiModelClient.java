@@ -58,10 +58,24 @@ public class FastApiModelClient implements ModelPredictionPort {
         ModelPredictResponse safeResponse = Objects.requireNonNull(response, "Model response is required");
         logJson("Model response payload", safeResponse);
         return new ModelPrediction(
-                safeResponse.predictedStatus(),
+                normalizeStatus(safeResponse.predictedStatus()),
                 safeResponse.predictedProbability(),
                 safeResponse.modelVersion()
         );
+    }
+
+    private String normalizeStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        String normalized = status.trim().toUpperCase();
+        if ("PUNTUAL".equals(normalized) || "ON TIME".equals(normalized) || "ONTIME".equals(normalized)) {
+            return "ON_TIME";
+        }
+        if ("RETRASADO".equals(normalized) || "DELAYED".equals(normalized)) {
+            return "DELAYED";
+        }
+        return normalized.replace(' ', '_');
     }
 
     private void logJson(String message, Object payload) {

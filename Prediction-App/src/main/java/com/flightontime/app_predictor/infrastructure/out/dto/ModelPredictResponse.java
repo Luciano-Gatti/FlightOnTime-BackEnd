@@ -4,10 +4,12 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record ModelPredictResponse(
-        @JsonAlias({"status", "prediction"})
+        @JsonAlias({"status", "prediction", "prevision"})
         String predictedStatus,
-        @JsonProperty("probability")
-        double predictedProbability,
+        @JsonAlias({"probability", "probabilidad"})
+        Double predictedProbability,
+        @JsonAlias({"confianza", "confidence"})
+        String confidence,
         String modelVersion
 ) {
 }
