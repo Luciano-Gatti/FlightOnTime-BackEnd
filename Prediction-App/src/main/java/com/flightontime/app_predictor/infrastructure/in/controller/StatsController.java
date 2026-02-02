@@ -4,6 +4,8 @@ import com.flightontime.app_predictor.domain.ports.in.StatsAccuracyByLeadTimeUse
 import com.flightontime.app_predictor.domain.ports.in.StatsSummaryUseCase;
 import com.flightontime.app_predictor.infrastructure.in.dto.StatsAccuracyByLeadTimeResponseDTO;
 import com.flightontime.app_predictor.infrastructure.in.dto.StatsSummaryResponseDTO;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/stats")
+@SecurityRequirement(name = "bearer-key")
+@Tag(name = "Estadisticas", description = "Endpoints para consultar estadisticas del sistema")
 public class StatsController {
     private final StatsAccuracyByLeadTimeUseCase statsAccuracyByLeadTimeUseCase;
     private final StatsSummaryUseCase statsSummaryUseCase;

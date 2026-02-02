@@ -9,6 +9,8 @@ import com.flightontime.app_predictor.infrastructure.in.dto.PredictHistoryDetail
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictHistoryItemDTO;
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictRequestDTO;
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictResponseDTO;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.MediaType;
@@ -30,6 +32,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 @RestController
 @RequestMapping("/predict")
+@Tag(name = "Predicciones", description = "Endpoints para generar predicciones y consultar historiales")
 @Validated
 public class PredictController {
     private final PredictFlightUseCase predictFlightUseCase;
@@ -53,6 +56,7 @@ public class PredictController {
     }
 
     @PostMapping(value = "/bulk-import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @SecurityRequirement(name = "bearer-key")
     public ResponseEntity<BulkPredictCsvUploadResponseDTO> bulkImport(
             @RequestParam("file") MultipartFile file,
             @RequestParam(name = "dryRun", defaultValue = "false") boolean dryRun
@@ -96,6 +100,7 @@ public class PredictController {
     }
 
     @GetMapping("/history")
+    @SecurityRequirement(name = "bearer-key")
     public ResponseEntity<List<PredictHistoryItemDTO>> getHistory() {
         Long userId = resolveUserId();
         if (userId == null) {
@@ -105,6 +110,7 @@ public class PredictController {
     }
 
     @GetMapping("/history/{requestId}")
+    @SecurityRequirement(name = "bearer-key")
     public ResponseEntity<PredictHistoryDetailDTO> getHistoryDetail(@PathVariable Long requestId) {
         Long userId = resolveUserId();
         if (userId == null) {
@@ -114,6 +120,7 @@ public class PredictController {
     }
 
     @GetMapping("/{requestId}/latest")
+    @SecurityRequirement(name = "bearer-key")
     public ResponseEntity<PredictResponseDTO> getLatest(@PathVariable Long requestId) {
         Long userId = resolveUserId();
         if (userId == null) {

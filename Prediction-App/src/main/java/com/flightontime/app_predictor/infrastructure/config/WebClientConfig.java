@@ -3,8 +3,6 @@ package com.flightontime.app_predictor.infrastructure.config;
 import io.netty.channel.ChannelOption;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
-import io.netty.channel.ChannelOption;
-import java.time.Duration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -38,6 +36,21 @@ public class WebClientConfig {
                 .responseTimeout(readTimeout);
         return WebClient.builder()
                 .baseUrl(weatherServiceBaseUrl)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
+    }
+
+    @Bean
+    public WebClient openMeteoWeatherWebClient(
+            @Value("${weather.openmeteo.base-url}") String openMeteoBaseUrl,
+            @Value("${weather.service.timeout.connect}") Duration connectTimeout,
+            @Value("${weather.service.timeout.read}") Duration readTimeout
+    ) {
+        HttpClient httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Math.toIntExact(connectTimeout.toMillis()))
+                .responseTimeout(readTimeout);
+        return WebClient.builder()
+                .baseUrl(openMeteoBaseUrl)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }

@@ -1,32 +1,47 @@
 package com.flightontime.app_predictor.infrastructure.out.adapters;
 
 import com.flightontime.app_predictor.application.dto.AirportWeatherDTO;
+import com.flightontime.app_predictor.domain.model.Airport;
+import com.flightontime.app_predictor.domain.ports.out.AirportInfoPort;
+import com.flightontime.app_predictor.domain.ports.out.AirportRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.WeatherPort;
-import com.flightontime.app_predictor.infrastructure.out.dto.WeatherApiResponse;
+import com.flightontime.app_predictor.infrastructure.out.dto.OpenMeteoWeatherResponse;
+import com.flightontime.app_predictor.infrastructure.out.dto.WeatherApiFallbackResponse;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Component
 public class WeatherApiClient implements WeatherPort {
-    private final WebClient weatherWebClient;
+    private final WebClient openMeteoWeatherWebClient;
     private final WeatherFallbackClient weatherFallbackClient;
+    private final AirportRepositoryPort airportRepositoryPort;
+    private final AirportInfoPort airportInfoPort;
     private final Duration cacheTtl;
     private final ConcurrentHashMap<String, CacheEntry> cache = new ConcurrentHashMap<>();
 
     public WeatherApiClient(
-            WebClient weatherWebClient,
+            @Qualifier("openMeteoWeatherWebClient") WebClient openMeteoWeatherWebClient,
             WeatherFallbackClient weatherFallbackClient,
+            AirportRepositoryPort airportRepositoryPort,
+            AirportInfoPort airportInfoPort,
             @Value("${weather.cache.ttl}") Duration cacheTtl
     ) {
-        this.weatherWebClient = weatherWebClient;
+        this.openMeteoWeatherWebClient = openMeteoWeatherWebClient;
         this.weatherFallbackClient = weatherFallbackClient;
+        this.airportRepositoryPort = airportRepositoryPort;
+        this.airportInfoPort = airportInfoPort;
         this.cacheTtl = cacheTtl;
     }
 
@@ -38,14 +53,15 @@ public class WeatherApiClient implements WeatherPort {
         if (cached != null && now.isBefore(cached.expiresAt())) {
             return cached.weather();
         }
+        Airport airport = resolveAirport(normalizedIata);
 
         try {
-            AirportWeatherDTO dto = fetchPrimary(normalizedIata, instantUtc);
+            AirportWeatherDTO dto = fetchPrimary(airport);
             cache.put(normalizedIata, new CacheEntry(dto, now.plus(cacheTtl)));
             return dto;
         } catch (RuntimeException primaryError) {
             try {
-                AirportWeatherDTO dto = fetchFallback(normalizedIata);
+                AirportWeatherDTO dto = fetchFallback(airport);
                 cache.put(normalizedIata, new CacheEntry(dto, now.plus(cacheTtl)));
                 return dto;
             } catch (RuntimeException fallbackError) {
@@ -59,38 +75,103 @@ public class WeatherApiClient implements WeatherPort {
         }
     }
 
-    private AirportWeatherDTO fetchPrimary(String normalizedIata, OffsetDateTime instantUtc) {
-        OffsetDateTime requestInstant = instantUtc.withOffsetSameInstant(ZoneOffset.UTC);
-        WeatherApiResponse response = weatherWebClient.get()
+    private AirportWeatherDTO fetchPrimary(Airport airport) {
+        OpenMeteoWeatherResponse response = openMeteoWeatherWebClient.get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/weather")
-                        .queryParam("iata", normalizedIata)
-                        .queryParam("instantUtc", requestInstant.toString())
+                        .path("/forecast")
+                        .queryParam("latitude", airport.latitude())
+                        .queryParam("longitude", airport.longitude())
+                        .queryParam("current", "temperature_2m,wind_speed_10m,visibility,precipitation")
+                        .queryParam("timezone", "UTC")
                         .build())
                 .retrieve()
-                .bodyToMono(WeatherApiResponse.class)
+                .bodyToMono(OpenMeteoWeatherResponse.class)
                 .block();
-        WeatherApiResponse safeResponse = Objects.requireNonNull(response, "Weather response is required");
+        OpenMeteoWeatherResponse safeResponse = Objects.requireNonNull(response, "OpenMeteo response is required");
         return mapToDto(safeResponse);
     }
 
-    private AirportWeatherDTO fetchFallback(String normalizedIata) {
-        WeatherApiResponse response = weatherFallbackClient.getWeatherForIata(normalizedIata);
-        WeatherApiResponse safeResponse = Objects.requireNonNull(response, "Fallback weather response is required");
+    private AirportWeatherDTO fetchFallback(Airport airport) {
+        WeatherApiFallbackResponse response = weatherFallbackClient.getWeatherForCoordinates(
+                airport.latitude(),
+                airport.longitude()
+        );
+        WeatherApiFallbackResponse safeResponse = Objects.requireNonNull(response, "Fallback weather response is required");
         return mapToDto(safeResponse);
     }
 
-    private AirportWeatherDTO mapToDto(WeatherApiResponse response) {
-        OffsetDateTime updatedAt = response.updatedAt() == null
-                ? null
-                : response.updatedAt().withOffsetSameInstant(ZoneOffset.UTC);
+    private AirportWeatherDTO mapToDto(OpenMeteoWeatherResponse response) {
+        OpenMeteoWeatherResponse.Current current = Objects.requireNonNull(response.current(), "OpenMeteo current weather is required");
+        OffsetDateTime updatedAt = parseOpenMeteoTimestamp(current.time());
+        double temperature = Objects.requireNonNull(current.temperature(), "OpenMeteo temperature is required");
+        double windSpeed = Objects.requireNonNull(current.windSpeed(), "OpenMeteo wind speed is required");
+        double visibilityKm = current.visibilityMeters() != null ? current.visibilityMeters() / 1000.0 : 0.0;
+        boolean precipitationFlag = current.precipitation() != null && current.precipitation() > 0;
         return new AirportWeatherDTO(
-                response.temp(),
-                response.windSpeed(),
-                response.visibility(),
-                response.precipitationFlag(),
+                temperature,
+                windSpeed,
+                visibilityKm,
+                precipitationFlag,
                 updatedAt
         );
+    }
+
+    private AirportWeatherDTO mapToDto(WeatherApiFallbackResponse response) {
+        WeatherApiFallbackResponse.Current current = Objects.requireNonNull(response.current(), "Fallback current weather is required");
+        OffsetDateTime updatedAt = parseWeatherApiTimestamp(current.lastUpdated(),
+                response.location() != null ? response.location().localtime() : null);
+        double temperature = Objects.requireNonNull(current.temperatureCelsius(), "Fallback temperature is required");
+        double windSpeed = Objects.requireNonNull(current.windSpeedKmh(), "Fallback wind speed is required");
+        double visibilityKm = current.visibilityKm() != null ? current.visibilityKm() : 0.0;
+        boolean precipitationFlag = current.precipitationMm() != null && current.precipitationMm() > 0;
+        return new AirportWeatherDTO(
+                temperature,
+                windSpeed,
+                visibilityKm,
+                precipitationFlag,
+                updatedAt
+        );
+    }
+
+    private Airport resolveAirport(String normalizedIata) {
+        Airport airport = airportRepositoryPort.findByIata(normalizedIata)
+                .orElseGet(() -> airportInfoPort.findByIata(normalizedIata)
+                        .map(this::storeAirport)
+                        .orElseThrow(() -> new IllegalArgumentException("Airport not found: " + normalizedIata)));
+        if (airport.latitude() == null || airport.longitude() == null) {
+            throw new IllegalArgumentException("Airport coordinates are required for weather data: " + normalizedIata);
+        }
+        return airport;
+    }
+
+    private Airport storeAirport(Airport airport) {
+        airportRepositoryPort.saveAll(List.of(airport));
+        return airport;
+    }
+
+    private OffsetDateTime parseOpenMeteoTimestamp(String time) {
+        if (time == null || time.isBlank()) {
+            return null;
+        }
+        try {
+            LocalDateTime localTime = LocalDateTime.parse(time, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            return localTime.atOffset(ZoneOffset.UTC);
+        } catch (DateTimeParseException ex) {
+            return null;
+        }
+    }
+
+    private OffsetDateTime parseWeatherApiTimestamp(String lastUpdated, String localtime) {
+        String timeValue = lastUpdated != null && !lastUpdated.isBlank() ? lastUpdated : localtime;
+        if (timeValue == null || timeValue.isBlank()) {
+            return null;
+        }
+        try {
+            LocalDateTime localTime = LocalDateTime.parse(timeValue, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+            return localTime.atOffset(ZoneOffset.UTC);
+        } catch (DateTimeParseException ex) {
+            return null;
+        }
     }
 
     private record CacheEntry(AirportWeatherDTO weather, OffsetDateTime expiresAt) {
