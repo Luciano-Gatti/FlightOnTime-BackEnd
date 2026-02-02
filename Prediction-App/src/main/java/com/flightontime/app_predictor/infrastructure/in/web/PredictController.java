@@ -9,14 +9,21 @@ import com.flightontime.app_predictor.infrastructure.in.dto.PredictHistoryDetail
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictHistoryItemDTO;
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictRequestDTO;
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictResponseDTO;
+import com.flightontime.app_predictor.infrastructure.out.repository.UserJpaRepository;
+import com.flightontime.app_predictor.infrastructure.security.JwtTokenProvider;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Optional;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -29,37 +36,59 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 @RestController
 @RequestMapping("/predict")
 @Tag(name = "Predicciones", description = "Endpoints para generar predicciones y consultar historiales")
 @Validated
 public class PredictController {
+    private static final Logger log = LoggerFactory.getLogger(PredictController.class);
     private final PredictFlightUseCase predictFlightUseCase;
     private final PredictHistoryUseCase predictHistoryUseCase;
     private final BulkPredictUseCase bulkPredictUseCase;
+    private final ObjectMapper objectMapper;
+    private final UserJpaRepository userJpaRepository;
+    private final JwtTokenProvider jwtTokenProvider;
 
     public PredictController(
             PredictFlightUseCase predictFlightUseCase,
             PredictHistoryUseCase predictHistoryUseCase,
-            BulkPredictUseCase bulkPredictUseCase
+            BulkPredictUseCase bulkPredictUseCase,
+            ObjectMapper objectMapper,
+            UserJpaRepository userJpaRepository,
+            JwtTokenProvider jwtTokenProvider
     ) {
         this.predictFlightUseCase = predictFlightUseCase;
         this.predictHistoryUseCase = predictHistoryUseCase;
         this.bulkPredictUseCase = bulkPredictUseCase;
+        this.objectMapper = objectMapper;
+        this.userJpaRepository = userJpaRepository;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @PostMapping
-    public ResponseEntity<PredictResponseDTO> predict(@Valid @RequestBody PredictRequestDTO request) {
-        Long userId = resolveUserId();
-        return ResponseEntity.ok(predictFlightUseCase.predict(request, userId));
+    public ResponseEntity<PredictResponseDTO> predict(
+            @Valid @RequestBody PredictRequestDTO request,
+            HttpServletRequest httpRequest
+    ) {
+        Long userId = resolveUserId(httpRequest);
+        logJson("Prediction request received userId=" + userId, request);
+        PredictResponseDTO response = predictFlightUseCase.predict(request, userId);
+        logJson("Prediction response userId=" + userId, response);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping(value = "/bulk-import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @SecurityRequirement(name = "bearer-key")
     public ResponseEntity<BulkPredictCsvUploadResponseDTO> bulkImport(
             @RequestParam("file") MultipartFile file,
-            @RequestParam(name = "dryRun", defaultValue = "false") boolean dryRun
+            @RequestParam(name = "dryRun", defaultValue = "false") boolean dryRun,
+            HttpServletRequest httpRequest
     ) {
         if (file == null || file.isEmpty()) {
             return ResponseEntity.badRequest().body(new BulkPredictCsvUploadResponseDTO(
@@ -69,7 +98,7 @@ public class PredictController {
                     List.of(new BulkPredictErrorDTO(0, "CSV file is required", null))
             ));
         }
-        Long userId = resolveUserId();
+        Long userId = resolveUserId(httpRequest);
         try {
             var result = bulkPredictUseCase.importPredictionsFromCsv(file.getInputStream(), userId, dryRun);
             int totalRows = result.accepted() + result.rejected();
@@ -101,8 +130,8 @@ public class PredictController {
 
     @GetMapping("/history")
     @SecurityRequirement(name = "bearer-key")
-    public ResponseEntity<List<PredictHistoryItemDTO>> getHistory() {
-        Long userId = resolveUserId();
+    public ResponseEntity<List<PredictHistoryItemDTO>> getHistory(HttpServletRequest httpRequest) {
+        Long userId = resolveUserId(httpRequest);
         if (userId == null) {
             return ResponseEntity.status(401).build();
         }
@@ -111,8 +140,11 @@ public class PredictController {
 
     @GetMapping("/history/{requestId}")
     @SecurityRequirement(name = "bearer-key")
-    public ResponseEntity<PredictHistoryDetailDTO> getHistoryDetail(@PathVariable Long requestId) {
-        Long userId = resolveUserId();
+    public ResponseEntity<PredictHistoryDetailDTO> getHistoryDetail(
+            @PathVariable Long requestId,
+            HttpServletRequest httpRequest
+    ) {
+        Long userId = resolveUserId(httpRequest);
         if (userId == null) {
             return ResponseEntity.status(401).build();
         }
@@ -121,8 +153,11 @@ public class PredictController {
 
     @GetMapping("/{requestId}/latest")
     @SecurityRequirement(name = "bearer-key")
-    public ResponseEntity<PredictResponseDTO> getLatest(@PathVariable Long requestId) {
-        Long userId = resolveUserId();
+    public ResponseEntity<PredictResponseDTO> getLatest(
+            @PathVariable Long requestId,
+            HttpServletRequest httpRequest
+    ) {
+        Long userId = resolveUserId(httpRequest);
         if (userId == null) {
             return ResponseEntity.status(401).build();
         }
@@ -131,43 +166,108 @@ public class PredictController {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleValidationError(IllegalArgumentException ex) {
+        log.warn("Validation error in predict flow: {}", ex.getMessage());
         return ResponseEntity.badRequest().body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
+        String message = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .findFirst()
+                .orElse("Validation error");
+        log.warn("Request validation failed: {}", message);
+        return ResponseEntity.badRequest().body(new ErrorResponse(message));
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ErrorResponse> handleUploadTooLarge(MaxUploadSizeExceededException ex) {
+        log.warn("CSV upload too large: {}", ex.getMessage());
         return ResponseEntity.status(413).body(new ErrorResponse("CSV file is too large"));
     }
 
     @ExceptionHandler(WebClientResponseException.class)
     public ResponseEntity<ErrorResponse> handleModelError(WebClientResponseException ex) {
+        log.error("Model service error status={} body={}", ex.getStatusCode().value(), ex.getResponseBodyAsString(), ex);
         return ResponseEntity.status(503).body(new ErrorResponse("Model service unavailable"));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpectedError(Exception ex) {
+        log.error("Unexpected error in predict flow", ex);
         return ResponseEntity.status(503).body(new ErrorResponse("Model service unavailable"));
     }
 
-    private Long resolveUserId() {
+    private Long resolveUserId(HttpServletRequest httpRequest) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return null;
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
+            return resolveUserIdFromToken(httpRequest).orElse(null);
         }
         Object principal = authentication.getPrincipal();
         if (principal instanceof String principalString) {
             if ("anonymousUser".equalsIgnoreCase(principalString)) {
-                return null;
+                return resolveUserIdFromToken(httpRequest).orElse(null);
             }
             try {
                 return Long.valueOf(principalString);
             } catch (NumberFormatException ex) {
-                return null;
+                return resolveUserIdFromToken(httpRequest).orElse(null);
             }
         }
-        return null;
+        if (principal instanceof UserDetails userDetails) {
+            return parseUserId(userDetails.getUsername())
+                    .or(() -> resolveUserIdByEmail(userDetails.getUsername()))
+                    .orElse(null);
+        }
+        return parseUserId(authentication.getName())
+                .or(() -> resolveUserIdByEmail(authentication.getName()))
+                .orElse(null);
+    }
+
+    private Optional<Long> parseUserId(String value) {
+        if (value == null || value.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(Long.valueOf(value));
+        } catch (NumberFormatException ex) {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<Long> resolveUserIdByEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return Optional.empty();
+        }
+        return userJpaRepository.findByEmail(email)
+                .map(user -> user.getId());
+    }
+
+    private Optional<Long> resolveUserIdFromToken(HttpServletRequest httpRequest) {
+        if (httpRequest == null) {
+            return Optional.empty();
+        }
+        String header = httpRequest.getHeader(HttpHeaders.AUTHORIZATION);
+        if (header == null || !header.startsWith("Bearer ")) {
+            return Optional.empty();
+        }
+        String token = header.substring(7);
+        if (!jwtTokenProvider.validateToken(token)) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(jwtTokenProvider.getUserIdFromToken(token));
     }
 
     public record ErrorResponse(String message) {
+    }
+
+    private void logJson(String message, Object payload) {
+        try {
+            log.info("{} payload={}", message, objectMapper.writeValueAsString(payload));
+        } catch (JsonProcessingException ex) {
+            log.warn("{} payload=<failed to serialize>", message, ex);
+        }
     }
 }

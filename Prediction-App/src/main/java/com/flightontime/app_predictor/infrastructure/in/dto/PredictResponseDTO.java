@@ -8,7 +8,11 @@ public record PredictResponseDTO(
         @JsonProperty("status")
         String predictedStatus,
         @JsonProperty("probability")
-        double predictedProbability,
+        Double predictedProbability,
+        @JsonProperty("confidence")
+        String confidence,
+        @JsonProperty("thresholdUsed")
+        Double thresholdUsed,
         String modelVersion,
         @JsonFormat(shape = JsonFormat.Shape.STRING)
         OffsetDateTime predictedAt

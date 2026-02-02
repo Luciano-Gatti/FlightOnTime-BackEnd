@@ -7,6 +7,8 @@ import com.flightontime.app_predictor.domain.ports.out.AirportRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.WeatherPort;
 import com.flightontime.app_predictor.infrastructure.out.dto.OpenMeteoWeatherResponse;
 import com.flightontime.app_predictor.infrastructure.out.dto.WeatherApiFallbackResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -17,6 +19,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -24,11 +28,13 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 @Component
 public class WeatherApiClient implements WeatherPort {
+    private static final Logger log = LoggerFactory.getLogger(WeatherApiClient.class);
     private final WebClient openMeteoWeatherWebClient;
     private final WeatherFallbackClient weatherFallbackClient;
     private final AirportRepositoryPort airportRepositoryPort;
     private final AirportInfoPort airportInfoPort;
     private final Duration cacheTtl;
+    private final ObjectMapper objectMapper;
     private final ConcurrentHashMap<String, CacheEntry> cache = new ConcurrentHashMap<>();
 
     public WeatherApiClient(
@@ -36,13 +42,15 @@ public class WeatherApiClient implements WeatherPort {
             WeatherFallbackClient weatherFallbackClient,
             AirportRepositoryPort airportRepositoryPort,
             AirportInfoPort airportInfoPort,
-            @Value("${weather.cache.ttl}") Duration cacheTtl
+            @Value("${weather.cache.ttl}") Duration cacheTtl,
+            ObjectMapper objectMapper
     ) {
         this.openMeteoWeatherWebClient = openMeteoWeatherWebClient;
         this.weatherFallbackClient = weatherFallbackClient;
         this.airportRepositoryPort = airportRepositoryPort;
         this.airportInfoPort = airportInfoPort;
         this.cacheTtl = cacheTtl;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -51,8 +59,10 @@ public class WeatherApiClient implements WeatherPort {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         CacheEntry cached = cache.get(normalizedIata);
         if (cached != null && now.isBefore(cached.expiresAt())) {
+            log.info("Weather cache hit for iata={}", normalizedIata);
             return cached.weather();
         }
+        log.info("Weather lookup start iata={} instantUtc={}", normalizedIata, instantUtc);
         Airport airport = resolveAirport(normalizedIata);
 
         try {
@@ -60,11 +70,13 @@ public class WeatherApiClient implements WeatherPort {
             cache.put(normalizedIata, new CacheEntry(dto, now.plus(cacheTtl)));
             return dto;
         } catch (RuntimeException primaryError) {
+            log.warn("Primary weather provider failed iata={} message={}", normalizedIata, primaryError.getMessage());
             try {
                 AirportWeatherDTO dto = fetchFallback(airport);
                 cache.put(normalizedIata, new CacheEntry(dto, now.plus(cacheTtl)));
                 return dto;
             } catch (RuntimeException fallbackError) {
+                log.error("Fallback weather provider failed iata={} message={}", normalizedIata, fallbackError.getMessage());
                 WeatherProviderException providerException = new WeatherProviderException(
                         "Weather provider error for IATA " + normalizedIata,
                         primaryError
@@ -76,6 +88,8 @@ public class WeatherApiClient implements WeatherPort {
     }
 
     private AirportWeatherDTO fetchPrimary(Airport airport) {
+        log.info("Calling OpenMeteo weather for iata={} lat={} lon={}",
+                airport.airportIata(), airport.latitude(), airport.longitude());
         OpenMeteoWeatherResponse response = openMeteoWeatherWebClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/forecast")
@@ -88,15 +102,19 @@ public class WeatherApiClient implements WeatherPort {
                 .bodyToMono(OpenMeteoWeatherResponse.class)
                 .block();
         OpenMeteoWeatherResponse safeResponse = Objects.requireNonNull(response, "OpenMeteo response is required");
+        logJson("OpenMeteo response payload", safeResponse);
         return mapToDto(safeResponse);
     }
 
     private AirportWeatherDTO fetchFallback(Airport airport) {
+        log.info("Calling fallback weather for iata={} lat={} lon={}",
+                airport.airportIata(), airport.latitude(), airport.longitude());
         WeatherApiFallbackResponse response = weatherFallbackClient.getWeatherForCoordinates(
                 airport.latitude(),
                 airport.longitude()
         );
         WeatherApiFallbackResponse safeResponse = Objects.requireNonNull(response, "Fallback weather response is required");
+        logJson("Fallback weather response payload", safeResponse);
         return mapToDto(safeResponse);
     }
 
@@ -145,8 +163,17 @@ public class WeatherApiClient implements WeatherPort {
     }
 
     private Airport storeAirport(Airport airport) {
+        log.info("Storing airport from external source for weather iata={}", airport.airportIata());
         airportRepositoryPort.saveAll(List.of(airport));
         return airport;
+    }
+
+    private void logJson(String message, Object payload) {
+        try {
+            log.info("{}: {}", message, objectMapper.writeValueAsString(payload));
+        } catch (JsonProcessingException ex) {
+            log.warn("{}: <failed to serialize payload>", message, ex);
+        }
     }
 
     private OffsetDateTime parseOpenMeteoTimestamp(String time) {

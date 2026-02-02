@@ -2,7 +2,9 @@ package com.flightontime.app_predictor.domain.model;
 
 public record ModelPrediction(
         String predictedStatus,
-        double predictedProbability,
+        Double predictedProbability,
+        String confidence,
+        Double thresholdUsed,
         String modelVersion
 ) {
 }
