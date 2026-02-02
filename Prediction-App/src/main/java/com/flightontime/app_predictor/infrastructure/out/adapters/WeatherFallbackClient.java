@@ -1,6 +1,6 @@
 package com.flightontime.app_predictor.infrastructure.out.adapters;
 
-import com.flightontime.app_predictor.infrastructure.out.dto.WeatherApiResponse;
+import com.flightontime.app_predictor.infrastructure.out.dto.WeatherApiFallbackResponse;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,7 +28,7 @@ public class WeatherFallbackClient {
         this.readTimeout = readTimeout;
     }
 
-    public WeatherApiResponse getWeatherForIata(String iata) {
+    public WeatherApiFallbackResponse getWeatherForIata(String iata) {
         ensureApiKey();
         String uri = UriComponentsBuilder.fromUriString(baseUrl)
                 .queryParam("key", apiKey)
@@ -38,13 +38,33 @@ public class WeatherFallbackClient {
             return fallbackWebClient.get()
                     .uri(uri)
                     .retrieve()
-                    .bodyToMono(WeatherApiResponse.class)
+                    .bodyToMono(WeatherApiFallbackResponse.class)
                     .timeout(readTimeout)
                     .block();
         } catch (WebClientResponseException ex) {
             throw new RuntimeException("Fallback weather provider error for IATA " + iata, ex);
         } catch (Exception ex) {
             throw new RuntimeException("Fallback weather provider connection error for IATA " + iata, ex);
+        }
+    }
+
+    public WeatherApiFallbackResponse getWeatherForCoordinates(double latitude, double longitude) {
+        ensureApiKey();
+        String uri = UriComponentsBuilder.fromUriString(baseUrl)
+                .queryParam("key", apiKey)
+                .queryParam("q", latitude + "," + longitude)
+                .toUriString();
+        try {
+            return fallbackWebClient.get()
+                    .uri(uri)
+                    .retrieve()
+                    .bodyToMono(WeatherApiFallbackResponse.class)
+                    .timeout(readTimeout)
+                    .block();
+        } catch (WebClientResponseException ex) {
+            throw new RuntimeException("Fallback weather provider error for coordinates " + latitude + "," + longitude, ex);
+        } catch (Exception ex) {
+            throw new RuntimeException("Fallback weather provider connection error for coordinates " + latitude + "," + longitude, ex);
         }
     }
 
