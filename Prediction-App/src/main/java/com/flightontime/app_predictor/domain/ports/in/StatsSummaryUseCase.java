@@ -1,10 +1,10 @@
 package com.flightontime.app_predictor.domain.ports.in;
 
-import com.flightontime.app_predictor.infrastructure.in.dto.StatsSummaryResponseDTO;
+import com.flightontime.app_predictor.domain.model.StatsSummary;
 
 /**
  * Interfaz StatsSummaryUseCase.
  */
 public interface StatsSummaryUseCase {
-    StatsSummaryResponseDTO getSummary(int topN);
+    StatsSummary getSummary(int topN);
 }

@@ -1,7 +1,7 @@
 package com.flightontime.app_predictor.infrastructure.in.controller;
 
 import com.flightontime.app_predictor.application.dto.AirportWeatherDTO;
-import com.flightontime.app_predictor.domain.ports.out.WeatherPort;
+import com.flightontime.app_predictor.application.services.WeatherService;
 import com.flightontime.app_predictor.infrastructure.out.adapters.WeatherProviderException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,10 +27,10 @@ import org.springframework.web.bind.annotation.RestController;
 public class WeatherController {
     private static final Pattern IATA_PATTERN = Pattern.compile("^[A-Za-z]{3}$");
 
-    private final WeatherPort weatherPort;
+    private final WeatherService weatherService;
 
-    public WeatherController(WeatherPort weatherPort) {
-        this.weatherPort = weatherPort;
+    public WeatherController(WeatherService weatherService) {
+        this.weatherService = weatherService;
     }
 
     @GetMapping("/{iata}/weather")
@@ -51,7 +51,7 @@ public class WeatherController {
             throw new IllegalArgumentException("IATA must be exactly 3 letters");
         }
         OffsetDateTime nowUtc = OffsetDateTime.now(ZoneOffset.UTC);
-        return ResponseEntity.ok(weatherPort.getCurrentWeather(iata, nowUtc));
+        return ResponseEntity.ok(weatherService.getCurrentWeather(iata, nowUtc));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

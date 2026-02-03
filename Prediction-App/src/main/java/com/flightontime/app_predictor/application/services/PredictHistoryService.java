@@ -1,14 +1,14 @@
 package com.flightontime.app_predictor.application.services;
 
 import com.flightontime.app_predictor.domain.model.FlightRequest;
+import com.flightontime.app_predictor.domain.model.PredictHistoryDetail;
+import com.flightontime.app_predictor.domain.model.PredictHistoryItem;
+import com.flightontime.app_predictor.domain.model.PredictHistoryPrediction;
 import com.flightontime.app_predictor.domain.model.Prediction;
 import com.flightontime.app_predictor.domain.ports.in.PredictHistoryUseCase;
 import com.flightontime.app_predictor.domain.ports.out.FlightRequestRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.PredictionRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.UserPredictionRepositoryPort;
-import com.flightontime.app_predictor.infrastructure.in.dto.PredictHistoryDetailDTO;
-import com.flightontime.app_predictor.infrastructure.in.dto.PredictHistoryItemDTO;
-import com.flightontime.app_predictor.infrastructure.in.dto.PredictHistoryPredictionDTO;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -35,7 +35,7 @@ public class PredictHistoryService implements PredictHistoryUseCase {
     }
 
     @Override
-    public List<PredictHistoryItemDTO> getHistory(Long userId) {
+    public List<PredictHistoryItem> getHistory(Long userId) {
         List<FlightRequest> requests = flightRequestRepositoryPort.findByUserId(userId);
         return requests.stream()
                 .map(request -> toHistoryItem(userId, request))
@@ -43,19 +43,19 @@ public class PredictHistoryService implements PredictHistoryUseCase {
     }
 
     @Override
-    public PredictHistoryDetailDTO getHistoryDetail(Long userId, Long requestId) {
+    public PredictHistoryDetail getHistoryDetail(Long userId, Long requestId) {
         FlightRequest request = flightRequestRepositoryPort.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found"));
         userPredictionRepositoryPort.findLatestByUserIdAndRequestId(userId, requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found"));
         long uniqueUsersCount = userPredictionRepositoryPort.countDistinctUsersByRequestId(requestId);
-        List<PredictHistoryPredictionDTO> predictions = predictionRepositoryPort
+        List<PredictHistoryPrediction> predictions = predictionRepositoryPort
                 .findByRequestIdAndUserId(requestId, userId)
                 .stream()
                 .sorted(Comparator.comparing(Prediction::predictedAt).reversed())
                 .map(this::toPredictionDto)
                 .collect(Collectors.toList());
-        return new PredictHistoryDetailDTO(
+        return new PredictHistoryDetail(
                 request.id(),
                 request.flightDateUtc(),
                 request.airlineCode(),
@@ -67,13 +67,13 @@ public class PredictHistoryService implements PredictHistoryUseCase {
         );
     }
 
-    private PredictHistoryItemDTO toHistoryItem(Long userId, FlightRequest request) {
+    private PredictHistoryItem toHistoryItem(Long userId, FlightRequest request) {
         List<Prediction> predictions = predictionRepositoryPort
                 .findByRequestIdAndUserId(request.id(), userId);
         Optional<Prediction> latest = predictions.stream()
                 .max(Comparator.comparing(Prediction::predictedAt));
         long uniqueUsersCount = userPredictionRepositoryPort.countDistinctUsersByRequestId(request.id());
-        return new PredictHistoryItemDTO(
+        return new PredictHistoryItem(
                 request.id(),
                 request.flightDateUtc(),
                 request.airlineCode(),
@@ -90,8 +90,8 @@ public class PredictHistoryService implements PredictHistoryUseCase {
         );
     }
 
-    private PredictHistoryPredictionDTO toPredictionDto(Prediction prediction) {
-        return new PredictHistoryPredictionDTO(
+    private PredictHistoryPrediction toPredictionDto(Prediction prediction) {
+        return new PredictHistoryPrediction(
                 prediction.predictedStatus(),
                 prediction.predictedProbability(),
                 prediction.confidence(),

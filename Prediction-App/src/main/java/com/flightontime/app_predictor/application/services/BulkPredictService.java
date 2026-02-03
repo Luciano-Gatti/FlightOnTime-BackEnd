@@ -9,7 +9,6 @@ import com.flightontime.app_predictor.domain.model.UserPredictionSource;
 import com.flightontime.app_predictor.domain.ports.in.BulkPredictUseCase;
 import com.flightontime.app_predictor.domain.ports.out.FlightFollowRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.UserPredictionRepositoryPort;
-import com.flightontime.app_predictor.infrastructure.in.CsvParser;
 import java.io.InputStream;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;

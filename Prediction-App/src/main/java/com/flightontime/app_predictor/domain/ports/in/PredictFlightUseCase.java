@@ -1,13 +1,13 @@
 package com.flightontime.app_predictor.domain.ports.in;
 
-import com.flightontime.app_predictor.infrastructure.in.dto.PredictRequestDTO;
-import com.flightontime.app_predictor.infrastructure.in.dto.PredictResponseDTO;
+import com.flightontime.app_predictor.domain.model.PredictFlightRequest;
+import com.flightontime.app_predictor.domain.model.PredictionResult;
 
 /**
  * Interfaz PredictFlightUseCase.
  */
 public interface PredictFlightUseCase {
-    PredictResponseDTO predict(PredictRequestDTO request, Long userId);
+    PredictionResult predict(PredictFlightRequest request, Long userId);
 
-    PredictResponseDTO getLatestPrediction(Long requestId, Long userId);
+    PredictionResult getLatestPrediction(Long requestId, Long userId);
 }

@@ -1,10 +1,10 @@
 package com.flightontime.app_predictor.domain.ports.in;
 
-import com.flightontime.app_predictor.infrastructure.in.dto.StatsAccuracyByLeadTimeResponseDTO;
+import com.flightontime.app_predictor.domain.model.StatsAccuracyByLeadTime;
 
 /**
  * Interfaz StatsAccuracyByLeadTimeUseCase.
  */
 public interface StatsAccuracyByLeadTimeUseCase {
-    StatsAccuracyByLeadTimeResponseDTO getAccuracyByLeadTime();
+    StatsAccuracyByLeadTime getAccuracyByLeadTime();
 }
