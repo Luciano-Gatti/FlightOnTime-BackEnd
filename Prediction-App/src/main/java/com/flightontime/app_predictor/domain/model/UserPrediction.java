@@ -5,7 +5,9 @@ import java.time.OffsetDateTime;
 public record UserPrediction(
         Long id,
         Long userId,
+        Long flightRequestId,
         Long flightPredictionId,
+        UserPredictionSource source,
         OffsetDateTime createdAt
 ) {
 }

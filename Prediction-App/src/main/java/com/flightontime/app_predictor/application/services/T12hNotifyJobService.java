@@ -4,14 +4,18 @@ import com.flightontime.app_predictor.domain.model.FlightRequest;
 import com.flightontime.app_predictor.domain.model.NotificationLog;
 import com.flightontime.app_predictor.domain.model.PredictFlightCommand;
 import com.flightontime.app_predictor.domain.model.Prediction;
+import com.flightontime.app_predictor.domain.model.PredictionSource;
+import com.flightontime.app_predictor.domain.model.RefreshMode;
 import com.flightontime.app_predictor.domain.model.UserPrediction;
 import com.flightontime.app_predictor.domain.ports.in.DistanceUseCase;
+import com.flightontime.app_predictor.domain.ports.out.FlightFollowRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.FlightRequestRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.ModelPredictionPort;
 import com.flightontime.app_predictor.domain.ports.out.NotificationLogRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.NotificationPort;
 import com.flightontime.app_predictor.domain.ports.out.PredictionRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.UserPredictionRepositoryPort;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -25,7 +29,10 @@ import org.springframework.stereotype.Service;
 public class T12hNotifyJobService {
     private static final String NOTIFICATION_TYPE = "T12H";
     private static final String CHANNEL = "SYSTEM";
+    private static final Duration EARLY_WINDOW_START = Duration.ofHours(11);
+    private static final Duration WINDOW_END = Duration.ofHours(13);
 
+    private final FlightFollowRepositoryPort flightFollowRepositoryPort;
     private final FlightRequestRepositoryPort flightRequestRepositoryPort;
     private final UserPredictionRepositoryPort userPredictionRepositoryPort;
     private final PredictionRepositoryPort predictionRepositoryPort;
@@ -35,6 +42,7 @@ public class T12hNotifyJobService {
     private final DistanceUseCase distanceUseCase;
 
     public T12hNotifyJobService(
+            FlightFollowRepositoryPort flightFollowRepositoryPort,
             FlightRequestRepositoryPort flightRequestRepositoryPort,
             UserPredictionRepositoryPort userPredictionRepositoryPort,
             PredictionRepositoryPort predictionRepositoryPort,
@@ -43,6 +51,7 @@ public class T12hNotifyJobService {
             NotificationLogRepositoryPort notificationLogRepositoryPort,
             DistanceUseCase distanceUseCase
     ) {
+        this.flightFollowRepositoryPort = flightFollowRepositoryPort;
         this.flightRequestRepositoryPort = flightRequestRepositoryPort;
         this.userPredictionRepositoryPort = userPredictionRepositoryPort;
         this.predictionRepositoryPort = predictionRepositoryPort;
@@ -54,27 +63,45 @@ public class T12hNotifyJobService {
 
     public void notifyUsers() {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        OffsetDateTime windowStart = now.plusHours(11);
+        OffsetDateTime windowStart = now;
         OffsetDateTime windowEnd = now.plusHours(13);
-        List<FlightRequest> requests = flightRequestRepositoryPort
-                .findByFlightDateBetweenWithUserPredictions(windowStart, windowEnd);
+        var follows = flightFollowRepositoryPort.findByFlightDateBetween(windowStart, windowEnd);
         Map<Long, List<NotificationCandidate>> notificationsByUser = new HashMap<>();
-        for (FlightRequest request : requests) {
-            if (closeIfExpired(request, now)) {
+        for (var follow : follows) {
+            if (!isRelevantRefreshMode(follow.refreshMode())) {
                 continue;
             }
-            List<Long> userIds = userPredictionRepositoryPort.findDistinctUserIdsByRequestId(request.id());
-            for (Long userId : userIds) {
-                processUserNotification(userId, request, now, notificationsByUser);
+            FlightRequest request = flightRequestRepositoryPort.findById(follow.flightRequestId())
+                    .orElse(null);
+            if (request == null || !request.active() || request.flightDateUtc() == null) {
+                continue;
             }
+            Duration timeToDeparture = Duration.between(now, request.flightDateUtc());
+            if (timeToDeparture.isNegative()) {
+                continue;
+            }
+            if (timeToDeparture.compareTo(WINDOW_END) > 0) {
+                continue;
+            }
+            boolean lateNotification = timeToDeparture.compareTo(EARLY_WINDOW_START) < 0;
+            processUserNotification(
+                    follow.userId(),
+                    follow.baselineSnapshotId(),
+                    request,
+                    now,
+                    lateNotification,
+                    notificationsByUser
+            );
         }
         dispatchNotifications(notificationsByUser, now);
     }
 
     private void processUserNotification(
             Long userId,
+            Long baselineSnapshotId,
             FlightRequest request,
             OffsetDateTime now,
+            boolean lateNotification,
             Map<Long, List<NotificationCandidate>> notificationsByUser
     ) {
         Optional<NotificationLog> existing = notificationLogRepositoryPort
@@ -82,8 +109,7 @@ public class T12hNotifyJobService {
         if (existing.isPresent()) {
             return;
         }
-        Optional<UserPrediction> baselineUserPrediction = userPredictionRepositoryPort
-                .findLatestByUserIdAndRequestId(userId, request.id());
+        Optional<UserPrediction> baselineUserPrediction = resolveBaselineSnapshot(userId, baselineSnapshotId, request.id());
         if (baselineUserPrediction.isEmpty()) {
             return;
         }
@@ -104,7 +130,7 @@ public class T12hNotifyJobService {
                 request,
                 baselineUserPrediction.get().id(),
                 currentPrediction.predictedStatus(),
-                buildMessage(request, baselinePrediction.get(), currentPrediction)
+                buildMessage(request, baselinePrediction.get(), currentPrediction, lateNotification)
         );
         notificationsByUser
                 .computeIfAbsent(userId, ignored -> new ArrayList<>())
@@ -142,12 +168,21 @@ public class T12hNotifyJobService {
         }
     }
 
-    private String buildMessage(FlightRequest request, Prediction baseline, Prediction current) {
+    private String buildMessage(
+            FlightRequest request,
+            Prediction baseline,
+            Prediction current,
+            boolean lateNotification
+    ) {
         String flightLabel = hasFlightNumber(request.flightNumber())
                 ? request.flightNumber()
                 : "Request " + request.id();
-        return "Flight " + flightLabel + " cambió de " + baseline.predictedStatus()
+        String baseMessage = "Flight " + flightLabel + " cambió de " + baseline.predictedStatus()
                 + " a " + current.predictedStatus();
+        if (!lateNotification) {
+            return baseMessage;
+        }
+        return baseMessage + " (notificación tardía)";
     }
 
     private boolean isRelevantStatusChange(String baselineStatus, String currentStatus) {
@@ -167,36 +202,11 @@ public class T12hNotifyJobService {
         return flightNumber != null && !flightNumber.isBlank();
     }
 
-    private boolean closeIfExpired(FlightRequest request, OffsetDateTime nowUtc) {
-        if (request == null || request.flightDateUtc() == null || !request.active()) {
-            return true;
-        }
-        if (request.flightDateUtc().isBefore(nowUtc)) {
-            FlightRequest closedRequest = new FlightRequest(
-                    request.id(),
-                    request.userId(),
-                    request.flightDateUtc(),
-                    request.airlineCode(),
-                    request.originIata(),
-                    request.destIata(),
-                    request.flightNumber(),
-                    request.createdAt(),
-                    false,
-                    nowUtc
-            );
-            flightRequestRepositoryPort.save(closedRequest);
-            return true;
-        }
-        return false;
-    }
-
     private Prediction getOrCreateCurrentPrediction(FlightRequest request, OffsetDateTime now) {
         OffsetDateTime bucketStart = resolveBucketStart(now);
-        OffsetDateTime bucketEnd = bucketStart.plusHours(3);
-        Optional<Prediction> cached = predictionRepositoryPort.findByRequestIdAndPredictedAtBetween(
+        Optional<Prediction> cached = predictionRepositoryPort.findByRequestIdAndForecastBucketUtc(
                 request.id(),
-                bucketStart,
-                bucketEnd
+                bucketStart
         );
         if (cached.isPresent()) {
             return cached.get();
@@ -206,11 +216,13 @@ public class T12hNotifyJobService {
         Prediction prediction = new Prediction(
                 null,
                 request.id(),
+                bucketStart,
                 modelPrediction.predictedStatus(),
                 modelPrediction.predictedProbability(),
                 modelPrediction.confidence(),
                 modelPrediction.thresholdUsed(),
                 modelPrediction.modelVersion(),
+                PredictionSource.SYSTEM,
                 now,
                 now
         );
@@ -218,7 +230,8 @@ public class T12hNotifyJobService {
     }
 
     private PredictFlightCommand buildCommand(FlightRequest request) {
-        double distance = distanceUseCase.calculateDistance(request.originIata(), request.destIata());
+        double distance = request.distance() > 0 ? request.distance()
+                : distanceUseCase.calculateDistance(request.originIata(), request.destIata());
         return new PredictFlightCommand(
                 toUtc(request.flightDateUtc()),
                 request.airlineCode(),
@@ -240,6 +253,23 @@ public class T12hNotifyJobService {
             return null;
         }
         return value.withOffsetSameInstant(ZoneOffset.UTC);
+    }
+
+    private Optional<UserPrediction> resolveBaselineSnapshot(
+            Long userId,
+            Long baselineSnapshotId,
+            Long flightRequestId
+    ) {
+        if (baselineSnapshotId != null) {
+            return userPredictionRepositoryPort.findById(baselineSnapshotId)
+                    .filter(snapshot -> userId.equals(snapshot.userId())
+                            && flightRequestId.equals(snapshot.flightRequestId()));
+        }
+        return userPredictionRepositoryPort.findLatestByUserIdAndRequestId(userId, flightRequestId);
+    }
+
+    private boolean isRelevantRefreshMode(RefreshMode refreshMode) {
+        return RefreshMode.T72_REFRESH.equals(refreshMode) || RefreshMode.T12_ONLY.equals(refreshMode);
     }
 
     private record NotificationCandidate(

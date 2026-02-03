@@ -9,6 +9,7 @@ public record FlightRequest(
         String airlineCode,
         String originIata,
         String destIata,
+        double distance,
         String flightNumber,
         OffsetDateTime createdAt,
         boolean active,

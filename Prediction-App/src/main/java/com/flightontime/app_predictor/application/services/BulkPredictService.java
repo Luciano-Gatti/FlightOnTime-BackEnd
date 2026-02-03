@@ -4,8 +4,11 @@ import com.flightontime.app_predictor.application.dto.BulkPredictError;
 import com.flightontime.app_predictor.application.dto.BulkPredictResult;
 import com.flightontime.app_predictor.domain.model.FlightFollow;
 import com.flightontime.app_predictor.domain.model.RefreshMode;
+import com.flightontime.app_predictor.domain.model.UserPrediction;
+import com.flightontime.app_predictor.domain.model.UserPredictionSource;
 import com.flightontime.app_predictor.domain.ports.in.BulkPredictUseCase;
 import com.flightontime.app_predictor.domain.ports.out.FlightFollowRepositoryPort;
+import com.flightontime.app_predictor.domain.ports.out.UserPredictionRepositoryPort;
 import com.flightontime.app_predictor.infrastructure.in.CsvParser;
 import java.io.InputStream;
 import java.time.OffsetDateTime;
@@ -27,14 +30,17 @@ public class BulkPredictService implements BulkPredictUseCase {
 
     private final PredictionWorkflowService predictionWorkflowService;
     private final FlightFollowRepositoryPort flightFollowRepositoryPort;
+    private final UserPredictionRepositoryPort userPredictionRepositoryPort;
     private final CsvParser csvParser;
 
     public BulkPredictService(
             PredictionWorkflowService predictionWorkflowService,
-            FlightFollowRepositoryPort flightFollowRepositoryPort
+            FlightFollowRepositoryPort flightFollowRepositoryPort,
+            UserPredictionRepositoryPort userPredictionRepositoryPort
     ) {
         this.predictionWorkflowService = predictionWorkflowService;
         this.flightFollowRepositoryPort = flightFollowRepositoryPort;
+        this.userPredictionRepositoryPort = userPredictionRepositoryPort;
         this.csvParser = new CsvParser();
     }
 
@@ -135,13 +141,20 @@ public class BulkPredictService implements BulkPredictUseCase {
                         flightNumber.isBlank() ? null : flightNumber,
                         userId,
                         true,
-                        userId != null
+                        false
                 );
                 if (userId != null && workflowResult.prediction() != null && workflowResult.flightRequest() != null) {
-                    upsertFlightFollow(
+                    UserPrediction snapshot = resolveUserSnapshot(
                             userId,
                             workflowResult.flightRequest().id(),
                             workflowResult.prediction().id(),
+                            UserPredictionSource.CSV_IMPORT,
+                            now
+                    );
+                    upsertFlightFollow(
+                            userId,
+                            workflowResult.flightRequest().id(),
+                            snapshot.id(),
                             RefreshMode.T12_ONLY
                     );
                 }
@@ -155,7 +168,7 @@ public class BulkPredictService implements BulkPredictUseCase {
     private void upsertFlightFollow(
             Long userId,
             Long flightRequestId,
-            Long baselineFlightPredictionId,
+            Long snapshotId,
             RefreshMode refreshMode
     ) {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -166,7 +179,7 @@ public class BulkPredictService implements BulkPredictUseCase {
                         userId,
                         flightRequestId,
                         refreshMode,
-                        baselineFlightPredictionId,
+                        resolveBaselineSnapshotId(existing.baselineSnapshotId(), snapshotId),
                         existing.createdAt(),
                         now
                 ))
@@ -175,10 +188,33 @@ public class BulkPredictService implements BulkPredictUseCase {
                         userId,
                         flightRequestId,
                         refreshMode,
-                        baselineFlightPredictionId,
+                        snapshotId,
                         now,
                         now
                 ));
         flightFollowRepositoryPort.save(flightFollow);
+    }
+
+    private UserPrediction resolveUserSnapshot(
+            Long userId,
+            Long flightRequestId,
+            Long flightPredictionId,
+            UserPredictionSource source,
+            OffsetDateTime now
+    ) {
+        return userPredictionRepositoryPort.findLatestByUserIdAndRequestId(userId, flightRequestId)
+                .filter(existing -> flightPredictionId.equals(existing.flightPredictionId()))
+                .orElseGet(() -> userPredictionRepositoryPort.save(new UserPrediction(
+                        null,
+                        userId,
+                        flightRequestId,
+                        flightPredictionId,
+                        source,
+                        now
+                )));
+    }
+
+    private Long resolveBaselineSnapshotId(Long existingBaselineSnapshotId, Long snapshotId) {
+        return existingBaselineSnapshotId == null ? snapshotId : existingBaselineSnapshotId;
     }
 }

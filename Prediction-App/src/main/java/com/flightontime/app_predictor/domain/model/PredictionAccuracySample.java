@@ -4,7 +4,7 @@ import java.time.OffsetDateTime;
 
 public record PredictionAccuracySample(
         OffsetDateTime flightDateUtc,
-        OffsetDateTime predictedAt,
+        OffsetDateTime forecastBucketUtc,
         String predictedStatus,
         String actualStatus
 ) {

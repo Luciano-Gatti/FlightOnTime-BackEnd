@@ -37,15 +37,13 @@ public class PredictionJpaAdapter implements PredictionRepositoryPort {
     }
 
     @Override
-    public Optional<Prediction> findByRequestIdAndPredictedAtBetween(
+    public Optional<Prediction> findByRequestIdAndForecastBucketUtc(
             Long flightRequestId,
-            OffsetDateTime start,
-            OffsetDateTime end
+            OffsetDateTime forecastBucketUtc
     ) {
-        return flightPredictionJpaRepository.findFirstByFlightRequestIdAndPredictedAtBetweenOrderByPredictedAtDesc(
+        return flightPredictionJpaRepository.findByFlightRequestIdAndForecastBucketUtc(
                 flightRequestId,
-                start,
-                end
+                forecastBucketUtc
         ).map(predictionMapper::toDomain);
     }
 
@@ -73,7 +71,7 @@ public class PredictionJpaAdapter implements PredictionRepositoryPort {
                 .stream()
                 .map(view -> new PredictionAccuracySample(
                         view.getFlightDateUtc(),
-                        view.getPredictedAt(),
+                        view.getForecastBucketUtc(),
                         view.getPredictedStatus(),
                         view.getActualStatus()
                 ))

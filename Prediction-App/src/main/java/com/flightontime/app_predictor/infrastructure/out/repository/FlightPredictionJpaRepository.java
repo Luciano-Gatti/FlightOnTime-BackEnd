@@ -9,10 +9,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface FlightPredictionJpaRepository extends JpaRepository<FlightPredictionEntity, Long> {
-    Optional<FlightPredictionEntity> findFirstByFlightRequestIdAndPredictedAtBetweenOrderByPredictedAtDesc(
+    Optional<FlightPredictionEntity> findByFlightRequestIdAndForecastBucketUtc(
             Long flightRequestId,
-            OffsetDateTime start,
-            OffsetDateTime end
+            OffsetDateTime forecastBucketUtc
     );
 
     @Query("""
@@ -20,7 +19,7 @@ public interface FlightPredictionJpaRepository extends JpaRepository<FlightPredi
             from FlightPredictionEntity prediction
             join UserPredictionSnapshotEntity userPrediction
               on userPrediction.flightPredictionId = prediction.id
-            where prediction.flightRequestId = :flightRequestId
+            where userPrediction.flightRequestId = :flightRequestId
               and userPrediction.userId = :userId
             order by prediction.predictedAt desc
             """)
@@ -33,7 +32,7 @@ public interface FlightPredictionJpaRepository extends JpaRepository<FlightPredi
 
     @Query("""
             select request.flightDateUtc as flightDateUtc,
-                   prediction.predictedAt as predictedAt,
+                   prediction.forecastBucketUtc as forecastBucketUtc,
                    prediction.predictedStatus as predictedStatus,
                    actual.actualStatus as actualStatus
             from FlightPredictionEntity prediction

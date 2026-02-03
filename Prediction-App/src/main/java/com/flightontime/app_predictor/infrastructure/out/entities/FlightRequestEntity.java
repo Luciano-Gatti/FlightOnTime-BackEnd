@@ -7,17 +7,24 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 @Entity
-@Table(name = "flight_request")
+@Table(
+        name = "flight_request",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"flight_date_utc", "airline_code", "origin_iata", "dest_iata"})
+        }
+)
 public class FlightRequestEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id")
+    @Transient
     private Long userId;
 
     @Column(name = "flight_date_utc", nullable = false)
@@ -31,6 +38,9 @@ public class FlightRequestEntity {
 
     @Column(name = "dest_iata", nullable = false, length = 3)
     private String destIata;
+
+    @Column(name = "distance", nullable = false)
+    private Double distance;
 
     @Column(name = "flight_number")
     private String flightNumber;
@@ -108,6 +118,14 @@ public class FlightRequestEntity {
 
     public void setFlightNumber(String flightNumber) {
         this.flightNumber = flightNumber;
+    }
+
+    public Double getDistance() {
+        return distance;
+    }
+
+    public void setDistance(Double distance) {
+        this.distance = distance;
     }
 
     public Boolean getActive() {

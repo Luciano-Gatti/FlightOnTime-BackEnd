@@ -11,10 +11,9 @@ public interface PredictionRepositoryPort {
 
     Optional<Prediction> findById(Long id);
 
-    Optional<Prediction> findByRequestIdAndPredictedAtBetween(
+    Optional<Prediction> findByRequestIdAndForecastBucketUtc(
             Long flightRequestId,
-            OffsetDateTime start,
-            OffsetDateTime end
+            OffsetDateTime forecastBucketUtc
     );
 
     List<Prediction> findByRequestIdAndUserId(Long flightRequestId, Long userId);

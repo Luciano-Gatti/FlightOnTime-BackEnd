@@ -42,7 +42,8 @@ public class PredictHistoryService implements PredictHistoryUseCase {
     @Override
     public PredictHistoryDetailDTO getHistoryDetail(Long userId, Long requestId) {
         FlightRequest request = flightRequestRepositoryPort.findById(requestId)
-                .filter(found -> userId.equals(found.userId()))
+                .orElseThrow(() -> new IllegalArgumentException("Request not found"));
+        userPredictionRepositoryPort.findLatestByUserIdAndRequestId(userId, requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found"));
         long uniqueUsersCount = userPredictionRepositoryPort.countDistinctUsersByRequestId(requestId);
         List<PredictHistoryPredictionDTO> predictions = predictionRepositoryPort

@@ -1,9 +1,13 @@
 package com.flightontime.app_predictor.application.services;
 
+import com.flightontime.app_predictor.domain.model.FlightFollow;
 import com.flightontime.app_predictor.domain.model.FlightRequest;
 import com.flightontime.app_predictor.domain.model.PredictFlightCommand;
 import com.flightontime.app_predictor.domain.model.Prediction;
+import com.flightontime.app_predictor.domain.model.PredictionSource;
+import com.flightontime.app_predictor.domain.model.RefreshMode;
 import com.flightontime.app_predictor.domain.ports.in.DistanceUseCase;
+import com.flightontime.app_predictor.domain.ports.out.FlightFollowRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.FlightRequestRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.ModelPredictionPort;
 import com.flightontime.app_predictor.domain.ports.out.PredictionRepositoryPort;
@@ -15,17 +19,20 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class T72hRefreshJobService {
+    private final FlightFollowRepositoryPort flightFollowRepositoryPort;
     private final FlightRequestRepositoryPort flightRequestRepositoryPort;
     private final PredictionRepositoryPort predictionRepositoryPort;
     private final ModelPredictionPort modelPredictionPort;
     private final DistanceUseCase distanceUseCase;
 
     public T72hRefreshJobService(
+            FlightFollowRepositoryPort flightFollowRepositoryPort,
             FlightRequestRepositoryPort flightRequestRepositoryPort,
             PredictionRepositoryPort predictionRepositoryPort,
             ModelPredictionPort modelPredictionPort,
             DistanceUseCase distanceUseCase
     ) {
+        this.flightFollowRepositoryPort = flightFollowRepositoryPort;
         this.flightRequestRepositoryPort = flightRequestRepositoryPort;
         this.predictionRepositoryPort = predictionRepositoryPort;
         this.modelPredictionPort = modelPredictionPort;
@@ -35,10 +42,15 @@ public class T72hRefreshJobService {
     public void refreshPredictions() {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         OffsetDateTime end = now.plusHours(72);
-        List<FlightRequest> requests = flightRequestRepositoryPort
-                .findByFlightDateBetweenWithUserPredictions(now, end);
-        for (FlightRequest request : requests) {
-            if (closeIfExpired(request, now)) {
+        List<FlightFollow> follows = flightFollowRepositoryPort
+                .findByRefreshModeAndFlightDateBetween(RefreshMode.T72_REFRESH, now, end);
+        for (FlightFollow follow : follows) {
+            FlightRequest request = flightRequestRepositoryPort.findById(follow.flightRequestId())
+                    .orElse(null);
+            if (request == null || !request.active()) {
+                continue;
+            }
+            if (request.flightDateUtc().isBefore(now) || request.flightDateUtc().isAfter(end)) {
                 continue;
             }
             PredictFlightCommand command = buildCommand(request);
@@ -47,7 +59,8 @@ public class T72hRefreshJobService {
     }
 
     private PredictFlightCommand buildCommand(FlightRequest request) {
-        double distance = distanceUseCase.calculateDistance(request.originIata(), request.destIata());
+        double distance = request.distance() > 0 ? request.distance()
+                : distanceUseCase.calculateDistance(request.originIata(), request.destIata());
         return new PredictFlightCommand(
                 toUtc(request.flightDateUtc()),
                 request.airlineCode(),
@@ -60,11 +73,9 @@ public class T72hRefreshJobService {
 
     private Prediction getOrCreatePrediction(Long flightRequestId, PredictFlightCommand command, OffsetDateTime now) {
         OffsetDateTime bucketStart = resolveBucketStart(now);
-        OffsetDateTime bucketEnd = bucketStart.plusHours(3);
-        Optional<Prediction> cached = predictionRepositoryPort.findByRequestIdAndPredictedAtBetween(
+        Optional<Prediction> cached = predictionRepositoryPort.findByRequestIdAndForecastBucketUtc(
                 flightRequestId,
-                bucketStart,
-                bucketEnd
+                bucketStart
         );
         if (cached.isPresent()) {
             return cached.get();
@@ -73,11 +84,13 @@ public class T72hRefreshJobService {
         Prediction prediction = new Prediction(
                 null,
                 flightRequestId,
+                bucketStart,
                 modelPrediction.predictedStatus(),
                 modelPrediction.predictedProbability(),
                 modelPrediction.confidence(),
                 modelPrediction.thresholdUsed(),
                 modelPrediction.modelVersion(),
+                PredictionSource.SYSTEM,
                 now,
                 now
         );
@@ -97,26 +110,4 @@ public class T72hRefreshJobService {
         return value.withOffsetSameInstant(ZoneOffset.UTC);
     }
 
-    private boolean closeIfExpired(FlightRequest request, OffsetDateTime nowUtc) {
-        if (request == null || request.flightDateUtc() == null || !request.active()) {
-            return true;
-        }
-        if (request.flightDateUtc().isBefore(nowUtc)) {
-            FlightRequest closedRequest = new FlightRequest(
-                    request.id(),
-                    request.userId(),
-                    request.flightDateUtc(),
-                    request.airlineCode(),
-                    request.originIata(),
-                    request.destIata(),
-                    request.flightNumber(),
-                    request.createdAt(),
-                    false,
-                    nowUtc
-            );
-            flightRequestRepositoryPort.save(closedRequest);
-            return true;
-        }
-        return false;
-    }
 }

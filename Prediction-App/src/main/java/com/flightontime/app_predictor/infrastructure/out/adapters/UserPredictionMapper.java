@@ -13,7 +13,9 @@ public class UserPredictionMapper {
         return new UserPrediction(
                 entity.getId(),
                 entity.getUserId(),
+                entity.getFlightRequestId(),
                 entity.getFlightPredictionId(),
+                entity.getSource(),
                 entity.getCreatedAt()
         );
     }
@@ -24,7 +26,9 @@ public class UserPredictionMapper {
         }
         UserPredictionSnapshotEntity target = entity == null ? new UserPredictionSnapshotEntity() : entity;
         target.setUserId(userPrediction.userId());
+        target.setFlightRequestId(userPrediction.flightRequestId());
         target.setFlightPredictionId(userPrediction.flightPredictionId());
+        target.setSource(userPrediction.source());
         if (userPrediction.createdAt() != null) {
             target.setCreatedAt(toUtc(userPrediction.createdAt()));
         }

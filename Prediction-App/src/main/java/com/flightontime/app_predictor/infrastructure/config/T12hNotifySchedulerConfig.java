@@ -14,7 +14,7 @@ public class T12hNotifySchedulerConfig {
         this.notifyJobService = notifyJobService;
     }
 
-    @Scheduled(cron = "0 59 11,23 * * *", zone = "America/Argentina/Buenos_Aires")
+    @Scheduled(fixedRateString = "PT1H")
     public void notifyUsers() {
         notifyJobService.notifyUsers();
     }

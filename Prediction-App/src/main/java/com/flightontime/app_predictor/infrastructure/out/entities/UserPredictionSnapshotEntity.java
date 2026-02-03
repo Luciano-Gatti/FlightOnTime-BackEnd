@@ -1,7 +1,10 @@
 package com.flightontime.app_predictor.infrastructure.out.entities;
 
+import com.flightontime.app_predictor.domain.model.UserPredictionSource;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -20,8 +23,15 @@ public class UserPredictionSnapshotEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(name = "flight_request_id", nullable = false)
+    private Long flightRequestId;
+
     @Column(name = "flight_prediction_id", nullable = false)
     private Long flightPredictionId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", nullable = false)
+    private UserPredictionSource source;
 
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
@@ -30,6 +40,9 @@ public class UserPredictionSnapshotEntity {
     public void onCreate() {
         if (createdAt == null) {
             createdAt = OffsetDateTime.now(ZoneOffset.UTC);
+        }
+        if (source == null) {
+            source = UserPredictionSource.USER_QUERY;
         }
     }
 
@@ -55,6 +68,22 @@ public class UserPredictionSnapshotEntity {
 
     public void setFlightPredictionId(Long flightPredictionId) {
         this.flightPredictionId = flightPredictionId;
+    }
+
+    public Long getFlightRequestId() {
+        return flightRequestId;
+    }
+
+    public void setFlightRequestId(Long flightRequestId) {
+        this.flightRequestId = flightRequestId;
+    }
+
+    public UserPredictionSource getSource() {
+        return source;
+    }
+
+    public void setSource(UserPredictionSource source) {
+        this.source = source;
     }
 
     public OffsetDateTime getCreatedAt() {
