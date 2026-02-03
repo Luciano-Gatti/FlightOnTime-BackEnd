@@ -7,12 +7,16 @@ import com.flightontime.app_predictor.domain.model.PredictionResult;
 import com.flightontime.app_predictor.domain.model.RefreshMode;
 import com.flightontime.app_predictor.domain.model.UserPrediction;
 import com.flightontime.app_predictor.domain.model.UserPredictionSource;
+import com.flightontime.app_predictor.domain.exception.BusinessErrorCodes;
+import com.flightontime.app_predictor.domain.exception.BusinessException;
+import com.flightontime.app_predictor.domain.exception.DomainException;
 import com.flightontime.app_predictor.domain.ports.in.PredictFlightUseCase;
 import com.flightontime.app_predictor.domain.ports.out.FlightFollowRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.FlightRequestRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.UserPredictionRepositoryPort;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -23,6 +27,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class PredictFlightService implements PredictFlightUseCase {
     private static final Logger log = LoggerFactory.getLogger(PredictFlightService.class);
+    private static final Pattern AIRLINE_CODE_PATTERN = Pattern.compile("^[A-Z0-9]{2}$");
+    private static final Pattern IATA_CODE_PATTERN = Pattern.compile("^[A-Z]{3}$");
     private final FlightRequestRepositoryPort flightRequestRepositoryPort;
     private final FlightFollowRepositoryPort flightFollowRepositoryPort;
     private final PredictionWorkflowService predictionWorkflowService;
@@ -58,16 +64,17 @@ public class PredictFlightService implements PredictFlightUseCase {
      */
     public PredictionResult predict(PredictFlightRequest request, Long userId) {
         // Valida los campos mínimos del request antes de iniciar el flujo.
-        validateRequest(request);
+        PredictFlightRequest normalizedRequest = normalizeRequest(request);
+        validateRequest(normalizedRequest);
         OffsetDateTime startTimestamp = OffsetDateTime.now(ZoneOffset.UTC);
-        log.info("Starting prediction workflow userId={} request={}", userId, request);
+        log.info("Starting prediction workflow userId={} request={}", userId, normalizedRequest);
         // Orquesta la resolución de predicción (cache por bucket o llamado al modelo).
         var workflowResult = predictionWorkflowService.predict(
-                request.flightDateUtc(),
-                request.airlineCode(),
-                request.originIata(),
-                request.destIata(),
-                request.flightNumber(),
+                normalizedRequest.flightDateUtc(),
+                normalizedRequest.airlineCode(),
+                normalizedRequest.originIata(),
+                normalizedRequest.destIata(),
+                normalizedRequest.flightNumber(),
                 userId,
                 true,
                 false
@@ -162,19 +169,83 @@ public class PredictFlightService implements PredictFlightUseCase {
      * @param request solicitud de predicción a validar.
      */
     private void validateRequest(PredictFlightRequest request) {
+        if (request == null) {
+            throw new DomainException("predict request is required");
+        }
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         if (request.flightDateUtc() == null || !request.flightDateUtc().isAfter(now)) {
-            throw new IllegalArgumentException("flightDateUtc must be in the future");
-        }
-        if (request.originIata() == null || request.originIata().length() != 3) {
-            throw new IllegalArgumentException("originIata must be length 3");
-        }
-        if (request.destIata() == null || request.destIata().length() != 3) {
-            throw new IllegalArgumentException("destIata must be length 3");
+            throw new DomainException("flightDateUtc must be in the future");
         }
         if (request.airlineCode() == null || request.airlineCode().isBlank()) {
-            throw new IllegalArgumentException("airlineCode is required");
+            throw new DomainException("airlineCode is required");
         }
+        if (hasInternalWhitespace(request.airlineCode())) {
+            throw new DomainException("airlineCode must not contain spaces");
+        }
+        if (!AIRLINE_CODE_PATTERN.matcher(request.airlineCode()).matches()) {
+            throw new BusinessException(
+                    BusinessErrorCodes.INVALID_AIRLINE_CODE,
+                    "airlineCode must be 2 uppercase IATA characters"
+            );
+        }
+        if (request.originIata() == null || request.originIata().isBlank()) {
+            throw new DomainException("originIata is required");
+        }
+        if (hasInternalWhitespace(request.originIata())) {
+            throw new DomainException("originIata must not contain spaces");
+        }
+        if (!IATA_CODE_PATTERN.matcher(request.originIata()).matches()) {
+            throw new BusinessException(
+                    BusinessErrorCodes.INVALID_IATA,
+                    "originIata must be a 3-letter IATA code"
+            );
+        }
+        if (request.destIata() == null || request.destIata().isBlank()) {
+            throw new DomainException("destIata is required");
+        }
+        if (hasInternalWhitespace(request.destIata())) {
+            throw new DomainException("destIata must not contain spaces");
+        }
+        if (!IATA_CODE_PATTERN.matcher(request.destIata()).matches()) {
+            throw new BusinessException(
+                    BusinessErrorCodes.INVALID_IATA,
+                    "destIata must be a 3-letter IATA code"
+            );
+        }
+        if (request.originIata().equalsIgnoreCase(request.destIata())) {
+            throw new BusinessException(
+                    BusinessErrorCodes.INVALID_ROUTE,
+                    "origin and destination cannot be the same"
+            );
+        }
+    }
+
+    private PredictFlightRequest normalizeRequest(PredictFlightRequest request) {
+        if (request == null) {
+            return null;
+        }
+        return new PredictFlightRequest(
+                request.flightDateUtc(),
+                normalizeToken(request.airlineCode(), true),
+                normalizeToken(request.originIata(), true),
+                normalizeToken(request.destIata(), true),
+                normalizeToken(request.flightNumber(), false)
+        );
+    }
+
+    private String normalizeToken(String value, boolean upperCase) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = value.trim();
+        if (normalized.isBlank()) {
+            return null;
+        }
+        return upperCase ? normalized.toUpperCase() : normalized;
+    }
+
+    private boolean hasInternalWhitespace(String value) {
+        return value != null && value.chars().anyMatch(Character::isWhitespace);
     }
 
     /**

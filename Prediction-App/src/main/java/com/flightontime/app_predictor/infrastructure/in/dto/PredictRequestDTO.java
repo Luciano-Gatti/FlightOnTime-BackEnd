@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 
@@ -20,16 +21,20 @@ public record PredictRequestDTO(
         @Schema(description = "Fecha/hora UTC del vuelo", example = "2025-05-01T14:30:00Z")
         OffsetDateTime flightDateUtc,
         @NotBlank
+        @Size(min = 2, max = 2)
+        @Pattern(regexp = "^[A-Za-z0-9]{2}$")
         @JsonProperty("carrier")
         @Schema(description = "Código de aerolínea", example = "AA")
         String airlineCode,
         @NotBlank
         @Size(min = 3, max = 3)
+        @Pattern(regexp = "^[A-Za-z]{3}$")
         @JsonProperty("origin")
         @Schema(description = "IATA aeropuerto origen", example = "EZE")
         String originIata,
         @NotBlank
         @Size(min = 3, max = 3)
+        @Pattern(regexp = "^[A-Za-z]{3}$")
         @JsonProperty("dest")
         @Schema(description = "IATA aeropuerto destino", example = "JFK")
         String destIata,
