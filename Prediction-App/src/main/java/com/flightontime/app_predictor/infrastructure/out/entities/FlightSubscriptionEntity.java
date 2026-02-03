@@ -19,6 +19,9 @@ import java.time.ZoneOffset;
 @Table(name = "flight_subscription", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"user_id", "flight_request_id"})
 })
+/**
+ * Clase FlightSubscriptionEntity.
+ */
 public class FlightSubscriptionEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

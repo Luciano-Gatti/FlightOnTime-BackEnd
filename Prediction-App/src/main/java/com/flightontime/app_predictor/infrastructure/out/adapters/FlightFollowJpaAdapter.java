@@ -11,6 +11,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
+/**
+ * Clase FlightFollowJpaAdapter.
+ */
 @Component
 public class FlightFollowJpaAdapter implements FlightFollowRepositoryPort {
     private final FlightSubscriptionJpaRepository flightSubscriptionJpaRepository;

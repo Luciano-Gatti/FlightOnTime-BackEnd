@@ -8,13 +8,25 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Clase CsvParser.
+ */
 public class CsvParser {
+/**
+ * Registro CsvRow.
+ */
     public record CsvRow(int rowNumber, String rawRow, List<String> fields) {
     }
 
+/**
+ * Registro CsvParseError.
+ */
     public record CsvParseError(int rowNumber, String message, String rawRow) {
     }
 
+/**
+ * Registro CsvParseResult.
+ */
     public record CsvParseResult(List<String> header, List<CsvRow> rows, List<CsvParseError> errors) {
     }
 

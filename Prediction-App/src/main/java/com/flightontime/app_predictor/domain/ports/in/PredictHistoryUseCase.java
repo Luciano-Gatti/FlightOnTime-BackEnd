@@ -4,6 +4,9 @@ import com.flightontime.app_predictor.infrastructure.in.dto.PredictHistoryDetail
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictHistoryItemDTO;
 import java.util.List;
 
+/**
+ * Interfaz PredictHistoryUseCase.
+ */
 public interface PredictHistoryUseCase {
     List<PredictHistoryItemDTO> getHistory(Long userId);
 

@@ -12,10 +12,16 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+/**
+ * Clase ActualsFetchJobService.
+ */
 @Service
 public class ActualsFetchJobService {
+    private static final Logger log = LoggerFactory.getLogger(ActualsFetchJobService.class);
     private static final ZoneId EXECUTION_ZONE = ZoneId.of("America/Argentina/Buenos_Aires");
 
     private final FlightRequestRepositoryPort flightRequestRepositoryPort;
@@ -33,26 +39,48 @@ public class ActualsFetchJobService {
     }
 
     public void fetchActuals() {
-        OffsetDateTime nowUtc = OffsetDateTime.now(ZoneOffset.UTC);
+        long startMillis = System.currentTimeMillis();
+        OffsetDateTime startTimestamp = OffsetDateTime.now(ZoneOffset.UTC);
         OffsetDateTime windowStart = resolveYesterdayWindowStart();
         OffsetDateTime windowEnd = resolveYesterdayWindowEnd();
+        log.info("Starting actuals fetch job timestamp={} windowStart={} windowEnd={}",
+                startTimestamp, windowStart, windowEnd);
         List<FlightRequest> requests = flightRequestRepositoryPort
                 .findByFlightDateBetweenWithoutActuals(windowStart, windowEnd);
+        int flightsInWindow = requests.size();
+        int actualsSaved = 0;
+        int closedRequests = 0;
+        int errors = 0;
         for (FlightRequest request : requests) {
-            processRequest(request, nowUtc);
+            try {
+                ProcessResult result = processRequest(request, startTimestamp);
+                actualsSaved += result.actualsSaved();
+                closedRequests += result.closedRequests();
+            } catch (Exception ex) {
+                errors++;
+                log.error("Error fetching actuals flight_request_id={}",
+                        request != null ? request.id() : null, ex);
+            }
         }
+        long durationMs = System.currentTimeMillis() - startMillis;
+        log.info("Finished actuals fetch job timestamp={} durationMs={} flightsInWindow={} actualsSaved={} "
+                        + "closedRequests={} errors={}",
+                OffsetDateTime.now(ZoneOffset.UTC),
+                durationMs,
+                flightsInWindow,
+                actualsSaved,
+                closedRequests,
+                errors);
     }
 
-    private void processRequest(FlightRequest request, OffsetDateTime nowUtc) {
+    private ProcessResult processRequest(FlightRequest request, OffsetDateTime nowUtc) {
         Optional<FlightActualResult> actualResult = fetchActualResult(request);
         if (actualResult.isEmpty()) {
-            closeIfExpired(request, nowUtc);
-            return;
+            return closeIfExpired(request, nowUtc);
         }
         FlightActualResult result = actualResult.get();
         if (!isPersistableStatus(result.actualStatus())) {
-            closeIfExpired(request, nowUtc);
-            return;
+            return closeIfExpired(request, nowUtc);
         }
         FlightActual actual = new FlightActual(
                 null,
@@ -68,7 +96,8 @@ public class ActualsFetchJobService {
                 nowUtc
         );
         flightActualRepositoryPort.save(actual);
-        closeIfExpired(request, nowUtc);
+        ProcessResult closeResult = closeIfExpired(request, nowUtc);
+        return new ProcessResult(1, closeResult.closedRequests());
     }
 
     private Optional<FlightActualResult> fetchActualResult(FlightRequest request) {
@@ -113,9 +142,9 @@ public class ActualsFetchJobService {
         return "ON_TIME".equals(status) || "DELAYED".equals(status) || "CANCELLED".equals(status);
     }
 
-    private void closeIfExpired(FlightRequest request, OffsetDateTime nowUtc) {
+    private ProcessResult closeIfExpired(FlightRequest request, OffsetDateTime nowUtc) {
         if (request == null || request.flightDateUtc() == null || !request.active()) {
-            return;
+            return new ProcessResult(0, 0);
         }
         if (request.flightDateUtc().isBefore(nowUtc)) {
             FlightRequest closedRequest = new FlightRequest(
@@ -132,7 +161,9 @@ public class ActualsFetchJobService {
                     nowUtc
             );
             flightRequestRepositoryPort.save(closedRequest);
+            return new ProcessResult(0, 1);
         }
+        return new ProcessResult(0, 0);
     }
 
     private OffsetDateTime toUtc(OffsetDateTime value) {
@@ -140,5 +171,8 @@ public class ActualsFetchJobService {
             return null;
         }
         return value.withOffsetSameInstant(ZoneOffset.UTC);
+    }
+
+    private record ProcessResult(int actualsSaved, int closedRequests) {
     }
 }

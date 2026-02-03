@@ -11,6 +11,10 @@ import com.flightontime.app_predictor.infrastructure.in.dto.PredictRequestDTO;
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictResponseDTO;
 import com.flightontime.app_predictor.infrastructure.out.repository.UserJpaRepository;
 import com.flightontime.app_predictor.infrastructure.security.JwtTokenProvider;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,9 +46,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
+/**
+ * Clase PredictController.
+ */
 @RestController
 @RequestMapping("/predict")
-@Tag(name = "Predicciones", description = "Endpoints para generar predicciones y consultar historiales")
+@Tag(name = "Predict", description = "Endpoints para generar predicciones y consultar historiales")
 @Validated
 public class PredictController {
     private static final Logger log = LoggerFactory.getLogger(PredictController.class);
@@ -72,7 +79,15 @@ public class PredictController {
     }
 
     @PostMapping
-    @SecurityRequirement(name = "bearer-key")
+    @Operation(
+            summary = "Generar predicción",
+            description = "Genera una predicción de estado para el vuelo indicado."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Predicción generada"),
+            @ApiResponse(responseCode = "400", description = "Solicitud inválida"),
+            @ApiResponse(responseCode = "503", description = "Servicio de modelo no disponible")
+    })
     public ResponseEntity<PredictResponseDTO> predict(
             @Valid @RequestBody PredictRequestDTO request,
             HttpServletRequest httpRequest
@@ -86,8 +101,21 @@ public class PredictController {
 
     @PostMapping(value = "/bulk-import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @SecurityRequirement(name = "bearer-key")
+    @Operation(
+            summary = "Importar predicciones desde CSV",
+            description = "Carga un archivo CSV para generar predicciones en lote."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Importación procesada"),
+            @ApiResponse(responseCode = "400", description = "Archivo o parámetros inválidos"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No autorizado"),
+            @ApiResponse(responseCode = "503", description = "Servicio de modelo no disponible")
+    })
     public ResponseEntity<BulkPredictCsvUploadResponseDTO> bulkImport(
+            @Parameter(description = "Archivo CSV con vuelos", required = true)
             @RequestParam("file") MultipartFile file,
+            @Parameter(description = "Ejecuta validación sin persistir", example = "false")
             @RequestParam(name = "dryRun", defaultValue = "false") boolean dryRun,
             HttpServletRequest httpRequest
     ) {
@@ -131,6 +159,15 @@ public class PredictController {
 
     @GetMapping("/history")
     @SecurityRequirement(name = "bearer-key")
+    @Operation(
+            summary = "Historial de predicciones",
+            description = "Devuelve el historial de predicciones del usuario autenticado."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Historial encontrado"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No autorizado")
+    })
     public ResponseEntity<List<PredictHistoryItemDTO>> getHistory(HttpServletRequest httpRequest) {
         Long userId = resolveUserId(httpRequest);
         if (userId == null) {
@@ -141,7 +178,18 @@ public class PredictController {
 
     @GetMapping("/history/{requestId}")
     @SecurityRequirement(name = "bearer-key")
+    @Operation(
+            summary = "Detalle de historial",
+            description = "Devuelve el detalle de predicciones para un request específico."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Detalle encontrado"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No autorizado"),
+            @ApiResponse(responseCode = "404", description = "Historial no encontrado")
+    })
     public ResponseEntity<PredictHistoryDetailDTO> getHistoryDetail(
+            @Parameter(description = "ID del request de vuelo", example = "123")
             @PathVariable Long requestId,
             HttpServletRequest httpRequest
     ) {
@@ -153,8 +201,17 @@ public class PredictController {
     }
 
     @GetMapping("/{requestId}/latest")
-    @SecurityRequirement(name = "bearer-key")
+    @Operation(
+            summary = "Última predicción",
+            description = "Devuelve la última predicción para un request específico."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Predicción encontrada"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "404", description = "Predicción no encontrada")
+    })
     public ResponseEntity<PredictResponseDTO> getLatest(
+            @Parameter(description = "ID del request de vuelo", example = "123")
             @PathVariable Long requestId,
             HttpServletRequest httpRequest
     ) {
@@ -261,6 +318,9 @@ public class PredictController {
         return Optional.ofNullable(jwtTokenProvider.getUserIdFromToken(token));
     }
 
+/**
+ * Registro ErrorResponse.
+ */
     public record ErrorResponse(String message) {
     }
 

@@ -2,6 +2,9 @@ package com.flightontime.app_predictor.application.dto;
 
 import com.flightontime.app_predictor.domain.model.Airport;
 
+/**
+ * Registro AirportDTO.
+ */
 public record AirportDTO(
         String airportIata,
         String airportName,

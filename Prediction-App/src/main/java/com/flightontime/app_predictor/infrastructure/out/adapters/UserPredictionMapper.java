@@ -5,6 +5,9 @@ import com.flightontime.app_predictor.infrastructure.out.entities.UserPrediction
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
+/**
+ * Clase UserPredictionMapper.
+ */
 public class UserPredictionMapper {
     public UserPrediction toDomain(UserPredictionSnapshotEntity entity) {
         if (entity == null) {

@@ -23,10 +23,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+/**
+ * Clase T12hNotifyJobService.
+ */
 @Service
 public class T12hNotifyJobService {
+    private static final Logger log = LoggerFactory.getLogger(T12hNotifyJobService.class);
     private static final String NOTIFICATION_TYPE = "T12H";
     private static final String CHANNEL = "SYSTEM";
     private static final Duration EARLY_WINDOW_START = Duration.ofHours(11);
@@ -62,38 +68,71 @@ public class T12hNotifyJobService {
     }
 
     public void notifyUsers() {
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        OffsetDateTime windowStart = now;
-        OffsetDateTime windowEnd = now.plusHours(13);
+        long startMillis = System.currentTimeMillis();
+        OffsetDateTime startTimestamp = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime windowStart = startTimestamp;
+        OffsetDateTime windowEnd = startTimestamp.plusHours(13);
+        log.info("Starting T12h notification job timestamp={} windowStart={} windowEnd={}",
+                startTimestamp, windowStart, windowEnd);
         var follows = flightFollowRepositoryPort.findByFlightDateBetween(windowStart, windowEnd);
         Map<Long, List<NotificationCandidate>> notificationsByUser = new HashMap<>();
+        int subscriptionsEvaluated = follows.size();
+        int flightsInWindow = 0;
+        int changesDetected = 0;
+        int errors = 0;
+        PredictionCacheStats cacheStats = new PredictionCacheStats();
         for (var follow : follows) {
-            if (!isRelevantRefreshMode(follow.refreshMode())) {
-                continue;
+            try {
+                if (!isRelevantRefreshMode(follow.refreshMode())) {
+                    continue;
+                }
+                FlightRequest request = flightRequestRepositoryPort.findById(follow.flightRequestId())
+                        .orElse(null);
+                if (request == null || !request.active() || request.flightDateUtc() == null) {
+                    continue;
+                }
+                Duration timeToDeparture = Duration.between(startTimestamp, request.flightDateUtc());
+                if (timeToDeparture.isNegative()) {
+                    continue;
+                }
+                if (timeToDeparture.compareTo(WINDOW_END) > 0) {
+                    continue;
+                }
+                flightsInWindow++;
+                boolean lateNotification = timeToDeparture.compareTo(EARLY_WINDOW_START) < 0;
+                int before = notificationsByUser.getOrDefault(follow.userId(), List.of()).size();
+                processUserNotification(
+                        follow.userId(),
+                        follow.baselineSnapshotId(),
+                        request,
+                        startTimestamp,
+                        lateNotification,
+                        notificationsByUser,
+                        cacheStats
+                );
+                int after = notificationsByUser.getOrDefault(follow.userId(), List.of()).size();
+                if (after > before) {
+                    changesDetected++;
+                }
+            } catch (Exception ex) {
+                errors++;
+                log.error("Error processing notification flight_request_id={} user_id={}",
+                        follow.flightRequestId(), follow.userId(), ex);
             }
-            FlightRequest request = flightRequestRepositoryPort.findById(follow.flightRequestId())
-                    .orElse(null);
-            if (request == null || !request.active() || request.flightDateUtc() == null) {
-                continue;
-            }
-            Duration timeToDeparture = Duration.between(now, request.flightDateUtc());
-            if (timeToDeparture.isNegative()) {
-                continue;
-            }
-            if (timeToDeparture.compareTo(WINDOW_END) > 0) {
-                continue;
-            }
-            boolean lateNotification = timeToDeparture.compareTo(EARLY_WINDOW_START) < 0;
-            processUserNotification(
-                    follow.userId(),
-                    follow.baselineSnapshotId(),
-                    request,
-                    now,
-                    lateNotification,
-                    notificationsByUser
-            );
         }
-        dispatchNotifications(notificationsByUser, now);
+        int emailsSent = dispatchNotifications(notificationsByUser, startTimestamp);
+        long durationMs = System.currentTimeMillis() - startMillis;
+        log.info("Finished T12h notification job timestamp={} durationMs={} subscriptionsEvaluated={} flightsInWindow={} "
+                        + "cacheHits={} predictionsCreated={} changesDetected={} emailsSent={} errors={}",
+                OffsetDateTime.now(ZoneOffset.UTC),
+                durationMs,
+                subscriptionsEvaluated,
+                flightsInWindow,
+                cacheStats.cacheHits,
+                cacheStats.predictionsCreated,
+                changesDetected,
+                emailsSent,
+                errors);
     }
 
     private void processUserNotification(
@@ -102,8 +141,10 @@ public class T12hNotifyJobService {
             FlightRequest request,
             OffsetDateTime now,
             boolean lateNotification,
-            Map<Long, List<NotificationCandidate>> notificationsByUser
+            Map<Long, List<NotificationCandidate>> notificationsByUser,
+            PredictionCacheStats cacheStats
     ) {
+        // Evita duplicados consultando el notification_log antes de construir mensajes.
         Optional<NotificationLog> existing = notificationLogRepositoryPort
                 .findByUserIdAndRequestIdAndType(userId, request.id(), NOTIFICATION_TYPE);
         if (existing.isPresent()) {
@@ -118,7 +159,7 @@ public class T12hNotifyJobService {
         if (baselinePrediction.isEmpty()) {
             return;
         }
-        Prediction currentPrediction = getOrCreateCurrentPrediction(request, now);
+        Prediction currentPrediction = getOrCreateCurrentPrediction(request, now, cacheStats);
         if (!isRelevantStatusChange(
                 baselinePrediction.get().predictedStatus(),
                 currentPrediction.predictedStatus()
@@ -137,10 +178,11 @@ public class T12hNotifyJobService {
                 .add(candidate);
     }
 
-    private void dispatchNotifications(
+    private int dispatchNotifications(
             Map<Long, List<NotificationCandidate>> notificationsByUser,
             OffsetDateTime now
     ) {
+        int emailsSent = 0;
         for (Map.Entry<Long, List<NotificationCandidate>> entry : notificationsByUser.entrySet()) {
             List<NotificationCandidate> candidates = entry.getValue();
             if (candidates == null || candidates.isEmpty()) {
@@ -150,6 +192,7 @@ public class T12hNotifyJobService {
                     .map(NotificationCandidate::message)
                     .toList();
             notificationPort.sendT12hSummary(entry.getKey(), messages);
+            emailsSent += messages.size();
             for (NotificationCandidate candidate : candidates) {
                 NotificationLog log = new NotificationLog(
                         null,
@@ -166,6 +209,7 @@ public class T12hNotifyJobService {
                 notificationLogRepositoryPort.save(log);
             }
         }
+        return emailsSent;
     }
 
     private String buildMessage(
@@ -202,13 +246,20 @@ public class T12hNotifyJobService {
         return flightNumber != null && !flightNumber.isBlank();
     }
 
-    private Prediction getOrCreateCurrentPrediction(FlightRequest request, OffsetDateTime now) {
+    private Prediction getOrCreateCurrentPrediction(
+            FlightRequest request,
+            OffsetDateTime now,
+            PredictionCacheStats cacheStats
+    ) {
+        // Las predicciones se agrupan por ventanas fijas para reutilizar resultados recientes.
         OffsetDateTime bucketStart = resolveBucketStart(now);
         Optional<Prediction> cached = predictionRepositoryPort.findByRequestIdAndForecastBucketUtc(
                 request.id(),
                 bucketStart
         );
         if (cached.isPresent()) {
+            // Si existe en cache, no se llama al modelo para esta ventana.
+            cacheStats.cacheHits++;
             return cached.get();
         }
         PredictFlightCommand command = buildCommand(request);
@@ -226,6 +277,7 @@ public class T12hNotifyJobService {
                 now,
                 now
         );
+        cacheStats.predictionsCreated++;
         return predictionRepositoryPort.save(prediction);
     }
 
@@ -243,6 +295,7 @@ public class T12hNotifyJobService {
     }
 
     private OffsetDateTime resolveBucketStart(OffsetDateTime timestamp) {
+        // Ajusta a buckets de 3 horas para mantener consistencia en las predicciones.
         OffsetDateTime normalized = timestamp.withMinute(0).withSecond(0).withNano(0);
         int offset = normalized.getHour() % 3;
         return normalized.minusHours(offset);
@@ -265,6 +318,7 @@ public class T12hNotifyJobService {
                     .filter(snapshot -> userId.equals(snapshot.userId())
                             && flightRequestId.equals(snapshot.flightRequestId()));
         }
+        // Usa el último snapshot disponible como baseline cuando no se especifica uno.
         return userPredictionRepositoryPort.findLatestByUserIdAndRequestId(userId, flightRequestId);
     }
 
@@ -279,5 +333,10 @@ public class T12hNotifyJobService {
             String predictedStatus,
             String message
     ) {
+    }
+
+    private static class PredictionCacheStats {
+        private int cacheHits;
+        private int predictionsCreated;
     }
 }

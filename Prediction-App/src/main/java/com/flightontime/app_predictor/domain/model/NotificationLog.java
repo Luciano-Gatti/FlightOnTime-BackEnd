@@ -2,6 +2,9 @@ package com.flightontime.app_predictor.domain.model;
 
 import java.time.OffsetDateTime;
 
+/**
+ * Registro NotificationLog.
+ */
 public record NotificationLog(
         Long id,
         Long userId,

@@ -15,6 +15,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
+/**
+ * Clase PredictHistoryService.
+ */
 @Service
 public class PredictHistoryService implements PredictHistoryUseCase {
     private final FlightRequestRepositoryPort flightRequestRepositoryPort;

@@ -22,6 +22,9 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
+/**
+ * Clase JwtTokenProvider.
+ */
 @Component
 public class JwtTokenProvider {
     private static final String ROLES_CLAIM = "roles";

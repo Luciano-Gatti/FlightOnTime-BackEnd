@@ -13,6 +13,9 @@ import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
+/**
+ * Clase UserPredictionSnapshotEntity.
+ */
 @Entity
 @Table(name = "user_prediction_snapshot")
 public class UserPredictionSnapshotEntity {

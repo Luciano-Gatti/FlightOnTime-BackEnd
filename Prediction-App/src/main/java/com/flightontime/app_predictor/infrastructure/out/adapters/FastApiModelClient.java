@@ -14,6 +14,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+/**
+ * Clase FastApiModelClient.
+ */
 @Component
 public class FastApiModelClient implements ModelPredictionPort {
     private static final Logger log = LoggerFactory.getLogger(FastApiModelClient.class);

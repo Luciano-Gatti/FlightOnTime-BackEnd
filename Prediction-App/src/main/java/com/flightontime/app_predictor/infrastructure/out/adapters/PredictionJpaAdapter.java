@@ -11,6 +11,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
+/**
+ * Clase PredictionJpaAdapter.
+ */
 @Component
 public class PredictionJpaAdapter implements PredictionRepositoryPort {
     private final FlightPredictionJpaRepository flightPredictionJpaRepository;

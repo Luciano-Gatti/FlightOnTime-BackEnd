@@ -9,6 +9,9 @@ import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 
+/**
+ * Clase WebClientConfig.
+ */
 @Configuration
 public class WebClientConfig {
     @Bean

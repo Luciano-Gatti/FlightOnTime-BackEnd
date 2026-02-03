@@ -9,6 +9,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.util.UriComponentsBuilder;
 
+/**
+ * Clase WeatherFallbackClient.
+ */
 @Component
 public class WeatherFallbackClient {
     private final WebClient fallbackWebClient;

@@ -5,6 +5,9 @@ import com.flightontime.app_predictor.infrastructure.out.entities.FlightOutcomeE
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
+/**
+ * Clase FlightActualMapper.
+ */
 public class FlightActualMapper {
     public FlightActual toDomain(FlightOutcomeEntity entity) {
         if (entity == null) {

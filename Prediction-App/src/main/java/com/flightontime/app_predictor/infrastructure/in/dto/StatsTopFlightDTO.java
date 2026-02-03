@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.OffsetDateTime;
 
+/**
+ * Registro StatsTopFlightDTO.
+ */
 public record StatsTopFlightDTO(
         @JsonProperty("requestId")
         Long flightRequestId,

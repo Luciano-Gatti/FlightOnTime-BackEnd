@@ -6,6 +6,9 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Interfaz PredictionRepositoryPort.
+ */
 public interface PredictionRepositoryPort {
     Prediction save(Prediction prediction);
 

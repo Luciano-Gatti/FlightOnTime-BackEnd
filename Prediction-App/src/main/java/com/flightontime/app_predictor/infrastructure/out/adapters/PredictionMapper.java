@@ -5,6 +5,9 @@ import com.flightontime.app_predictor.infrastructure.out.entities.FlightPredicti
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
+/**
+ * Clase PredictionMapper.
+ */
 public class PredictionMapper {
     public Prediction toDomain(FlightPredictionEntity entity) {
         if (entity == null) {

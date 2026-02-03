@@ -13,6 +13,9 @@ import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
+/**
+ * Clase FlightPredictionEntity.
+ */
 @Entity
 @Table(name = "flight_prediction")
 public class FlightPredictionEntity {

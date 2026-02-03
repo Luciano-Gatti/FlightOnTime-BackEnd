@@ -19,6 +19,9 @@ import java.time.ZoneOffset;
                 @UniqueConstraint(columnNames = {"flight_date_utc", "airline_code", "origin_iata", "dest_iata"})
         }
 )
+/**
+ * Clase FlightRequestEntity.
+ */
 public class FlightRequestEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

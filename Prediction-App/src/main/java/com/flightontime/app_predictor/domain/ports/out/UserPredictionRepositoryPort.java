@@ -5,6 +5,9 @@ import com.flightontime.app_predictor.domain.model.FlightRequestPopularity;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Interfaz UserPredictionRepositoryPort.
+ */
 public interface UserPredictionRepositoryPort {
     UserPrediction save(UserPrediction userPrediction);
 

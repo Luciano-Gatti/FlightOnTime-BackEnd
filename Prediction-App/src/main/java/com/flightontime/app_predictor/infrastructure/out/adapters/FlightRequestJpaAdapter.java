@@ -10,6 +10,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
+/**
+ * Clase FlightRequestJpaAdapter.
+ */
 @Component
 public class FlightRequestJpaAdapter implements FlightRequestRepositoryPort {
     private final FlightRequestJpaRepository flightRequestJpaRepository;

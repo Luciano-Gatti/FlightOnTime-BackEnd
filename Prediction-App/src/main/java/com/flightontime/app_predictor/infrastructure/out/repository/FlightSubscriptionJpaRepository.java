@@ -9,6 +9,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+/**
+ * Interfaz FlightSubscriptionJpaRepository.
+ */
 public interface FlightSubscriptionJpaRepository extends JpaRepository<FlightSubscriptionEntity, Long> {
     Optional<FlightSubscriptionEntity> findFirstByUserIdAndFlightRequestId(Long userId, Long flightRequestId);
 
