@@ -38,6 +38,13 @@ public class BulkPredictService implements BulkPredictUseCase {
     private final UserPredictionRepositoryPort userPredictionRepositoryPort;
     private final CsvParser csvParser;
 
+    /**
+     * Construye el servicio de importación masiva por CSV.
+     *
+     * @param predictionWorkflowService servicio que orquesta predicciones y cache.
+     * @param flightFollowRepositoryPort repositorio de seguimientos de vuelo.
+     * @param userPredictionRepositoryPort repositorio de snapshots de predicción por usuario.
+     */
     public BulkPredictService(
             PredictionWorkflowService predictionWorkflowService,
             FlightFollowRepositoryPort flightFollowRepositoryPort,
@@ -50,6 +57,14 @@ public class BulkPredictService implements BulkPredictUseCase {
     }
 
     @Override
+    /**
+     * Importa predicciones desde un CSV, validando filas y creando suscripciones.
+     *
+     * @param inputStream stream del CSV.
+     * @param userId identificador del usuario que realiza la carga.
+     * @param dryRun indica si se valida sin persistir ni llamar al modelo.
+     * @return resultado con conteo de aceptados, rechazados y errores.
+     */
     public BulkPredictResult importPredictionsFromCsv(InputStream inputStream, Long userId, boolean dryRun) {
         List<BulkPredictError> errors = new ArrayList<>();
         int accepted = 0;
@@ -198,6 +213,15 @@ public class BulkPredictService implements BulkPredictUseCase {
         return new BulkPredictResult(accepted, rejected, errors);
     }
 
+    /**
+     * Inserta o actualiza un seguimiento de vuelo para habilitar notificaciones T-12h.
+     *
+     * @param userId identificador del usuario.
+     * @param flightRequestId identificador de la solicitud de vuelo.
+     * @param snapshotId snapshot base asociado a la predicción.
+     * @param refreshMode modo de refresco configurado.
+     * @return true si se creó un seguimiento nuevo.
+     */
     private boolean upsertFlightFollow(
             Long userId,
             Long flightRequestId,
@@ -234,6 +258,16 @@ public class BulkPredictService implements BulkPredictUseCase {
         return created;
     }
 
+    /**
+     * Resuelve (o crea) el snapshot de predicción del usuario.
+     *
+     * @param userId identificador del usuario.
+     * @param flightRequestId identificador de la solicitud de vuelo.
+     * @param flightPredictionId identificador de la predicción.
+     * @param source origen del snapshot (CSV, usuario, etc.).
+     * @param now timestamp de creación.
+     * @return snapshot existente si coincide o uno nuevo persistido.
+     */
     private UserPrediction resolveUserSnapshot(
             Long userId,
             Long flightRequestId,
@@ -254,6 +288,13 @@ public class BulkPredictService implements BulkPredictUseCase {
                 )));
     }
 
+    /**
+     * Determina el snapshot base, priorizando el existente si está presente.
+     *
+     * @param existingBaselineSnapshotId snapshot base ya registrado.
+     * @param snapshotId snapshot actual a usar si no hay base previa.
+     * @return id del snapshot base definitivo.
+     */
     private Long resolveBaselineSnapshotId(Long existingBaselineSnapshotId, Long snapshotId) {
         return existingBaselineSnapshotId == null ? snapshotId : existingBaselineSnapshotId;
     }

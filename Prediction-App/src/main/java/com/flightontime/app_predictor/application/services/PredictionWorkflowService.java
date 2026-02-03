@@ -40,6 +40,15 @@ public class PredictionWorkflowService {
     private final PredictionRepositoryPort predictionRepositoryPort;
     private final UserPredictionRepositoryPort userPredictionRepositoryPort;
 
+    /**
+     * Construye el servicio que orquesta el flujo de predicción.
+     *
+     * @param modelPredictionPort puerto hacia el modelo de predicción.
+     * @param distanceUseCase caso de uso para calcular distancia entre aeropuertos.
+     * @param flightRequestRepositoryPort repositorio de solicitudes de vuelo.
+     * @param predictionRepositoryPort repositorio de predicciones persistidas.
+     * @param userPredictionRepositoryPort repositorio de snapshots de predicción por usuario.
+     */
     public PredictionWorkflowService(
             ModelPredictionPort modelPredictionPort,
             DistanceUseCase distanceUseCase,
@@ -54,6 +63,19 @@ public class PredictionWorkflowService {
         this.userPredictionRepositoryPort = userPredictionRepositoryPort;
     }
 
+    /**
+     * Ejecuta el flujo completo de predicción (cache por bucket y persistencia opcional).
+     *
+     * @param flightDateUtc fecha/hora del vuelo en UTC.
+     * @param airlineCode código de la aerolínea.
+     * @param originIata IATA del origen.
+     * @param destIata IATA del destino.
+     * @param flightNumber número de vuelo (opcional).
+     * @param userId identificador del usuario (puede ser null).
+     * @param persistWhenAnonymous indica si se persiste cuando no hay usuario.
+     * @param createUserPrediction indica si se crea snapshot de usuario.
+     * @return resultado compuesto con request, predicción y métricas calculadas.
+     */
     public PredictionWorkflowResult predict(
             OffsetDateTime flightDateUtc,
             String airlineCode,
@@ -127,6 +149,12 @@ public class PredictionWorkflowService {
         return new PredictionWorkflowResult(flightRequest, prediction, result);
     }
 
+    /**
+     * Obtiene una predicción para una solicitud existente, creando cache si no existe.
+     *
+     * @param flightRequest solicitud de vuelo persistida.
+     * @return resultado compuesto con request, predicción y métricas calculadas.
+     */
     public PredictionWorkflowResult getOrCreatePredictionForRequest(FlightRequest flightRequest) {
         double distance = distanceUseCase.calculateDistance(flightRequest.originIata(), flightRequest.destIata());
         log.info("Calculated distance for existing requestId={} distanceKm={}", flightRequest.id(), distance);
@@ -152,6 +180,19 @@ public class PredictionWorkflowService {
         return new PredictionWorkflowResult(flightRequest, prediction, result);
     }
 
+    /**
+     * Resuelve una solicitud de vuelo existente o crea una nueva si no hay duplicados.
+     *
+     * @param userId identificador del usuario.
+     * @param flightDateUtc fecha/hora del vuelo en UTC.
+     * @param airlineCode código de aerolínea.
+     * @param originIata IATA de origen.
+     * @param destIata IATA de destino.
+     * @param flightNumber número de vuelo (opcional).
+     * @param distance distancia calculada en kilómetros.
+     * @param now timestamp actual en UTC.
+     * @return solicitud de vuelo persistida o reutilizada.
+     */
     private FlightRequest getOrCreateFlightRequest(
             Long userId,
             OffsetDateTime flightDateUtc,
@@ -192,6 +233,14 @@ public class PredictionWorkflowService {
         return flightRequestRepositoryPort.save(flightRequest);
     }
 
+    /**
+     * Resuelve una predicción desde cache por bucket o crea una nueva invocando al modelo.
+     *
+     * @param flightRequestId identificador de la solicitud de vuelo.
+     * @param command comando con los datos del vuelo.
+     * @param now timestamp actual en UTC.
+     * @return predicción persistida (cacheada o nueva).
+     */
     private Prediction getOrCreatePrediction(Long flightRequestId, PredictFlightCommand command, OffsetDateTime now) {
         // Usa buckets temporales en UTC para decidir si se llama al modelo o se usa cache.
         OffsetDateTime bucketStart = resolveBucketStart(now);
@@ -222,6 +271,12 @@ public class PredictionWorkflowService {
         return predictionRepositoryPort.save(prediction);
     }
 
+    /**
+     * Normaliza un timestamp al inicio del bucket de 3 horas.
+     *
+     * @param timestamp timestamp base.
+     * @return inicio del bucket correspondiente.
+     */
     private OffsetDateTime resolveBucketStart(OffsetDateTime timestamp) {
         // Normaliza el timestamp al inicio del bucket de 3 horas.
         OffsetDateTime normalized = timestamp.withMinute(0).withSecond(0).withNano(0);
@@ -229,6 +284,12 @@ public class PredictionWorkflowService {
         return normalized.minusHours(offset);
     }
 
+    /**
+     * Convierte una fecha/hora a UTC conservando el instante.
+     *
+     * @param value fecha/hora original.
+     * @return fecha/hora en UTC o null si el valor era null.
+     */
     private OffsetDateTime toUtc(OffsetDateTime value) {
         if (value == null) {
             return null;

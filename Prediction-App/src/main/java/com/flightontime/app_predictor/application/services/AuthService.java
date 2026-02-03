@@ -18,11 +18,26 @@ public class AuthService {
     private final UserRepositoryPort userRepositoryPort;
     private final PasswordEncoder passwordEncoder;
 
+    /**
+     * Construye el servicio de autenticación.
+     *
+     * @param userRepositoryPort repositorio de usuarios.
+     * @param passwordEncoder encoder de contraseñas.
+     */
     public AuthService(UserRepositoryPort userRepositoryPort, PasswordEncoder passwordEncoder) {
         this.userRepositoryPort = userRepositoryPort;
         this.passwordEncoder = passwordEncoder;
     }
 
+    /**
+     * Registra un usuario nuevo con rol por defecto.
+     *
+     * @param email email del usuario.
+     * @param firstName nombre del usuario.
+     * @param lastName apellido del usuario.
+     * @param rawPassword contraseña en texto plano.
+     * @return usuario persistido.
+     */
     public User register(
             String email,
             String firstName,
@@ -44,6 +59,13 @@ public class AuthService {
         return userRepositoryPort.save(user, passwordEncoder.encode(rawPassword));
     }
 
+    /**
+     * Autentica un usuario por email y contraseña.
+     *
+     * @param email email del usuario.
+     * @param rawPassword contraseña en texto plano.
+     * @return usuario autenticado.
+     */
     public User login(String email, String rawPassword) {
         UserAuthData authData = userRepositoryPort.findAuthDataByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));

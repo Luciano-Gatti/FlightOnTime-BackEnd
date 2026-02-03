@@ -21,12 +21,25 @@ public class DistanceService implements DistanceUseCase {
     private final AirportRepositoryPort airportRepositoryPort;
     private final AirportInfoPort airportInfoPort;
 
+    /**
+     * Construye el servicio de cálculo de distancias.
+     *
+     * @param airportRepositoryPort repositorio local de aeropuertos.
+     * @param airportInfoPort puerto de consulta de aeropuertos externos.
+     */
     public DistanceService(AirportRepositoryPort airportRepositoryPort, AirportInfoPort airportInfoPort) {
         this.airportRepositoryPort = airportRepositoryPort;
         this.airportInfoPort = airportInfoPort;
     }
 
     @Override
+    /**
+     * Calcula la distancia entre dos aeropuertos (IATA) usando Haversine.
+     *
+     * @param originIata IATA de origen.
+     * @param destinationIata IATA de destino.
+     * @return distancia en kilómetros.
+     */
     public double calculateDistance(String originIata, String destinationIata) {
         String normalizedOrigin = normalizeIata(originIata);
         String normalizedDestination = normalizeIata(destinationIata);
@@ -39,6 +52,12 @@ public class DistanceService implements DistanceUseCase {
         return haversine(origin.latitude(), origin.longitude(), destination.latitude(), destination.longitude());
     }
 
+    /**
+     * Resuelve un aeropuerto desde el repositorio local o fuente externa.
+     *
+     * @param normalizedIata IATA normalizado (trim y upper).
+     * @return aeropuerto encontrado o persistido.
+     */
     private Airport resolveAirport(String normalizedIata) {
         return airportRepositoryPort.findByIata(normalizedIata)
                 .orElseGet(() -> airportInfoPort.findByIata(normalizedIata)
@@ -49,12 +68,24 @@ public class DistanceService implements DistanceUseCase {
                         }));
     }
 
+    /**
+     * Persiste un aeropuerto obtenido desde una fuente externa.
+     *
+     * @param airport aeropuerto a almacenar.
+     * @return aeropuerto persistido (sin modificación de datos).
+     */
     private Airport storeAirport(Airport airport) {
         log.info("Storing airport from external source for distance calculation: {}", airport.airportIata());
         airportRepositoryPort.saveAll(List.of(airport));
         return airport;
     }
 
+    /**
+     * Normaliza el IATA a mayúsculas y sin espacios.
+     *
+     * @param airportIata IATA original.
+     * @return IATA normalizado o null si el valor era null.
+     */
     private String normalizeIata(String airportIata) {
         if (airportIata == null) {
             return null;
@@ -62,6 +93,15 @@ public class DistanceService implements DistanceUseCase {
         return airportIata.trim().toUpperCase(Locale.ROOT);
     }
 
+    /**
+     * Aplica la fórmula de Haversine para distancia entre coordenadas.
+     *
+     * @param originLat latitud de origen.
+     * @param originLon longitud de origen.
+     * @param destinationLat latitud de destino.
+     * @param destinationLon longitud de destino.
+     * @return distancia en kilómetros.
+     */
     private double haversine(double originLat, double originLon, double destinationLat, double destinationLon) {
         double originLatRad = Math.toRadians(originLat);
         double destinationLatRad = Math.toRadians(destinationLat);

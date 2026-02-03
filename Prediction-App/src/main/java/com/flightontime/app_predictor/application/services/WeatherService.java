@@ -12,10 +12,22 @@ import org.springframework.stereotype.Service;
 public class WeatherService {
     private final WeatherPort weatherPort;
 
+    /**
+     * Construye el servicio de consulta meteorológica.
+     *
+     * @param weatherPort puerto de acceso a proveedor de clima.
+     */
     public WeatherService(WeatherPort weatherPort) {
         this.weatherPort = weatherPort;
     }
 
+    /**
+     * Obtiene el clima actual para un aeropuerto en un instante dado.
+     *
+     * @param iata IATA del aeropuerto.
+     * @param instantUtc instante de consulta en UTC.
+     * @return DTO con información meteorológica.
+     */
     public AirportWeatherDTO getCurrentWeather(String iata, OffsetDateTime instantUtc) {
         return weatherPort.getCurrentWeather(iata, instantUtc);
     }

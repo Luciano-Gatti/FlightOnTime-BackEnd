@@ -12,24 +12,30 @@ import java.util.List;
  * Clase CsvParser.
  */
 public class CsvParser {
-/**
- * Registro CsvRow.
- */
+    /**
+     * Registro CsvRow.
+     */
     public record CsvRow(int rowNumber, String rawRow, List<String> fields) {
     }
 
-/**
- * Registro CsvParseError.
- */
+    /**
+     * Registro CsvParseError.
+     */
     public record CsvParseError(int rowNumber, String message, String rawRow) {
     }
 
-/**
- * Registro CsvParseResult.
- */
+    /**
+     * Registro CsvParseResult.
+     */
     public record CsvParseResult(List<String> header, List<CsvRow> rows, List<CsvParseError> errors) {
     }
 
+    /**
+     * Parsea un CSV con separador coma, soportando valores entrecomillados.
+     *
+     * @param inputStream stream de entrada del CSV.
+     * @return resultado con header, filas válidas y errores de parsing.
+     */
     public CsvParseResult parse(InputStream inputStream) {
         List<String> headerFields = new ArrayList<>();
         List<CsvRow> rows = new ArrayList<>();
@@ -72,6 +78,12 @@ public class CsvParser {
         return new CsvParseResult(headerFields, rows, errors);
     }
 
+    /**
+     * Parsea una línea CSV en campos, respetando comillas dobles y escapes.
+     *
+     * @param line línea cruda del CSV.
+     * @return lista de campos normalizados (trim).
+     */
     private List<String> parseLine(String line) {
         List<String> fields = new ArrayList<>();
         StringBuilder current = new StringBuilder();

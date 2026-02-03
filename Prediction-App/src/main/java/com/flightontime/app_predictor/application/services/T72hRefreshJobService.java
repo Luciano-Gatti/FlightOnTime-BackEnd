@@ -31,6 +31,15 @@ public class T72hRefreshJobService {
     private final ModelPredictionPort modelPredictionPort;
     private final DistanceUseCase distanceUseCase;
 
+    /**
+     * Construye el servicio que refresca predicciones en la ventana T-72h.
+     *
+     * @param flightFollowRepositoryPort repositorio de seguimientos de vuelo.
+     * @param flightRequestRepositoryPort repositorio de solicitudes de vuelo.
+     * @param predictionRepositoryPort repositorio de predicciones persistidas.
+     * @param modelPredictionPort puerto hacia el modelo de predicción.
+     * @param distanceUseCase caso de uso para calcular distancia entre aeropuertos.
+     */
     public T72hRefreshJobService(
             FlightFollowRepositoryPort flightFollowRepositoryPort,
             FlightRequestRepositoryPort flightRequestRepositoryPort,
@@ -45,6 +54,9 @@ public class T72hRefreshJobService {
         this.distanceUseCase = distanceUseCase;
     }
 
+    /**
+     * Ejecuta el job de refresco T-72h para vuelos activos en la ventana de 72 horas.
+     */
     public void refreshPredictions() {
         long startMillis = System.currentTimeMillis();
         OffsetDateTime startTimestamp = OffsetDateTime.now(ZoneOffset.UTC);
@@ -88,6 +100,12 @@ public class T72hRefreshJobService {
                 errors);
     }
 
+    /**
+     * Construye el comando de predicción a partir de una solicitud de vuelo.
+     *
+     * @param request solicitud de vuelo persistida.
+     * @return comando listo para invocar el modelo.
+     */
     private PredictFlightCommand buildCommand(FlightRequest request) {
         double distance = request.distance() > 0 ? request.distance()
                 : distanceUseCase.calculateDistance(request.originIata(), request.destIata());
@@ -101,6 +119,15 @@ public class T72hRefreshJobService {
         );
     }
 
+    /**
+     * Obtiene una predicción del cache por bucket o la crea llamando al modelo.
+     *
+     * @param flightRequestId identificador de la solicitud de vuelo.
+     * @param command comando con datos del vuelo.
+     * @param now timestamp actual en UTC.
+     * @param cacheStats acumulador de métricas de cache.
+     * @return predicción persistida (cacheada o nueva).
+     */
     private Prediction getOrCreatePrediction(
             Long flightRequestId,
             PredictFlightCommand command,
@@ -136,6 +163,12 @@ public class T72hRefreshJobService {
         return predictionRepositoryPort.save(prediction);
     }
 
+    /**
+     * Normaliza un timestamp al inicio del bucket de 3 horas.
+     *
+     * @param timestamp timestamp base.
+     * @return inicio del bucket correspondiente.
+     */
     private OffsetDateTime resolveBucketStart(OffsetDateTime timestamp) {
         // Normaliza a intervalos de 3 horas en UTC para alinear la predicción.
         OffsetDateTime normalized = timestamp.withMinute(0).withSecond(0).withNano(0);
@@ -143,6 +176,12 @@ public class T72hRefreshJobService {
         return normalized.minusHours(offset);
     }
 
+    /**
+     * Convierte una fecha/hora a UTC conservando el instante.
+     *
+     * @param value fecha/hora original.
+     * @return fecha/hora en UTC o null si el valor era null.
+     */
     private OffsetDateTime toUtc(OffsetDateTime value) {
         if (value == null) {
             return null;
@@ -150,6 +189,9 @@ public class T72hRefreshJobService {
         return value.withOffsetSameInstant(ZoneOffset.UTC);
     }
 
+    /**
+     * Acumulador simple de métricas de cache en memoria.
+     */
     private static class PredictionCacheStats {
         private int cacheHits;
         private int predictionsCreated;
