@@ -1,10 +1,10 @@
 package com.flightontime.app_predictor.application.services;
 
 import com.flightontime.app_predictor.domain.model.PredictionAccuracySample;
+import com.flightontime.app_predictor.domain.model.StatsAccuracyBin;
+import com.flightontime.app_predictor.domain.model.StatsAccuracyByLeadTime;
 import com.flightontime.app_predictor.domain.ports.in.StatsAccuracyByLeadTimeUseCase;
 import com.flightontime.app_predictor.domain.ports.out.PredictionRepositoryPort;
-import com.flightontime.app_predictor.infrastructure.in.dto.StatsAccuracyBinDTO;
-import com.flightontime.app_predictor.infrastructure.in.dto.StatsAccuracyByLeadTimeResponseDTO;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -27,7 +27,7 @@ public class StatsAccuracyByLeadTimeService implements StatsAccuracyByLeadTimeUs
     }
 
     @Override
-    public StatsAccuracyByLeadTimeResponseDTO getAccuracyByLeadTime() {
+    public StatsAccuracyByLeadTime getAccuracyByLeadTime() {
         List<PredictionAccuracySample> samples = predictionRepositoryPort.findAccuracySamplesExcludingCancelled();
         List<BinAccumulator> bins = initializeBins();
         for (PredictionAccuracySample sample : samples) {
@@ -39,16 +39,16 @@ public class StatsAccuracyByLeadTimeService implements StatsAccuracyByLeadTimeUs
                 bin.correct++;
             }
         }
-        List<StatsAccuracyBinDTO> responseBins = new ArrayList<>();
+        List<StatsAccuracyBin> responseBins = new ArrayList<>();
         for (BinAccumulator bin : bins) {
-            responseBins.add(new StatsAccuracyBinDTO(
+            responseBins.add(new StatsAccuracyBin(
                     bin.label,
                     bin.total,
                     bin.correct,
                     bin.total == 0 ? 0.0 : (double) bin.correct / bin.total
             ));
         }
-        return new StatsAccuracyByLeadTimeResponseDTO(responseBins);
+        return new StatsAccuracyByLeadTime(responseBins);
     }
 
     private List<BinAccumulator> initializeBins() {

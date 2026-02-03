@@ -2,6 +2,8 @@ package com.flightontime.app_predictor.application.services;
 
 import com.flightontime.app_predictor.domain.model.FlightRequest;
 import com.flightontime.app_predictor.domain.model.FlightFollow;
+import com.flightontime.app_predictor.domain.model.PredictFlightRequest;
+import com.flightontime.app_predictor.domain.model.PredictionResult;
 import com.flightontime.app_predictor.domain.model.RefreshMode;
 import com.flightontime.app_predictor.domain.model.UserPrediction;
 import com.flightontime.app_predictor.domain.model.UserPredictionSource;
@@ -9,8 +11,6 @@ import com.flightontime.app_predictor.domain.ports.in.PredictFlightUseCase;
 import com.flightontime.app_predictor.domain.ports.out.FlightFollowRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.FlightRequestRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.UserPredictionRepositoryPort;
-import com.flightontime.app_predictor.infrastructure.in.dto.PredictRequestDTO;
-import com.flightontime.app_predictor.infrastructure.in.dto.PredictResponseDTO;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import org.slf4j.Logger;
@@ -41,7 +41,7 @@ public class PredictFlightService implements PredictFlightUseCase {
     }
 
     @Override
-    public PredictResponseDTO predict(PredictRequestDTO request, Long userId) {
+    public PredictionResult predict(PredictFlightRequest request, Long userId) {
         validateRequest(request);
         OffsetDateTime startTimestamp = OffsetDateTime.now(ZoneOffset.UTC);
         log.info("Starting prediction workflow userId={} request={}", userId, request);
@@ -87,7 +87,7 @@ public class PredictFlightService implements PredictFlightUseCase {
             log.debug("Subscription upserted userId={} flight_request_id={} refreshMode={}",
                     userId, workflowResult.flightRequest().id(), RefreshMode.T72_REFRESH);
         }
-        return new PredictResponseDTO(
+        return new PredictionResult(
                 workflowResult.result().predictedStatus(),
                 workflowResult.result().predictedProbability(),
                 workflowResult.result().confidence(),
@@ -98,7 +98,7 @@ public class PredictFlightService implements PredictFlightUseCase {
     }
 
     @Override
-    public PredictResponseDTO getLatestPrediction(Long requestId, Long userId) {
+    public PredictionResult getLatestPrediction(Long requestId, Long userId) {
         if (userId == null) {
             throw new IllegalArgumentException("User is required");
         }
@@ -119,7 +119,7 @@ public class PredictFlightService implements PredictFlightUseCase {
         }
         log.info("Latest prediction resolved userId={} requestId={} predictionId={}",
                 userId, requestId, result.prediction() != null ? result.prediction().id() : null);
-        return new PredictResponseDTO(
+        return new PredictionResult(
                 result.result().predictedStatus(),
                 result.result().predictedProbability(),
                 result.result().confidence(),
@@ -129,7 +129,7 @@ public class PredictFlightService implements PredictFlightUseCase {
         );
     }
 
-    private void validateRequest(PredictRequestDTO request) {
+    private void validateRequest(PredictFlightRequest request) {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         if (request.flightDateUtc() == null || !request.flightDateUtc().isAfter(now)) {
             throw new IllegalArgumentException("flightDateUtc must be in the future");

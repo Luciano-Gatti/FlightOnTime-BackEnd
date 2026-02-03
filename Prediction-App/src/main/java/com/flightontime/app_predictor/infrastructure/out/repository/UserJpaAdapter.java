@@ -1,6 +1,7 @@
 package com.flightontime.app_predictor.infrastructure.out.repository;
 
 import com.flightontime.app_predictor.domain.model.User;
+import com.flightontime.app_predictor.domain.model.UserAuthData;
 import com.flightontime.app_predictor.domain.ports.out.UserRepositoryPort;
 import com.flightontime.app_predictor.infrastructure.out.entities.UserEntity;
 import java.time.OffsetDateTime;
@@ -23,6 +24,20 @@ public class UserJpaAdapter implements UserRepositoryPort {
     public Optional<User> findByEmail(String email) {
         return userJpaRepository.findByEmail(email)
                 .map(this::toDomain);
+    }
+
+    @Override
+    public Optional<UserAuthData> findAuthDataByEmail(String email) {
+        return userJpaRepository.findByEmail(email)
+                .map(entity -> new UserAuthData(
+                        entity.getId(),
+                        entity.getEmail(),
+                        entity.getFirstName(),
+                        entity.getLastName(),
+                        entity.getRoles(),
+                        entity.getCreatedAt(),
+                        entity.getPasswordHash()
+                ));
     }
 
     @Override

@@ -1,5 +1,11 @@
 package com.flightontime.app_predictor.infrastructure.in.web;
 
+import com.flightontime.app_predictor.application.services.UserLookupService;
+import com.flightontime.app_predictor.domain.model.PredictFlightRequest;
+import com.flightontime.app_predictor.domain.model.PredictHistoryDetail;
+import com.flightontime.app_predictor.domain.model.PredictHistoryItem;
+import com.flightontime.app_predictor.domain.model.PredictHistoryPrediction;
+import com.flightontime.app_predictor.domain.model.PredictionResult;
 import com.flightontime.app_predictor.domain.ports.in.BulkPredictUseCase;
 import com.flightontime.app_predictor.domain.ports.in.PredictFlightUseCase;
 import com.flightontime.app_predictor.domain.ports.in.PredictHistoryUseCase;
@@ -9,7 +15,6 @@ import com.flightontime.app_predictor.infrastructure.in.dto.PredictHistoryDetail
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictHistoryItemDTO;
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictRequestDTO;
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictResponseDTO;
-import com.flightontime.app_predictor.infrastructure.out.repository.UserJpaRepository;
 import com.flightontime.app_predictor.infrastructure.security.JwtTokenProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -59,7 +64,7 @@ public class PredictController {
     private final PredictHistoryUseCase predictHistoryUseCase;
     private final BulkPredictUseCase bulkPredictUseCase;
     private final ObjectMapper objectMapper;
-    private final UserJpaRepository userJpaRepository;
+    private final UserLookupService userLookupService;
     private final JwtTokenProvider jwtTokenProvider;
 
     public PredictController(
@@ -67,14 +72,14 @@ public class PredictController {
             PredictHistoryUseCase predictHistoryUseCase,
             BulkPredictUseCase bulkPredictUseCase,
             ObjectMapper objectMapper,
-            UserJpaRepository userJpaRepository,
+            UserLookupService userLookupService,
             JwtTokenProvider jwtTokenProvider
     ) {
         this.predictFlightUseCase = predictFlightUseCase;
         this.predictHistoryUseCase = predictHistoryUseCase;
         this.bulkPredictUseCase = bulkPredictUseCase;
         this.objectMapper = objectMapper;
-        this.userJpaRepository = userJpaRepository;
+        this.userLookupService = userLookupService;
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
@@ -94,7 +99,8 @@ public class PredictController {
     ) {
         Long userId = resolveUserId(httpRequest);
         logJson("Prediction request received userId=" + userId, request);
-        PredictResponseDTO response = predictFlightUseCase.predict(request, userId);
+        PredictionResult result = predictFlightUseCase.predict(toPredictFlightRequest(request), userId);
+        PredictResponseDTO response = toPredictResponseDto(result);
         logJson("Prediction response userId=" + userId, response);
         return ResponseEntity.ok(response);
     }
@@ -173,7 +179,10 @@ public class PredictController {
         if (userId == null) {
             return ResponseEntity.status(401).build();
         }
-        return ResponseEntity.ok(predictHistoryUseCase.getHistory(userId));
+        List<PredictHistoryItemDTO> items = predictHistoryUseCase.getHistory(userId).stream()
+                .map(this::toHistoryItemDto)
+                .toList();
+        return ResponseEntity.ok(items);
     }
 
     @GetMapping("/history/{requestId}")
@@ -197,7 +206,8 @@ public class PredictController {
         if (userId == null) {
             return ResponseEntity.status(401).build();
         }
-        return ResponseEntity.ok(predictHistoryUseCase.getHistoryDetail(userId, requestId));
+        PredictHistoryDetail detail = predictHistoryUseCase.getHistoryDetail(userId, requestId);
+        return ResponseEntity.ok(toHistoryDetailDto(detail));
     }
 
     @GetMapping("/{requestId}/latest")
@@ -219,7 +229,8 @@ public class PredictController {
         if (userId == null) {
             return ResponseEntity.status(401).build();
         }
-        return ResponseEntity.ok(predictFlightUseCase.getLatestPrediction(requestId, userId));
+        PredictionResult result = predictFlightUseCase.getLatestPrediction(requestId, userId);
+        return ResponseEntity.ok(toPredictResponseDto(result));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -296,11 +307,7 @@ public class PredictController {
     }
 
     private Optional<Long> resolveUserIdByEmail(String email) {
-        if (email == null || email.isBlank()) {
-            return Optional.empty();
-        }
-        return userJpaRepository.findByEmail(email)
-                .map(user -> user.getId());
+        return userLookupService.findUserIdByEmail(email);
     }
 
     private Optional<Long> resolveUserIdFromToken(HttpServletRequest httpRequest) {
@@ -330,5 +337,86 @@ public class PredictController {
         } catch (JsonProcessingException ex) {
             log.warn("{} payload=<failed to serialize>", message, ex);
         }
+    }
+
+    private PredictFlightRequest toPredictFlightRequest(PredictRequestDTO request) {
+        if (request == null) {
+            return null;
+        }
+        return new PredictFlightRequest(
+                request.flightDateUtc(),
+                request.airlineCode(),
+                request.originIata(),
+                request.destIata(),
+                request.flightNumber()
+        );
+    }
+
+    private PredictResponseDTO toPredictResponseDto(PredictionResult result) {
+        if (result == null) {
+            return null;
+        }
+        return new PredictResponseDTO(
+                result.predictedStatus(),
+                result.predictedProbability(),
+                result.confidence(),
+                result.thresholdUsed(),
+                result.modelVersion(),
+                result.predictedAt()
+        );
+    }
+
+    private PredictHistoryItemDTO toHistoryItemDto(PredictHistoryItem item) {
+        if (item == null) {
+            return null;
+        }
+        return new PredictHistoryItemDTO(
+                item.flightRequestId(),
+                item.flightDateUtc(),
+                item.airlineCode(),
+                item.originIata(),
+                item.destIata(),
+                item.flightNumber(),
+                item.predictedStatus(),
+                item.predictedProbability(),
+                item.confidence(),
+                item.thresholdUsed(),
+                item.modelVersion(),
+                item.predictedAt(),
+                item.uniqueUsersCount()
+        );
+    }
+
+    private PredictHistoryDetailDTO toHistoryDetailDto(PredictHistoryDetail detail) {
+        if (detail == null) {
+            return null;
+        }
+        List<PredictHistoryPredictionDTO> predictions = detail.predictions().stream()
+                .map(this::toHistoryPredictionDto)
+                .toList();
+        return new PredictHistoryDetailDTO(
+                detail.flightRequestId(),
+                detail.flightDateUtc(),
+                detail.airlineCode(),
+                detail.originIata(),
+                detail.destIata(),
+                detail.flightNumber(),
+                detail.uniqueUsersCount(),
+                predictions
+        );
+    }
+
+    private PredictHistoryPredictionDTO toHistoryPredictionDto(PredictHistoryPrediction prediction) {
+        if (prediction == null) {
+            return null;
+        }
+        return new PredictHistoryPredictionDTO(
+                prediction.predictedStatus(),
+                prediction.predictedProbability(),
+                prediction.confidence(),
+                prediction.thresholdUsed(),
+                prediction.modelVersion(),
+                prediction.predictedAt()
+        );
     }
 }

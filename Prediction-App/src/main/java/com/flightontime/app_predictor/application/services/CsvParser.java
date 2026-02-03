@@ -1,4 +1,4 @@
-package com.flightontime.app_predictor.infrastructure.in;
+package com.flightontime.app_predictor.application.services;
 
 import java.io.BufferedReader;
 import java.io.IOException;

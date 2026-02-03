@@ -2,13 +2,13 @@ package com.flightontime.app_predictor.application.services;
 
 import com.flightontime.app_predictor.domain.model.FlightRequest;
 import com.flightontime.app_predictor.domain.model.FlightRequestPopularity;
+import com.flightontime.app_predictor.domain.model.StatsSummary;
+import com.flightontime.app_predictor.domain.model.StatsTopFlight;
 import com.flightontime.app_predictor.domain.ports.in.StatsSummaryUseCase;
 import com.flightontime.app_predictor.domain.ports.out.FlightActualRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.FlightRequestRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.PredictionRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.UserPredictionRepositoryPort;
-import com.flightontime.app_predictor.infrastructure.in.dto.StatsSummaryResponseDTO;
-import com.flightontime.app_predictor.infrastructure.in.dto.StatsTopFlightDTO;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
@@ -41,14 +41,14 @@ public class StatsSummaryService implements StatsSummaryUseCase {
     }
 
     @Override
-    public StatsSummaryResponseDTO getSummary(int topN) {
+    public StatsSummary getSummary(int topN) {
         long totalPredictions = predictionRepositoryPort.countAll();
         long totalOnTimePredicted = predictionRepositoryPort.countByStatus("ON_TIME");
         long totalDelayedPredicted = predictionRepositoryPort.countByStatus("DELAYED");
         long totalFlightsWithActual = flightActualRepositoryPort.countAll();
         long totalCancelled = flightActualRepositoryPort.countByActualStatus("CANCELLED");
-        List<StatsTopFlightDTO> topFlights = resolveTopFlights(topN);
-        return new StatsSummaryResponseDTO(
+        List<StatsTopFlight> topFlights = resolveTopFlights(topN);
+        return new StatsSummary(
                 totalPredictions,
                 totalOnTimePredicted,
                 totalDelayedPredicted,
@@ -58,7 +58,7 @@ public class StatsSummaryService implements StatsSummaryUseCase {
         );
     }
 
-    private List<StatsTopFlightDTO> resolveTopFlights(int topN) {
+    private List<StatsTopFlight> resolveTopFlights(int topN) {
         if (topN <= 0) {
             return Collections.emptyList();
         }
@@ -80,11 +80,11 @@ public class StatsSummaryService implements StatsSummaryUseCase {
                 .collect(Collectors.toList());
     }
 
-    private StatsTopFlightDTO toTopFlight(FlightRequestPopularity popularity, FlightRequest request) {
+    private StatsTopFlight toTopFlight(FlightRequestPopularity popularity, FlightRequest request) {
         if (request == null) {
             return null;
         }
-        return new StatsTopFlightDTO(
+        return new StatsTopFlight(
                 request.id(),
                 toUtc(request.flightDateUtc()),
                 request.airlineCode(),

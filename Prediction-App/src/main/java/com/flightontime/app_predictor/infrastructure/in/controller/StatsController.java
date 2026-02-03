@@ -1,9 +1,15 @@
 package com.flightontime.app_predictor.infrastructure.in.controller;
 
+import com.flightontime.app_predictor.domain.model.StatsAccuracyBin;
+import com.flightontime.app_predictor.domain.model.StatsAccuracyByLeadTime;
+import com.flightontime.app_predictor.domain.model.StatsSummary;
+import com.flightontime.app_predictor.domain.model.StatsTopFlight;
 import com.flightontime.app_predictor.domain.ports.in.StatsAccuracyByLeadTimeUseCase;
 import com.flightontime.app_predictor.domain.ports.in.StatsSummaryUseCase;
+import com.flightontime.app_predictor.infrastructure.in.dto.StatsAccuracyBinDTO;
 import com.flightontime.app_predictor.infrastructure.in.dto.StatsAccuracyByLeadTimeResponseDTO;
 import com.flightontime.app_predictor.infrastructure.in.dto.StatsSummaryResponseDTO;
+import com.flightontime.app_predictor.infrastructure.in.dto.StatsTopFlightDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -54,7 +60,8 @@ public class StatsController {
         if (topN < 0) {
             throw new IllegalArgumentException("topN must be greater than or equal to 0");
         }
-        return ResponseEntity.ok(statsSummaryUseCase.getSummary(topN));
+        StatsSummary summary = statsSummaryUseCase.getSummary(topN);
+        return ResponseEntity.ok(toSummaryDto(summary));
     }
 
     @GetMapping("/accuracy-by-leadtime")
@@ -69,7 +76,8 @@ public class StatsController {
             @ApiResponse(responseCode = "403", description = "No autorizado")
     })
     public ResponseEntity<StatsAccuracyByLeadTimeResponseDTO> getAccuracyByLeadTime() {
-        return ResponseEntity.ok(statsAccuracyByLeadTimeUseCase.getAccuracyByLeadTime());
+        StatsAccuracyByLeadTime accuracy = statsAccuracyByLeadTimeUseCase.getAccuracyByLeadTime();
+        return ResponseEntity.ok(toAccuracyDto(accuracy));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -81,5 +89,59 @@ public class StatsController {
  * Registro ErrorResponse.
  */
     public record ErrorResponse(String message) {
+    }
+
+    private StatsSummaryResponseDTO toSummaryDto(StatsSummary summary) {
+        if (summary == null) {
+            return null;
+        }
+        return new StatsSummaryResponseDTO(
+                summary.totalPredictions(),
+                summary.totalOnTimePredicted(),
+                summary.totalDelayedPredicted(),
+                summary.totalFlightsWithActual(),
+                summary.totalCancelled(),
+                summary.topFlights().stream()
+                        .map(this::toTopFlightDto)
+                        .toList()
+        );
+    }
+
+    private StatsTopFlightDTO toTopFlightDto(StatsTopFlight flight) {
+        if (flight == null) {
+            return null;
+        }
+        return new StatsTopFlightDTO(
+                flight.flightRequestId(),
+                flight.flightDateUtc(),
+                flight.airlineCode(),
+                flight.originIata(),
+                flight.destIata(),
+                flight.flightNumber(),
+                flight.uniqueUsersCount()
+        );
+    }
+
+    private StatsAccuracyByLeadTimeResponseDTO toAccuracyDto(StatsAccuracyByLeadTime accuracy) {
+        if (accuracy == null) {
+            return null;
+        }
+        return new StatsAccuracyByLeadTimeResponseDTO(
+                accuracy.bins().stream()
+                        .map(this::toAccuracyBinDto)
+                        .toList()
+        );
+    }
+
+    private StatsAccuracyBinDTO toAccuracyBinDto(StatsAccuracyBin bin) {
+        if (bin == null) {
+            return null;
+        }
+        return new StatsAccuracyBinDTO(
+                bin.leadTimeHours(),
+                bin.total(),
+                bin.correct(),
+                bin.accuracy()
+        );
     }
 }
