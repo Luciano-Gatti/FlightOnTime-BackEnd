@@ -9,6 +9,10 @@ import com.flightontime.app_predictor.infrastructure.in.dto.UserResponseDTO;
 import com.flightontime.app_predictor.infrastructure.out.entities.UserEntity;
 import com.flightontime.app_predictor.infrastructure.out.repository.UserJpaRepository;
 import com.flightontime.app_predictor.infrastructure.security.JwtTokenProvider;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -22,8 +26,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * Clase AuthController.
+ */
 @RestController
 @RequestMapping("/auth")
+@Tag(name = "Auth", description = "Operaciones de autenticación")
 public class AuthController {
     private final UserRepositoryPort userRepositoryPort;
     private final UserJpaRepository userJpaRepository;
@@ -46,6 +54,15 @@ public class AuthController {
     }
 
     @PostMapping("/register")
+    @Operation(
+            summary = "Registrar usuario",
+            description = "Crea una cuenta de usuario y devuelve el token JWT."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Usuario creado"),
+            @ApiResponse(responseCode = "400", description = "Solicitud inválida"),
+            @ApiResponse(responseCode = "409", description = "Email ya registrado")
+    })
     public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) {
         if (userRepositoryPort.existsByEmail(request.email())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
@@ -65,6 +82,14 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @Operation(
+            summary = "Iniciar sesión",
+            description = "Valida credenciales y devuelve un token JWT válido."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Login exitoso"),
+            @ApiResponse(responseCode = "401", description = "Credenciales inválidas")
+    })
     public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
         UserEntity entity = userJpaRepository.findByEmail(request.email())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));

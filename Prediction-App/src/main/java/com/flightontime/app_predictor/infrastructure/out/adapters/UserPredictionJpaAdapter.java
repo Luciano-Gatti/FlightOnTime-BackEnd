@@ -11,6 +11,9 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
+/**
+ * Clase UserPredictionJpaAdapter.
+ */
 @Component
 public class UserPredictionJpaAdapter implements UserPredictionRepositoryPort {
     private final UserPredictionSnapshotJpaRepository userPredictionSnapshotJpaRepository;

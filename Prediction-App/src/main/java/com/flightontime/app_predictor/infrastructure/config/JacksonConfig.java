@@ -6,6 +6,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Clase JacksonConfig.
+ */
 @Configuration
 public class JacksonConfig {
     @Bean

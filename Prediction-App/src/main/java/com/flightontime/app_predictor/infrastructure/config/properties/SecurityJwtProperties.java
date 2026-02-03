@@ -2,6 +2,9 @@ package com.flightontime.app_predictor.infrastructure.config.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/**
+ * Clase SecurityJwtProperties.
+ */
 @ConfigurationProperties(prefix = "security.jwt")
 public class SecurityJwtProperties {
     private String secret;

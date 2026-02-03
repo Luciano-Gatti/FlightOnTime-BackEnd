@@ -3,6 +3,9 @@ package com.flightontime.app_predictor.infrastructure.out.adapters;
 import com.flightontime.app_predictor.domain.model.FlightFollow;
 import com.flightontime.app_predictor.infrastructure.out.entities.FlightSubscriptionEntity;
 
+/**
+ * Clase FlightFollowMapper.
+ */
 public class FlightFollowMapper {
     public FlightFollow toDomain(FlightSubscriptionEntity entity) {
         if (entity == null) {

@@ -7,6 +7,9 @@ import com.flightontime.app_predictor.infrastructure.out.repository.FlightOutcom
 import java.util.Optional;
 import org.springframework.stereotype.Component;
 
+/**
+ * Clase FlightActualJpaAdapter.
+ */
 @Component
 public class FlightActualJpaAdapter implements FlightActualRepositoryPort {
     private final FlightOutcomeJpaRepository flightOutcomeJpaRepository;

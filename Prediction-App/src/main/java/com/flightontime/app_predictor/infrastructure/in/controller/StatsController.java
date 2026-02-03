@@ -4,6 +4,10 @@ import com.flightontime.app_predictor.domain.ports.in.StatsAccuracyByLeadTimeUse
 import com.flightontime.app_predictor.domain.ports.in.StatsSummaryUseCase;
 import com.flightontime.app_predictor.infrastructure.in.dto.StatsAccuracyByLeadTimeResponseDTO;
 import com.flightontime.app_predictor.infrastructure.in.dto.StatsSummaryResponseDTO;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
@@ -13,10 +17,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Clase StatsController.
+ */
 @RestController
 @RequestMapping("/stats")
-@SecurityRequirement(name = "bearer-key")
-@Tag(name = "Estadisticas", description = "Endpoints para consultar estadisticas del sistema")
+@Tag(name = "Stats", description = "Endpoints para consultar estadísticas del sistema")
 public class StatsController {
     private final StatsAccuracyByLeadTimeUseCase statsAccuracyByLeadTimeUseCase;
     private final StatsSummaryUseCase statsSummaryUseCase;
@@ -30,7 +36,19 @@ public class StatsController {
     }
 
     @GetMapping("/summary")
+    @SecurityRequirement(name = "bearer-key")
+    @Operation(
+            summary = "Resumen de estadísticas",
+            description = "Devuelve métricas agregadas y top vuelos consultados."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Resumen generado"),
+            @ApiResponse(responseCode = "400", description = "Parámetro inválido"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No autorizado")
+    })
     public ResponseEntity<StatsSummaryResponseDTO> getSummary(
+            @Parameter(description = "Cantidad de vuelos a incluir en el top", example = "5")
             @RequestParam(name = "topN", defaultValue = "5") int topN
     ) {
         if (topN < 0) {
@@ -40,6 +58,16 @@ public class StatsController {
     }
 
     @GetMapping("/accuracy-by-leadtime")
+    @SecurityRequirement(name = "bearer-key")
+    @Operation(
+            summary = "Precisión por lead time",
+            description = "Entrega la precisión del modelo segmentada por lead time."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Métricas generadas"),
+            @ApiResponse(responseCode = "401", description = "No autenticado"),
+            @ApiResponse(responseCode = "403", description = "No autorizado")
+    })
     public ResponseEntity<StatsAccuracyByLeadTimeResponseDTO> getAccuracyByLeadTime() {
         return ResponseEntity.ok(statsAccuracyByLeadTimeUseCase.getAccuracyByLeadTime());
     }
@@ -49,6 +77,9 @@ public class StatsController {
         return ResponseEntity.badRequest().body(new ErrorResponse(ex.getMessage()));
     }
 
+/**
+ * Registro ErrorResponse.
+ */
     public record ErrorResponse(String message) {
     }
 }

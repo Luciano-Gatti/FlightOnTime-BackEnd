@@ -3,6 +3,9 @@ package com.flightontime.app_predictor.infrastructure.config.properties;
 import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/**
+ * Clase WeatherProperties.
+ */
 @ConfigurationProperties(prefix = "weather")
 public class WeatherProperties {
     private Service service = new Service();
@@ -42,6 +45,9 @@ public class WeatherProperties {
         this.cache = cache;
     }
 
+    /**
+     * Clase Service.
+     */
     public static class Service {
         private String baseUrl;
         private Duration timeoutConnect;
@@ -72,6 +78,9 @@ public class WeatherProperties {
         }
     }
 
+    /**
+     * Clase Openmeteo.
+     */
     public static class Openmeteo {
         private String baseUrl;
         private String geocodingBaseUrl;
@@ -93,6 +102,9 @@ public class WeatherProperties {
         }
     }
 
+    /**
+     * Clase Fallback.
+     */
     public static class Fallback {
         private String baseUrl;
         private String apiKey;
@@ -132,6 +144,9 @@ public class WeatherProperties {
         }
     }
 
+    /**
+     * Clase Cache.
+     */
     public static class Cache {
         private Duration ttl;
 

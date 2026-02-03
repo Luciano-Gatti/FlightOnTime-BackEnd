@@ -1,5 +1,8 @@
 package com.flightontime.app_predictor.infrastructure.out.dto;
 
+/**
+ * Registro AirportApiItem.
+ */
 public record AirportApiItem(
         String airportIata,
         String airportName,

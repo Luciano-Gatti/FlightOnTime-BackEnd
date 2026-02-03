@@ -5,6 +5,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
+/**
+ * Clase T72hRefreshSchedulerConfig.
+ */
 @Configuration
 @EnableScheduling
 public class T72hRefreshSchedulerConfig {

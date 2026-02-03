@@ -7,6 +7,9 @@ import com.flightontime.app_predictor.domain.ports.out.AirportRepositoryPort;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
+/**
+ * Clase AirportService.
+ */
 @Service
 public class AirportService {
     private final AirportRepositoryPort airportRepositoryPort;

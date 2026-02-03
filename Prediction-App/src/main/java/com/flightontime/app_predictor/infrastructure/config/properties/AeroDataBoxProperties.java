@@ -2,6 +2,9 @@ package com.flightontime.app_predictor.infrastructure.config.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/**
+ * Clase AeroDataBoxProperties.
+ */
 @ConfigurationProperties(prefix = "aerodatabox.service")
 public class AeroDataBoxProperties {
     private String url;

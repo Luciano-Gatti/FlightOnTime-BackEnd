@@ -2,6 +2,9 @@ package com.flightontime.app_predictor.infrastructure.in.dto;
 
 import java.util.List;
 
+/**
+ * Registro StatsSummaryResponseDTO.
+ */
 public record StatsSummaryResponseDTO(
         long totalPredictions,
         long totalOnTimePredicted,

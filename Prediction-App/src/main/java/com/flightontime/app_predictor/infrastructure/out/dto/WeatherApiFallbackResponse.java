@@ -3,11 +3,17 @@ package com.flightontime.app_predictor.infrastructure.out.dto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Registro WeatherApiFallbackResponse.
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record WeatherApiFallbackResponse(
         Location location,
         Current current
 ) {
+/**
+ * Registro Location.
+ */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Location(
             String name,
@@ -18,6 +24,9 @@ public record WeatherApiFallbackResponse(
     ) {
     }
 
+/**
+ * Registro Current.
+ */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Current(
             @JsonProperty("temp_c") Double temperatureCelsius,

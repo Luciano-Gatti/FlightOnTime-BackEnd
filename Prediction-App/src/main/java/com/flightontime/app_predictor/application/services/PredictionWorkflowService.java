@@ -19,9 +19,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+/**
+ * Clase PredictionWorkflowService.
+ */
 @Service
 public class PredictionWorkflowService {
     private static final Logger log = LoggerFactory.getLogger(PredictionWorkflowService.class);
+    /**
+     * Registro PredictionWorkflowResult.
+     */
     public record PredictionWorkflowResult(
             FlightRequest flightRequest,
             Prediction prediction,
@@ -58,6 +64,7 @@ public class PredictionWorkflowService {
             boolean persistWhenAnonymous,
             boolean createUserPrediction
     ) {
+        log.info("Starting prediction workflow userId={} origin={} dest={}", userId, originIata, destIata);
         double distance = distanceUseCase.calculateDistance(originIata, destIata);
         log.info("Calculated distance origin={} destination={} distanceKm={}", originIata, destIata, distance);
         PredictFlightCommand command = new PredictFlightCommand(
@@ -80,6 +87,7 @@ public class PredictionWorkflowService {
                     prediction.modelVersion(),
                     now
             );
+            log.info("Anonymous prediction workflow completed origin={} dest={}", originIata, destIata);
             return new PredictionWorkflowResult(null, null, result);
         }
         FlightRequest flightRequest = getOrCreateFlightRequest(
@@ -114,6 +122,8 @@ public class PredictionWorkflowService {
                 prediction.modelVersion(),
                 prediction.predictedAt()
         );
+        log.info("Prediction workflow completed requestId={} predictionId={}",
+                flightRequest.id(), prediction.id());
         return new PredictionWorkflowResult(flightRequest, prediction, result);
     }
 
@@ -152,6 +162,7 @@ public class PredictionWorkflowService {
             double distance,
             OffsetDateTime now
     ) {
+        // Reutiliza el request existente para evitar duplicar solicitudes equivalentes.
         OffsetDateTime normalizedFlightDateUtc = toUtc(flightDateUtc);
         Optional<FlightRequest> existing = flightRequestRepositoryPort.findByFlight(
             normalizedFlightDateUtc,
@@ -182,6 +193,7 @@ public class PredictionWorkflowService {
     }
 
     private Prediction getOrCreatePrediction(Long flightRequestId, PredictFlightCommand command, OffsetDateTime now) {
+        // Usa buckets temporales en UTC para decidir si se llama al modelo o se usa cache.
         OffsetDateTime bucketStart = resolveBucketStart(now);
         Optional<Prediction> cached = predictionRepositoryPort.findByRequestIdAndForecastBucketUtc(
                 flightRequestId,
@@ -211,6 +223,7 @@ public class PredictionWorkflowService {
     }
 
     private OffsetDateTime resolveBucketStart(OffsetDateTime timestamp) {
+        // Normaliza el timestamp al inicio del bucket de 3 horas.
         OffsetDateTime normalized = timestamp.withMinute(0).withSecond(0).withNano(0);
         int offset = normalized.getHour() % 3;
         return normalized.minusHours(offset);

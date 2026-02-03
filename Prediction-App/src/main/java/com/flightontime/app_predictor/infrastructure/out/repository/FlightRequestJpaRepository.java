@@ -8,6 +8,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+/**
+ * Interfaz FlightRequestJpaRepository.
+ */
 public interface FlightRequestJpaRepository extends JpaRepository<FlightRequestEntity, Long> {
     Optional<FlightRequestEntity> findFirstByFlightDateUtcAndAirlineCodeAndOriginIataAndDestIata(
             OffsetDateTime flightDateUtc,

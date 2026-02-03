@@ -1,5 +1,6 @@
 package com.flightontime.app_predictor.infrastructure.security;
 
+import com.flightontime.app_predictor.infrastructure.config.CorrelationIdFilter;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,13 +25,18 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+/**
+ * Clase SecurityConfig.
+ */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
+    private final CorrelationIdFilter correlationIdFilter;
 
-    public SecurityConfig(JwtTokenProvider jwtTokenProvider) {
+    public SecurityConfig(JwtTokenProvider jwtTokenProvider, CorrelationIdFilter correlationIdFilter) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.correlationIdFilter = correlationIdFilter;
     }
 
     @Bean
@@ -72,6 +78,7 @@ public class SecurityConfig {
 
                 .anyRequest().authenticated()
             )
+            .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

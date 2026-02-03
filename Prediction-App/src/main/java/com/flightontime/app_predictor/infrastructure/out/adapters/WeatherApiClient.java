@@ -26,6 +26,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+/**
+ * Clase WeatherApiClient.
+ */
 @Component
 public class WeatherApiClient implements WeatherPort {
     private static final Logger log = LoggerFactory.getLogger(WeatherApiClient.class);
@@ -57,6 +60,7 @@ public class WeatherApiClient implements WeatherPort {
     public AirportWeatherDTO getCurrentWeather(String iata, OffsetDateTime instantUtc) {
         String normalizedIata = iata.toUpperCase(Locale.ROOT);
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        // Usa cache temporal para evitar llamadas repetidas a proveedores externos.
         CacheEntry cached = cache.get(normalizedIata);
         if (cached != null && now.isBefore(cached.expiresAt())) {
             log.info("Weather cache hit for iata={}", normalizedIata);

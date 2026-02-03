@@ -9,6 +9,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
+/**
+ * Clase AirportJpaAdapter.
+ */
 @Component
 public class AirportJpaAdapter implements AirportRepositoryPort {
     private final AirportJpaRepository airportJpaRepository;

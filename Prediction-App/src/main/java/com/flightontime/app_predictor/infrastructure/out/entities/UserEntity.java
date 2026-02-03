@@ -10,6 +10,9 @@ import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
+/**
+ * Clase UserEntity.
+ */
 @Entity
 @Table(name = "users")
 public class UserEntity {

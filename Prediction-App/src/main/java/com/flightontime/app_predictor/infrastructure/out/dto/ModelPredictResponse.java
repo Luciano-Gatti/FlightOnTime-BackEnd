@@ -3,6 +3,9 @@ package com.flightontime.app_predictor.infrastructure.out.dto;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Registro ModelPredictResponse.
+ */
 public record ModelPredictResponse(
         @JsonAlias({"status", "prediction", "prevision"})
         String predictedStatus,
@@ -21,6 +24,9 @@ public record ModelPredictResponse(
         return details.thresholdUsed();
     }
 
+/**
+ * Registro ModelPredictDetails.
+ */
     public record ModelPredictDetails(
             @JsonAlias({"umbral_usado", "threshold_used", "thresholdUsed"})
             Double thresholdUsed

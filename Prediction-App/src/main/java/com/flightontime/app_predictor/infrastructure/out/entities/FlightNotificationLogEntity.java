@@ -10,6 +10,9 @@ import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
+/**
+ * Clase FlightNotificationLogEntity.
+ */
 @Entity
 @Table(name = "flight_notification_log")
 public class FlightNotificationLogEntity {

@@ -4,6 +4,9 @@ import com.flightontime.app_predictor.infrastructure.out.entities.FlightNotifica
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+/**
+ * Interfaz FlightNotificationLogJpaRepository.
+ */
 public interface FlightNotificationLogJpaRepository extends JpaRepository<FlightNotificationLogEntity, Long> {
     Optional<FlightNotificationLogEntity> findFirstByUserIdAndRequestIdAndType(Long userId, Long requestId, String type);
 }

@@ -8,6 +8,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+/**
+ * Interfaz FlightPredictionJpaRepository.
+ */
 public interface FlightPredictionJpaRepository extends JpaRepository<FlightPredictionEntity, Long> {
     Optional<FlightPredictionEntity> findByFlightRequestIdAndForecastBucketUtc(
             Long flightRequestId,

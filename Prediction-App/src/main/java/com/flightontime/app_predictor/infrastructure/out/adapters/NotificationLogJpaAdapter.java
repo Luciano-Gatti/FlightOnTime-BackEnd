@@ -7,6 +7,9 @@ import com.flightontime.app_predictor.infrastructure.out.repository.FlightNotifi
 import java.util.Optional;
 import org.springframework.stereotype.Component;
 
+/**
+ * Clase NotificationLogJpaAdapter.
+ */
 @Component
 public class NotificationLogJpaAdapter implements NotificationLogRepositoryPort {
     private final FlightNotificationLogJpaRepository flightNotificationLogJpaRepository;

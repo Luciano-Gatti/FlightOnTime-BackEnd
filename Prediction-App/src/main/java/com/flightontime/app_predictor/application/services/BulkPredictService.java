@@ -16,10 +16,16 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+/**
+ * Clase BulkPredictService.
+ */
 @Service
 public class BulkPredictService implements BulkPredictUseCase {
+    private static final Logger log = LoggerFactory.getLogger(BulkPredictService.class);
     private static final List<String> EXPECTED_HEADER = List.of(
             "fl_date_utc",
             "carrier",
@@ -49,9 +55,14 @@ public class BulkPredictService implements BulkPredictUseCase {
         List<BulkPredictError> errors = new ArrayList<>();
         int accepted = 0;
         int rejected = 0;
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime startTimestamp = OffsetDateTime.now(ZoneOffset.UTC);
+        int cacheHits = 0;
+        int modelCalls = 0;
+        int subscriptionsCreated = 0;
 
         CsvParser.CsvParseResult parseResult = csvParser.parse(inputStream);
+        int totalRows = parseResult.rows().size();
+        log.info("Starting CSV import userId={} totalRows={} dryRun={}", userId, totalRows, dryRun);
         if (!EXPECTED_HEADER.equals(parseResult.header())) {
             throw new IllegalArgumentException("Invalid CSV header. Expected: " + String.join(",", EXPECTED_HEADER));
         }
@@ -95,7 +106,7 @@ public class BulkPredictService implements BulkPredictUseCase {
                 ));
                 continue;
             }
-            if (!flightDate.isAfter(now)) {
+            if (!flightDate.isAfter(startTimestamp)) {
                 rejected++;
                 errors.add(new BulkPredictError(
                         row.rowNumber(),
@@ -143,34 +154,59 @@ public class BulkPredictService implements BulkPredictUseCase {
                         true,
                         false
                 );
+                if (workflowResult.prediction() != null && workflowResult.prediction().createdAt() != null) {
+                    boolean cacheHit = workflowResult.prediction().createdAt().isBefore(startTimestamp);
+                    if (cacheHit) {
+                        cacheHits++;
+                    } else {
+                        modelCalls++;
+                    }
+                    log.debug("CSV prediction resolved flight_request_id={} bucketStart={} cacheHit={}",
+                            workflowResult.flightRequest() != null ? workflowResult.flightRequest().id() : null,
+                            workflowResult.prediction().forecastBucketUtc(),
+                            cacheHit);
+                }
                 if (userId != null && workflowResult.prediction() != null && workflowResult.flightRequest() != null) {
                     UserPrediction snapshot = resolveUserSnapshot(
                             userId,
                             workflowResult.flightRequest().id(),
                             workflowResult.prediction().id(),
                             UserPredictionSource.CSV_IMPORT,
-                            now
+                            startTimestamp
                     );
-                    upsertFlightFollow(
+                    if (upsertFlightFollow(
                             userId,
                             workflowResult.flightRequest().id(),
                             snapshot.id(),
                             RefreshMode.T12_ONLY
-                    );
+                    )) {
+                        subscriptionsCreated++;
+                    }
                 }
             }
             accepted++;
         }
 
+        log.info("Finished CSV import userId={} totalRows={} accepted={} rejected={} modelCalls={} cacheHits={} "
+                        + "subscriptionsCreated={}",
+                userId,
+                totalRows,
+                accepted,
+                rejected,
+                modelCalls,
+                cacheHits,
+                subscriptionsCreated);
         return new BulkPredictResult(accepted, rejected, errors);
     }
 
-    private void upsertFlightFollow(
+    private boolean upsertFlightFollow(
             Long userId,
             Long flightRequestId,
             Long snapshotId,
             RefreshMode refreshMode
     ) {
+        boolean created = false;
+        // Guarda la suscripción para habilitar el flujo de notificaciones posteriores.
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         FlightFollow flightFollow = flightFollowRepositoryPort
                 .findByUserIdAndFlightRequestId(userId, flightRequestId)
@@ -192,7 +228,11 @@ public class BulkPredictService implements BulkPredictUseCase {
                         now,
                         now
                 ));
+        if (flightFollow.id() == null) {
+            created = true;
+        }
         flightFollowRepositoryPort.save(flightFollow);
+        return created;
     }
 
     private UserPrediction resolveUserSnapshot(
@@ -202,6 +242,7 @@ public class BulkPredictService implements BulkPredictUseCase {
             UserPredictionSource source,
             OffsetDateTime now
     ) {
+        // Evita duplicar snapshots cuando la predicción no cambió.
         return userPredictionRepositoryPort.findLatestByUserIdAndRequestId(userId, flightRequestId)
                 .filter(existing -> flightPredictionId.equals(existing.flightPredictionId()))
                 .orElseGet(() -> userPredictionRepositoryPort.save(new UserPrediction(

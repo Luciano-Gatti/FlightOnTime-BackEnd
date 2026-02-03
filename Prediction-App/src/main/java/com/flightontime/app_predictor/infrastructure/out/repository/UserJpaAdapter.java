@@ -8,6 +8,9 @@ import java.time.ZoneOffset;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
 
+/**
+ * Clase UserJpaAdapter.
+ */
 @Component
 public class UserJpaAdapter implements UserRepositoryPort {
     private final UserJpaRepository userJpaRepository;

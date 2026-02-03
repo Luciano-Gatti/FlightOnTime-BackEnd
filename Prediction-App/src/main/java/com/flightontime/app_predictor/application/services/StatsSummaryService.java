@@ -18,6 +18,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
+/**
+ * Clase StatsSummaryService.
+ */
 @Service
 public class StatsSummaryService implements StatsSummaryUseCase {
     private final PredictionRepositoryPort predictionRepositoryPort;

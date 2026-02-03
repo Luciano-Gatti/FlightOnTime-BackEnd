@@ -10,6 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+/**
+ * Clase DistanceService.
+ */
 @Service
 public class DistanceService implements DistanceUseCase {
     private static final double EARTH_RADIUS_KM = 6371.0088;

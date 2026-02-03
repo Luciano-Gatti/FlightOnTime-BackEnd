@@ -12,6 +12,9 @@ import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
+/**
+ * Clase StatsAccuracyByLeadTimeService.
+ */
 @Service
 public class StatsAccuracyByLeadTimeService implements StatsAccuracyByLeadTimeUseCase {
     private static final int BIN_SIZE_HOURS = 3;

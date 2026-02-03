@@ -2,6 +2,9 @@ package com.flightontime.app_predictor.infrastructure.config.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/**
+ * Clase ApiMarketProperties.
+ */
 @ConfigurationProperties(prefix = "api.market")
 public class ApiMarketProperties {
     private String key;

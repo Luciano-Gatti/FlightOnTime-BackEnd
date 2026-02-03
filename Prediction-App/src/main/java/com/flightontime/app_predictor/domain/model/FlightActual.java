@@ -2,6 +2,9 @@ package com.flightontime.app_predictor.domain.model;
 
 import java.time.OffsetDateTime;
 
+/**
+ * Registro FlightActual.
+ */
 public record FlightActual(
         Long id,
         Long flightRequestId,

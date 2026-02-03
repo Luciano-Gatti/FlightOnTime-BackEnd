@@ -3,9 +3,15 @@ package com.flightontime.app_predictor.infrastructure.out.dto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Registro OpenMeteoWeatherResponse.
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record OpenMeteoWeatherResponse(Current current) {
 
+/**
+ * Registro Current.
+ */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Current(
             String time,

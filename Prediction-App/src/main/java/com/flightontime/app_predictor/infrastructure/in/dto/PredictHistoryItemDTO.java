@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.OffsetDateTime;
 
+/**
+ * Registro PredictHistoryItemDTO.
+ */
 public record PredictHistoryItemDTO(
         @JsonProperty("requestId")
         Long flightRequestId,

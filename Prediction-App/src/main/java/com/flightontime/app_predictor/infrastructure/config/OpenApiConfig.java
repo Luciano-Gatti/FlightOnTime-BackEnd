@@ -13,5 +13,8 @@ import org.springframework.context.annotation.Configuration;
         bearerFormat = "JWT",
         in = SecuritySchemeIn.HEADER
 )
+/**
+ * Clase OpenApiConfig.
+ */
 public class OpenApiConfig {
 }

@@ -5,6 +5,9 @@ import com.flightontime.app_predictor.infrastructure.out.entities.FlightNotifica
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
+/**
+ * Clase NotificationLogMapper.
+ */
 public class NotificationLogMapper {
     public NotificationLog toDomain(FlightNotificationLogEntity entity) {
         if (entity == null) {
