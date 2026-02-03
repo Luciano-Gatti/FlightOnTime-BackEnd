@@ -4,7 +4,9 @@ import com.flightontime.app_predictor.domain.model.FlightRequest;
 import com.flightontime.app_predictor.domain.model.PredictFlightCommand;
 import com.flightontime.app_predictor.domain.model.Prediction;
 import com.flightontime.app_predictor.domain.model.PredictionResult;
+import com.flightontime.app_predictor.domain.model.PredictionSource;
 import com.flightontime.app_predictor.domain.model.UserPrediction;
+import com.flightontime.app_predictor.domain.model.UserPredictionSource;
 import com.flightontime.app_predictor.domain.ports.in.DistanceUseCase;
 import com.flightontime.app_predictor.domain.ports.out.FlightRequestRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.ModelPredictionPort;
@@ -87,13 +89,21 @@ public class PredictionWorkflowService {
                 originIata,
                 destIata,
                 flightNumber,
+                distance,
                 now
         );
         log.info("Resolved flight request id={} userId={}", flightRequest.id(), userId);
         Prediction prediction = getOrCreatePrediction(flightRequest.id(), command, now);
         log.info("Resolved prediction id={} for flightRequestId={}", prediction.id(), flightRequest.id());
         if (createUserPrediction && userId != null) {
-            userPredictionRepositoryPort.save(new UserPrediction(null, userId, prediction.id(), now));
+            userPredictionRepositoryPort.save(new UserPrediction(
+                    null,
+                    userId,
+                    flightRequest.id(),
+                    prediction.id(),
+                    UserPredictionSource.USER_QUERY,
+                    now
+            ));
             log.info("Saved user prediction userId={} predictionId={}", userId, prediction.id());
         }
         PredictionResult result = new PredictionResult(
@@ -139,16 +149,15 @@ public class PredictionWorkflowService {
             String originIata,
             String destIata,
             String flightNumber,
+            double distance,
             OffsetDateTime now
     ) {
         OffsetDateTime normalizedFlightDateUtc = toUtc(flightDateUtc);
-        Optional<FlightRequest> existing = flightRequestRepositoryPort.findByUserAndFlight(
-                userId,
-                normalizedFlightDateUtc,
-                airlineCode,
-                originIata,
-                destIata,
-                flightNumber
+        Optional<FlightRequest> existing = flightRequestRepositoryPort.findByFlight(
+            normalizedFlightDateUtc,
+            airlineCode,
+            originIata,
+            destIata
         );
         if (existing.isPresent()) {
             log.info("Reusing existing flight request id={} userId={}", existing.get().id(), userId);
@@ -161,6 +170,7 @@ public class PredictionWorkflowService {
                 airlineCode,
                 originIata,
                 destIata,
+                distance,
                 flightNumber,
                 now,
                 true,
@@ -173,11 +183,9 @@ public class PredictionWorkflowService {
 
     private Prediction getOrCreatePrediction(Long flightRequestId, PredictFlightCommand command, OffsetDateTime now) {
         OffsetDateTime bucketStart = resolveBucketStart(now);
-        OffsetDateTime bucketEnd = bucketStart.plusHours(3);
-        Optional<Prediction> cached = predictionRepositoryPort.findByRequestIdAndPredictedAtBetween(
+        Optional<Prediction> cached = predictionRepositoryPort.findByRequestIdAndForecastBucketUtc(
                 flightRequestId,
-                bucketStart,
-                bucketEnd
+                bucketStart
         );
         if (cached.isPresent()) {
             log.info("Using cached prediction id={} for flightRequestId={} bucketStart={}",
@@ -189,11 +197,13 @@ public class PredictionWorkflowService {
         Prediction prediction = new Prediction(
                 null,
                 flightRequestId,
+                bucketStart,
                 modelPrediction.predictedStatus(),
                 modelPrediction.predictedProbability(),
                 modelPrediction.confidence(),
                 modelPrediction.thresholdUsed(),
                 modelPrediction.modelVersion(),
+                PredictionSource.SYSTEM,
                 now,
                 now
         );

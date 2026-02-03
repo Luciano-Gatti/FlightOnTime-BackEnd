@@ -19,6 +19,7 @@ public interface FlightSubscriptionJpaRepository extends JpaRepository<FlightSub
               on request.id = follow.flightRequestId
             where follow.refreshMode = :refreshMode
               and request.flightDateUtc between :start and :end
+              and request.active = true
             """)
     List<FlightSubscriptionEntity> findByRefreshModeAndFlightDateBetween(
             @Param("refreshMode") RefreshMode refreshMode,

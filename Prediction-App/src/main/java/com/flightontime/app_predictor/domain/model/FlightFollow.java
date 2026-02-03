@@ -7,7 +7,7 @@ public record FlightFollow(
         Long userId,
         Long flightRequestId,
         RefreshMode refreshMode,
-        Long baselineFlightPredictionId,
+        Long baselineSnapshotId,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
 ) {

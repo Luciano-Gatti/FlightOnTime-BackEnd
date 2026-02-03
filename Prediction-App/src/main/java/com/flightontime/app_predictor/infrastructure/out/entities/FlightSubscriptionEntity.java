@@ -34,8 +34,8 @@ public class FlightSubscriptionEntity {
     @Column(name = "refresh_mode", nullable = false)
     private RefreshMode refreshMode;
 
-    @Column(name = "baseline_flight_prediction_id")
-    private Long baselineFlightPredictionId;
+    @Column(name = "baseline_snapshot_id")
+    private Long baselineSnapshotId;
 
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
@@ -91,12 +91,12 @@ public class FlightSubscriptionEntity {
         this.refreshMode = refreshMode;
     }
 
-    public Long getBaselineFlightPredictionId() {
-        return baselineFlightPredictionId;
+    public Long getBaselineSnapshotId() {
+        return baselineSnapshotId;
     }
 
-    public void setBaselineFlightPredictionId(Long baselineFlightPredictionId) {
-        this.baselineFlightPredictionId = baselineFlightPredictionId;
+    public void setBaselineSnapshotId(Long baselineSnapshotId) {
+        this.baselineSnapshotId = baselineSnapshotId;
     }
 
     public OffsetDateTime getCreatedAt() {

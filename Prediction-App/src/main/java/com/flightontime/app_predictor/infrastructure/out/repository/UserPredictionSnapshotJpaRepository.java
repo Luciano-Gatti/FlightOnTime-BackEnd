@@ -12,28 +12,22 @@ public interface UserPredictionSnapshotJpaRepository extends JpaRepository<UserP
     @Query("""
             select count(distinct userPrediction.userId)
             from UserPredictionSnapshotEntity userPrediction
-            join FlightPredictionEntity prediction
-              on userPrediction.flightPredictionId = prediction.id
-            where prediction.flightRequestId = :flightRequestId
+            where userPrediction.flightRequestId = :flightRequestId
             """)
     long countDistinctUsersByRequestId(@Param("flightRequestId") Long flightRequestId);
 
     @Query("""
             select distinct userPrediction.userId
             from UserPredictionSnapshotEntity userPrediction
-            join FlightPredictionEntity prediction
-              on userPrediction.flightPredictionId = prediction.id
-            where prediction.flightRequestId = :flightRequestId
+            where userPrediction.flightRequestId = :flightRequestId
             """)
     List<Long> findDistinctUserIdsByRequestId(@Param("flightRequestId") Long flightRequestId);
 
     @Query("""
             select userPrediction
             from UserPredictionSnapshotEntity userPrediction
-            join FlightPredictionEntity prediction
-              on userPrediction.flightPredictionId = prediction.id
             where userPrediction.userId = :userId
-              and prediction.flightRequestId = :flightRequestId
+              and userPrediction.flightRequestId = :flightRequestId
             order by userPrediction.createdAt desc
             """)
     Optional<UserPredictionSnapshotEntity> findTopByUserIdAndFlightRequestIdOrderByCreatedAtDesc(
@@ -42,11 +36,9 @@ public interface UserPredictionSnapshotJpaRepository extends JpaRepository<UserP
     );
 
     @Query("""
-            select prediction.flightRequestId, count(distinct userPrediction.userId)
+            select userPrediction.flightRequestId, count(distinct userPrediction.userId)
             from UserPredictionSnapshotEntity userPrediction
-            join FlightPredictionEntity prediction
-              on userPrediction.flightPredictionId = prediction.id
-            group by prediction.flightRequestId
+            group by userPrediction.flightRequestId
             order by count(distinct userPrediction.userId) desc
             """)
     List<Object[]> findTopRequestPopularity(Pageable pageable);

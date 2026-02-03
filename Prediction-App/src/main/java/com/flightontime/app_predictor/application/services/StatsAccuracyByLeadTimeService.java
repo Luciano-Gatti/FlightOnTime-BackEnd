@@ -28,7 +28,7 @@ public class StatsAccuracyByLeadTimeService implements StatsAccuracyByLeadTimeUs
         List<PredictionAccuracySample> samples = predictionRepositoryPort.findAccuracySamplesExcludingCancelled();
         List<BinAccumulator> bins = initializeBins();
         for (PredictionAccuracySample sample : samples) {
-            int hours = computeLeadTimeHours(sample.predictedAt(), sample.flightDateUtc());
+            int hours = computeLeadTimeHours(sample.forecastBucketUtc(), sample.flightDateUtc());
             int index = resolveBinIndex(hours);
             BinAccumulator bin = bins.get(index);
             bin.total++;

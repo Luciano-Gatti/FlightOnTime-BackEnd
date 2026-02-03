@@ -1,7 +1,10 @@
 package com.flightontime.app_predictor.infrastructure.out.entities;
 
+import com.flightontime.app_predictor.domain.model.PredictionSource;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -20,6 +23,9 @@ public class FlightPredictionEntity {
     @Column(name = "flight_request_id")
     private Long flightRequestId;
 
+    @Column(name = "forecast_bucket_utc", nullable = false)
+    private OffsetDateTime forecastBucketUtc;
+
     @Column(name = "predicted_status", nullable = false)
     private String predictedStatus;
 
@@ -35,6 +41,10 @@ public class FlightPredictionEntity {
     @Column(name = "model_version")
     private String modelVersion;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", nullable = false)
+    private PredictionSource source;
+
     @Column(name = "predicted_at", nullable = false)
     private OffsetDateTime predictedAt;
 
@@ -45,6 +55,9 @@ public class FlightPredictionEntity {
     public void onCreate() {
         if (createdAt == null) {
             createdAt = OffsetDateTime.now(ZoneOffset.UTC);
+        }
+        if (source == null) {
+            source = PredictionSource.SYSTEM;
         }
     }
 
@@ -62,6 +75,14 @@ public class FlightPredictionEntity {
 
     public void setFlightRequestId(Long flightRequestId) {
         this.flightRequestId = flightRequestId;
+    }
+
+    public OffsetDateTime getForecastBucketUtc() {
+        return forecastBucketUtc;
+    }
+
+    public void setForecastBucketUtc(OffsetDateTime forecastBucketUtc) {
+        this.forecastBucketUtc = forecastBucketUtc;
     }
 
     public String getPredictedStatus() {
@@ -102,6 +123,14 @@ public class FlightPredictionEntity {
 
     public void setModelVersion(String modelVersion) {
         this.modelVersion = modelVersion;
+    }
+
+    public PredictionSource getSource() {
+        return source;
+    }
+
+    public void setSource(PredictionSource source) {
+        this.source = source;
     }
 
     public OffsetDateTime getPredictedAt() {

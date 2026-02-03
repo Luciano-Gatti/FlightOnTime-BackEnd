@@ -9,16 +9,22 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface FlightRequestJpaRepository extends JpaRepository<FlightRequestEntity, Long> {
-    Optional<FlightRequestEntity> findFirstByUserIdAndFlightDateUtcAndAirlineCodeAndOriginIataAndDestIataAndFlightNumber(
-            Long userId,
+    Optional<FlightRequestEntity> findFirstByFlightDateUtcAndAirlineCodeAndOriginIataAndDestIata(
             OffsetDateTime flightDateUtc,
             String airlineCode,
             String originIata,
-            String destIata,
-            String flightNumber
+            String destIata
     );
 
-    List<FlightRequestEntity> findByUserIdOrderByCreatedAtDesc(Long userId);
+    @Query("""
+            select distinct request
+            from FlightRequestEntity request
+            join UserPredictionSnapshotEntity userPrediction
+              on userPrediction.flightRequestId = request.id
+            where userPrediction.userId = :userId
+            order by request.createdAt desc
+            """)
+    List<FlightRequestEntity> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId);
 
     @Query("""
             select request
@@ -28,9 +34,7 @@ public interface FlightRequestJpaRepository extends JpaRepository<FlightRequestE
               and exists (
                 select 1
                 from UserPredictionSnapshotEntity userPrediction
-                join FlightPredictionEntity prediction
-                  on userPrediction.flightPredictionId = prediction.id
-                where prediction.flightRequestId = request.id
+                where userPrediction.flightRequestId = request.id
               )
             """)
     List<FlightRequestEntity> findByFlightDateBetweenWithUserPredictions(

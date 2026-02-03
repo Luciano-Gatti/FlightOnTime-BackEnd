@@ -31,6 +31,7 @@ public class CloseExpiredFlightsJobService {
                     request.airlineCode(),
                     request.originIata(),
                     request.destIata(),
+                    request.distance(),
                     request.flightNumber(),
                     request.createdAt(),
                     false,

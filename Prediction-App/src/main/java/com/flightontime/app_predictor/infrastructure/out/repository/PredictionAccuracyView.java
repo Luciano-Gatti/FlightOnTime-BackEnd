@@ -5,7 +5,7 @@ import java.time.OffsetDateTime;
 public interface PredictionAccuracyView {
     OffsetDateTime getFlightDateUtc();
 
-    OffsetDateTime getPredictedAt();
+    OffsetDateTime getForecastBucketUtc();
 
     String getPredictedStatus();
 

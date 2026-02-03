@@ -125,6 +125,7 @@ public class ActualsFetchJobService {
                     request.airlineCode(),
                     request.originIata(),
                     request.destIata(),
+                    request.distance(),
                     request.flightNumber(),
                     request.createdAt(),
                     false,

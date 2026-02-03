@@ -3,9 +3,12 @@ package com.flightontime.app_predictor.application.services;
 import com.flightontime.app_predictor.domain.model.FlightRequest;
 import com.flightontime.app_predictor.domain.model.FlightFollow;
 import com.flightontime.app_predictor.domain.model.RefreshMode;
+import com.flightontime.app_predictor.domain.model.UserPrediction;
+import com.flightontime.app_predictor.domain.model.UserPredictionSource;
 import com.flightontime.app_predictor.domain.ports.in.PredictFlightUseCase;
 import com.flightontime.app_predictor.domain.ports.out.FlightFollowRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.FlightRequestRepositoryPort;
+import com.flightontime.app_predictor.domain.ports.out.UserPredictionRepositoryPort;
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictRequestDTO;
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictResponseDTO;
 import java.time.OffsetDateTime;
@@ -20,15 +23,18 @@ public class PredictFlightService implements PredictFlightUseCase {
     private final FlightRequestRepositoryPort flightRequestRepositoryPort;
     private final FlightFollowRepositoryPort flightFollowRepositoryPort;
     private final PredictionWorkflowService predictionWorkflowService;
+    private final UserPredictionRepositoryPort userPredictionRepositoryPort;
 
     public PredictFlightService(
             FlightRequestRepositoryPort flightRequestRepositoryPort,
             FlightFollowRepositoryPort flightFollowRepositoryPort,
-            PredictionWorkflowService predictionWorkflowService
+            PredictionWorkflowService predictionWorkflowService,
+            UserPredictionRepositoryPort userPredictionRepositoryPort
     ) {
         this.flightRequestRepositoryPort = flightRequestRepositoryPort;
         this.flightFollowRepositoryPort = flightFollowRepositoryPort;
         this.predictionWorkflowService = predictionWorkflowService;
+        this.userPredictionRepositoryPort = userPredictionRepositoryPort;
     }
 
     @Override
@@ -43,17 +49,25 @@ public class PredictFlightService implements PredictFlightUseCase {
                 request.flightNumber(),
                 userId,
                 true,
-                true
+                false
         );
         log.info("Prediction workflow completed userId={} predictionId={} requestId={}",
                 userId,
                 workflowResult.prediction() != null ? workflowResult.prediction().id() : null,
                 workflowResult.flightRequest() != null ? workflowResult.flightRequest().id() : null);
         if (userId != null && workflowResult.prediction() != null && workflowResult.flightRequest() != null) {
-            upsertFlightFollow(
+            OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+            UserPrediction snapshot = resolveUserSnapshot(
                     userId,
                     workflowResult.flightRequest().id(),
                     workflowResult.prediction().id(),
+                    UserPredictionSource.USER_QUERY,
+                    now
+            );
+            upsertFlightFollow(
+                    userId,
+                    workflowResult.flightRequest().id(),
+                    snapshot.id(),
                     RefreshMode.T72_REFRESH
             );
         }
@@ -74,17 +88,10 @@ public class PredictFlightService implements PredictFlightUseCase {
         }
         log.info("Fetching latest prediction userId={} requestId={}", userId, requestId);
         FlightRequest flightRequest = flightRequestRepositoryPort.findById(requestId)
-                .filter(request -> userId.equals(request.userId()))
+                .orElseThrow(() -> new IllegalArgumentException("Request not found"));
+        userPredictionRepositoryPort.findLatestByUserIdAndRequestId(userId, requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found"));
         var result = predictionWorkflowService.getOrCreatePredictionForRequest(flightRequest);
-        if (userId != null && result.prediction() != null) {
-            upsertFlightFollow(
-                    userId,
-                    flightRequest.id(),
-                    result.prediction().id(),
-                    RefreshMode.T72_REFRESH
-            );
-        }
         log.info("Latest prediction resolved userId={} requestId={} predictionId={}",
                 userId, requestId, result.prediction() != null ? result.prediction().id() : null);
         return new PredictResponseDTO(
@@ -116,7 +123,7 @@ public class PredictFlightService implements PredictFlightUseCase {
     private void upsertFlightFollow(
             Long userId,
             Long flightRequestId,
-            Long baselineFlightPredictionId,
+            Long snapshotId,
             RefreshMode refreshMode
     ) {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -127,7 +134,7 @@ public class PredictFlightService implements PredictFlightUseCase {
                         userId,
                         flightRequestId,
                         refreshMode,
-                        baselineFlightPredictionId,
+                        resolveBaselineSnapshotId(existing.baselineSnapshotId(), snapshotId),
                         existing.createdAt(),
                         now
                 ))
@@ -136,11 +143,34 @@ public class PredictFlightService implements PredictFlightUseCase {
                         userId,
                         flightRequestId,
                         refreshMode,
-                        baselineFlightPredictionId,
+                        snapshotId,
                         now,
                         now
                 ));
         flightFollowRepositoryPort.save(flightFollow);
+    }
+
+    private UserPrediction resolveUserSnapshot(
+            Long userId,
+            Long flightRequestId,
+            Long flightPredictionId,
+            UserPredictionSource source,
+            OffsetDateTime now
+    ) {
+        return userPredictionRepositoryPort.findLatestByUserIdAndRequestId(userId, flightRequestId)
+                .filter(existing -> flightPredictionId.equals(existing.flightPredictionId()))
+                .orElseGet(() -> userPredictionRepositoryPort.save(new UserPrediction(
+                        null,
+                        userId,
+                        flightRequestId,
+                        flightPredictionId,
+                        source,
+                        now
+                )));
+    }
+
+    private Long resolveBaselineSnapshotId(Long existingBaselineSnapshotId, Long snapshotId) {
+        return existingBaselineSnapshotId == null ? snapshotId : existingBaselineSnapshotId;
     }
 
 }

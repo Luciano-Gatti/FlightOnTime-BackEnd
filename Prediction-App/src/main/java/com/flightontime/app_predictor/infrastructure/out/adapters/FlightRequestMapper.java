@@ -17,6 +17,7 @@ public class FlightRequestMapper {
                 entity.getAirlineCode(),
                 entity.getOriginIata(),
                 entity.getDestIata(),
+                entity.getDistance() == null ? 0.0 : entity.getDistance(),
                 entity.getFlightNumber(),
                 entity.getCreatedAt(),
                 entity.getActive() == null || entity.getActive(),
@@ -34,6 +35,7 @@ public class FlightRequestMapper {
         target.setAirlineCode(request.airlineCode());
         target.setOriginIata(request.originIata());
         target.setDestIata(request.destIata());
+        target.setDistance(request.distance());
         target.setFlightNumber(request.flightNumber());
         target.setActive(request.active());
         target.setClosedAt(toUtc(request.closedAt()));

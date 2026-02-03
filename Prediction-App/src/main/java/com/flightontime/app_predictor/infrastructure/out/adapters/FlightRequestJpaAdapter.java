@@ -36,22 +36,18 @@ public class FlightRequestJpaAdapter implements FlightRequestRepositoryPort {
     }
 
     @Override
-    public Optional<FlightRequest> findByUserAndFlight(
-            Long userId,
+    public Optional<FlightRequest> findByFlight(
             OffsetDateTime flightDateUtc,
             String airlineCode,
             String originIata,
-            String destIata,
-            String flightNumber
+            String destIata
     ) {
         return flightRequestJpaRepository
-                .findFirstByUserIdAndFlightDateUtcAndAirlineCodeAndOriginIataAndDestIataAndFlightNumber(
-                        userId,
+                .findFirstByFlightDateUtcAndAirlineCodeAndOriginIataAndDestIata(
                         flightDateUtc,
                         airlineCode,
                         originIata,
-                        destIata,
-                        flightNumber
+                        destIata
                 )
                 .map(flightRequestMapper::toDomain);
     }
