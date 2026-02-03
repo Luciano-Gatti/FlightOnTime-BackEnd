@@ -15,6 +15,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,8 @@ public class BulkPredictService implements BulkPredictUseCase {
             "dest",
             "flight_number"
     );
+    private static final Pattern AIRLINE_CODE_PATTERN = Pattern.compile("^[A-Z0-9]{2}$");
+    private static final Pattern IATA_CODE_PATTERN = Pattern.compile("^[A-Z]{3}$");
 
     private final PredictionWorkflowService predictionWorkflowService;
     private final FlightFollowRepositoryPort flightFollowRepositoryPort;
@@ -92,12 +95,21 @@ public class BulkPredictService implements BulkPredictUseCase {
 
         for (CsvParser.CsvRow row : parseResult.rows()) {
             List<String> fields = row.fields();
-            String flightDateRaw = fields.get(0);
-            String airlineCode = fields.get(1);
-            String originIata = fields.get(2);
-            String destIata = fields.get(3);
-            String flightNumber = fields.get(4);
+            String flightDateRaw = normalizeToken(fields.get(0), false);
+            String airlineCode = normalizeToken(fields.get(1), true);
+            String originIata = normalizeToken(fields.get(2), true);
+            String destIata = normalizeToken(fields.get(3), true);
+            String flightNumber = normalizeToken(fields.get(4), false);
 
+            if (flightDateRaw == null) {
+                rejected++;
+                errors.add(new BulkPredictError(
+                        row.rowNumber(),
+                        "fl_date_utc is required",
+                        row.rawRow()
+                ));
+                continue;
+            }
             OffsetDateTime flightDate;
             try {
                 flightDate = OffsetDateTime.parse(flightDateRaw);
@@ -129,7 +141,7 @@ public class BulkPredictService implements BulkPredictUseCase {
                 ));
                 continue;
             }
-            if (airlineCode.isBlank()) {
+            if (airlineCode == null || airlineCode.isBlank()) {
                 rejected++;
                 errors.add(new BulkPredictError(
                         row.rowNumber(),
@@ -138,32 +150,67 @@ public class BulkPredictService implements BulkPredictUseCase {
                 ));
                 continue;
             }
-            if (originIata.length() != 3) {
+            if (hasInternalWhitespace(airlineCode) || !AIRLINE_CODE_PATTERN.matcher(airlineCode).matches()) {
                 rejected++;
                 errors.add(new BulkPredictError(
                         row.rowNumber(),
-                        "origin must be length 3",
+                        "carrier must be 2 uppercase IATA characters",
                         row.rawRow()
                 ));
                 continue;
             }
-            if (destIata.length() != 3) {
+            if (originIata == null || originIata.isBlank()) {
                 rejected++;
                 errors.add(new BulkPredictError(
                         row.rowNumber(),
-                        "dest must be length 3",
+                        "origin is required",
                         row.rawRow()
                 ));
                 continue;
             }
-
+            if (hasInternalWhitespace(originIata) || !IATA_CODE_PATTERN.matcher(originIata).matches()) {
+                rejected++;
+                errors.add(new BulkPredictError(
+                        row.rowNumber(),
+                        "origin must be a 3-letter IATA code",
+                        row.rawRow()
+                ));
+                continue;
+            }
+            if (destIata == null || destIata.isBlank()) {
+                rejected++;
+                errors.add(new BulkPredictError(
+                        row.rowNumber(),
+                        "dest is required",
+                        row.rawRow()
+                ));
+                continue;
+            }
+            if (hasInternalWhitespace(destIata) || !IATA_CODE_PATTERN.matcher(destIata).matches()) {
+                rejected++;
+                errors.add(new BulkPredictError(
+                        row.rowNumber(),
+                        "dest must be a 3-letter IATA code",
+                        row.rawRow()
+                ));
+                continue;
+            }
+            if (originIata.equalsIgnoreCase(destIata)) {
+                rejected++;
+                errors.add(new BulkPredictError(
+                        row.rowNumber(),
+                        "origin and dest cannot be the same",
+                        row.rawRow()
+                ));
+                continue;
+            }
             if (!dryRun) {
                 var workflowResult = predictionWorkflowService.predict(
                         flightDate,
                         airlineCode,
                         originIata,
                         destIata,
-                        flightNumber.isBlank() ? null : flightNumber,
+                        flightNumber == null || flightNumber.isBlank() ? null : flightNumber,
                         userId,
                         true,
                         false
@@ -211,6 +258,21 @@ public class BulkPredictService implements BulkPredictUseCase {
                 cacheHits,
                 subscriptionsCreated);
         return new BulkPredictResult(accepted, rejected, errors);
+    }
+
+    private String normalizeToken(String value, boolean upperCase) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = value.trim();
+        if (normalized.isBlank()) {
+            return null;
+        }
+        return upperCase ? normalized.toUpperCase() : normalized;
+    }
+
+    private boolean hasInternalWhitespace(String value) {
+        return value != null && value.chars().anyMatch(Character::isWhitespace);
     }
 
     /**
