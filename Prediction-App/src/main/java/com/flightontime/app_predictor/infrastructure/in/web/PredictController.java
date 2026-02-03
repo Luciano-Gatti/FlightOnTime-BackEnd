@@ -72,6 +72,7 @@ public class PredictController {
     }
 
     @PostMapping
+    @SecurityRequirement(name = "bearer-key")
     public ResponseEntity<PredictResponseDTO> predict(
             @Valid @RequestBody PredictRequestDTO request,
             HttpServletRequest httpRequest
