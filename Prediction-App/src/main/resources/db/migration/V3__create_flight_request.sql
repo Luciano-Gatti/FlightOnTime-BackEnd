@@ -1,3 +1,4 @@
+-- FLIGHT REQUEST (vuelo global; flight_number opcional)
 CREATE TABLE flight_request (
   id BIGINT NOT NULL AUTO_INCREMENT,
 
@@ -17,8 +18,9 @@ CREATE TABLE flight_request (
 
   PRIMARY KEY (id),
 
+  -- Identidad del vuelo SIN flight_number ni distance (flight_number es opcional)
   UNIQUE KEY uq_flight_request_unique (
-    flight_date_utc, airline_code, flight_number, origin_iata, dest_iata, distance
+    flight_date_utc, airline_code, origin_iata, dest_iata
   ),
 
   KEY idx_flight_request_active_date (active, flight_date_utc)

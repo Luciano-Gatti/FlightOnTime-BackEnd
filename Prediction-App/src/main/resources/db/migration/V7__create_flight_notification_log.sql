@@ -1,10 +1,11 @@
+-- NOTIFICATION LOG (dedup notificaciones)
 CREATE TABLE flight_notification_log (
   id BIGINT NOT NULL AUTO_INCREMENT,
 
   user_id BIGINT NOT NULL,
   flight_request_id BIGINT NOT NULL,
 
-  type VARCHAR(20) NOT NULL,
+  type VARCHAR(20) NOT NULL, -- T12H
   sent_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   PRIMARY KEY (id),

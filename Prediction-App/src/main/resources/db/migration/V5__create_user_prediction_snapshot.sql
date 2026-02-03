@@ -1,3 +1,4 @@
+-- USER PREDICTION SNAPSHOT (historial del usuario)
 CREATE TABLE user_prediction_snapshot (
   id BIGINT NOT NULL AUTO_INCREMENT,
 
@@ -6,7 +7,7 @@ CREATE TABLE user_prediction_snapshot (
   flight_prediction_id BIGINT NOT NULL,
 
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  source VARCHAR(20) NOT NULL DEFAULT 'USER_QUERY',
+  source VARCHAR(20) NOT NULL DEFAULT 'USER_QUERY', -- USER_QUERY | CSV_IMPORT
 
   PRIMARY KEY (id),
 

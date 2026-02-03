@@ -1,3 +1,4 @@
+-- AIRPORTS
 CREATE TABLE airports (
   id BIGINT NOT NULL AUTO_INCREMENT,
   airport_iata CHAR(3) NOT NULL,

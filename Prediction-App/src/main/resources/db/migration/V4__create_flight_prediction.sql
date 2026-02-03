@@ -1,3 +1,4 @@
+-- FLIGHT PREDICTION (cache por bucket 3h)
 CREATE TABLE flight_prediction (
   id BIGINT NOT NULL AUTO_INCREMENT,
 
@@ -8,8 +9,11 @@ CREATE TABLE flight_prediction (
 
   predicted_status VARCHAR(20) NOT NULL,      -- ON_TIME / DELAYED
   predicted_probability DOUBLE NULL,
-  model_version VARCHAR(50) NULL,
 
+  confidence VARCHAR(20) NULL,
+  threshold_used DOUBLE NULL,
+
+  model_version VARCHAR(50) NULL,
   source VARCHAR(20) NOT NULL DEFAULT 'SYSTEM',
 
   PRIMARY KEY (id),

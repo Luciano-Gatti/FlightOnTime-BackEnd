@@ -1,3 +1,4 @@
+-- FLIGHT OUTCOME (real)
 CREATE TABLE flight_outcome (
   id BIGINT NOT NULL AUTO_INCREMENT,
 
