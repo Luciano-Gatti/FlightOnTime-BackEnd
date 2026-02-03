@@ -28,6 +28,14 @@ public class PredictFlightService implements PredictFlightUseCase {
     private final PredictionWorkflowService predictionWorkflowService;
     private final UserPredictionRepositoryPort userPredictionRepositoryPort;
 
+    /**
+     * Construye el servicio de predicción de vuelos.
+     *
+     * @param flightRequestRepositoryPort repositorio de solicitudes de vuelo.
+     * @param flightFollowRepositoryPort repositorio de suscripciones/seguimientos de vuelo.
+     * @param predictionWorkflowService servicio que orquesta el flujo de predicción y cache.
+     * @param userPredictionRepositoryPort repositorio de snapshots de predicciones de usuario.
+     */
     public PredictFlightService(
             FlightRequestRepositoryPort flightRequestRepositoryPort,
             FlightFollowRepositoryPort flightFollowRepositoryPort,
@@ -41,10 +49,19 @@ public class PredictFlightService implements PredictFlightUseCase {
     }
 
     @Override
+    /**
+     * Ejecuta una predicción de vuelo a demanda para un usuario.
+     *
+     * @param request solicitud con datos del vuelo (fecha, aerolínea, rutas y número opcional).
+     * @param userId identificador del usuario que realiza la consulta (puede ser null).
+     * @return resultado de la predicción (estado, probabilidad, confianza, umbral, versión y timestamp).
+     */
     public PredictionResult predict(PredictFlightRequest request, Long userId) {
+        // Valida los campos mínimos del request antes de iniciar el flujo.
         validateRequest(request);
         OffsetDateTime startTimestamp = OffsetDateTime.now(ZoneOffset.UTC);
         log.info("Starting prediction workflow userId={} request={}", userId, request);
+        // Orquesta la resolución de predicción (cache por bucket o llamado al modelo).
         var workflowResult = predictionWorkflowService.predict(
                 request.flightDateUtc(),
                 request.airlineCode(),
@@ -67,6 +84,7 @@ public class PredictFlightService implements PredictFlightUseCase {
                 userId,
                 workflowResult.prediction() != null ? workflowResult.prediction().id() : null,
                 workflowResult.flightRequest() != null ? workflowResult.flightRequest().id() : null);
+        // Si hay usuario autenticado, registra snapshot y suscripción para futuros refrescos.
         if (userId != null && workflowResult.prediction() != null && workflowResult.flightRequest() != null) {
             OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
             UserPrediction snapshot = resolveUserSnapshot(
@@ -98,16 +116,25 @@ public class PredictFlightService implements PredictFlightUseCase {
     }
 
     @Override
+    /**
+     * Obtiene la última predicción disponible para una solicitud de vuelo de un usuario.
+     *
+     * @param requestId identificador de la solicitud de vuelo.
+     * @param userId identificador del usuario dueño de la solicitud.
+     * @return resultado de la predicción más reciente (estado, probabilidad, confianza, umbral, versión y timestamp).
+     */
     public PredictionResult getLatestPrediction(Long requestId, Long userId) {
         if (userId == null) {
             throw new IllegalArgumentException("User is required");
         }
         OffsetDateTime startTimestamp = OffsetDateTime.now(ZoneOffset.UTC);
         log.info("Fetching latest prediction userId={} requestId={}", userId, requestId);
+        // Verifica existencia de la solicitud y de una predicción previa del usuario.
         FlightRequest flightRequest = flightRequestRepositoryPort.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found"));
         userPredictionRepositoryPort.findLatestByUserIdAndRequestId(userId, requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found"));
+        // Reutiliza cache por bucket o genera una nueva predicción.
         var result = predictionWorkflowService.getOrCreatePredictionForRequest(flightRequest);
         if (result.prediction() != null) {
             boolean cacheHit = result.prediction().createdAt() != null
@@ -129,6 +156,11 @@ public class PredictFlightService implements PredictFlightUseCase {
         );
     }
 
+    /**
+     * Valida la consistencia básica del request de predicción.
+     *
+     * @param request solicitud de predicción a validar.
+     */
     private void validateRequest(PredictFlightRequest request) {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         if (request.flightDateUtc() == null || !request.flightDateUtc().isAfter(now)) {
@@ -145,6 +177,14 @@ public class PredictFlightService implements PredictFlightUseCase {
         }
     }
 
+    /**
+     * Inserta o actualiza el seguimiento del usuario para un vuelo.
+     *
+     * @param userId identificador del usuario.
+     * @param flightRequestId identificador de la solicitud de vuelo.
+     * @param snapshotId identificador del snapshot base de predicción.
+     * @param refreshMode modo de refresco configurado para el seguimiento.
+     */
     private void upsertFlightFollow(
             Long userId,
             Long flightRequestId,
@@ -176,6 +216,16 @@ public class PredictFlightService implements PredictFlightUseCase {
         flightFollowRepositoryPort.save(flightFollow);
     }
 
+    /**
+     * Resuelve (o crea) el snapshot de predicción del usuario.
+     *
+     * @param userId identificador del usuario.
+     * @param flightRequestId identificador de la solicitud de vuelo.
+     * @param flightPredictionId identificador de la predicción asociada.
+     * @param source origen del snapshot (consulta usuario, CSV, etc.).
+     * @param now timestamp de creación.
+     * @return snapshot existente si corresponde o uno nuevo persistido.
+     */
     private UserPrediction resolveUserSnapshot(
             Long userId,
             Long flightRequestId,
@@ -196,6 +246,13 @@ public class PredictFlightService implements PredictFlightUseCase {
                 )));
     }
 
+    /**
+     * Determina el snapshot base, priorizando el existente si está presente.
+     *
+     * @param existingBaselineSnapshotId snapshot base ya registrado.
+     * @param snapshotId snapshot actual a usar si no hay base previa.
+     * @return id del snapshot base definitivo.
+     */
     private Long resolveBaselineSnapshotId(Long existingBaselineSnapshotId, Long snapshotId) {
         return existingBaselineSnapshotId == null ? snapshotId : existingBaselineSnapshotId;
     }

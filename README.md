@@ -1,4 +1,10 @@
 # FlightOnTime-BackEnd
+## FlightOnTime en breve
+**Qué es FlightOnTime:** backend en Spring Boot que expone un API REST para predecir demoras de vuelos, consultar aeropuertos y obtener datos meteorológicos, con persistencia JPA de solicitudes y predicciones.  
+**Qué problema resuelve:** ofrece predicciones anticipadas y consistentes para planificar mejor viajes y operaciones, evitando depender de consultas aisladas sin historial ni contexto.  
+**Público objetivo:** usuarios finales (pasajeros que necesitan anticipar demoras) y aerolíneas/operaciones (equipos que requieren visibilidad de riesgo por vuelo).  
+**Enfoque técnico:** integra un modelo de predicción de vuelos; ejecuta jobs programados (T-72h para refresco y T-12h para notificaciones); aplica cache por bucket temporal (ventanas fijas de horas) para reutilizar predicciones; admite importación masiva por CSV.  
+
 Es una aplicación Spring Boot que expone un API REST para predecir demoras de vuelos, consultar aeropuertos y obtener datos meteorológicos. Está organizado en controladores y servicios, y usa persistencia con JPA para guardar solicitudes y predicciones cuando corresponde. 
 
 ## Formato CSV para importación masiva de predicciones

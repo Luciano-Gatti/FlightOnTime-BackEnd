@@ -67,6 +67,16 @@ public class PredictController {
     private final UserLookupService userLookupService;
     private final JwtTokenProvider jwtTokenProvider;
 
+    /**
+     * Construye el controlador de predicciones.
+     *
+     * @param predictFlightUseCase caso de uso para predecir un vuelo.
+     * @param predictHistoryUseCase caso de uso para historial de predicciones.
+     * @param bulkPredictUseCase caso de uso para importación masiva por CSV.
+     * @param objectMapper serializador JSON para logging.
+     * @param userLookupService servicio de resolución de usuario.
+     * @param jwtTokenProvider proveedor de JWT para validación.
+     */
     public PredictController(
             PredictFlightUseCase predictFlightUseCase,
             PredictHistoryUseCase predictHistoryUseCase,
@@ -93,6 +103,13 @@ public class PredictController {
             @ApiResponse(responseCode = "400", description = "Solicitud inválida"),
             @ApiResponse(responseCode = "503", description = "Servicio de modelo no disponible")
     })
+    /**
+     * Genera una predicción de vuelo para el request recibido.
+     *
+     * @param request DTO con datos del vuelo.
+     * @param httpRequest request HTTP para resolver usuario.
+     * @return respuesta con la predicción calculada.
+     */
     public ResponseEntity<PredictResponseDTO> predict(
             @Valid @RequestBody PredictRequestDTO request,
             HttpServletRequest httpRequest
@@ -118,6 +135,14 @@ public class PredictController {
             @ApiResponse(responseCode = "403", description = "No autorizado"),
             @ApiResponse(responseCode = "503", description = "Servicio de modelo no disponible")
     })
+    /**
+     * Importa predicciones en lote desde un archivo CSV.
+     *
+     * @param file archivo CSV con vuelos.
+     * @param dryRun indica validación sin persistencia.
+     * @param httpRequest request HTTP para resolver usuario.
+     * @return respuesta con el resultado de la importación.
+     */
     public ResponseEntity<BulkPredictCsvUploadResponseDTO> bulkImport(
             @Parameter(description = "Archivo CSV con vuelos", required = true)
             @RequestParam("file") MultipartFile file,
@@ -174,6 +199,12 @@ public class PredictController {
             @ApiResponse(responseCode = "401", description = "No autenticado"),
             @ApiResponse(responseCode = "403", description = "No autorizado")
     })
+    /**
+     * Devuelve el historial de predicciones del usuario autenticado.
+     *
+     * @param httpRequest request HTTP para resolver usuario.
+     * @return lista de ítems de historial o 401 si no está autenticado.
+     */
     public ResponseEntity<List<PredictHistoryItemDTO>> getHistory(HttpServletRequest httpRequest) {
         Long userId = resolveUserId(httpRequest);
         if (userId == null) {
@@ -197,6 +228,13 @@ public class PredictController {
             @ApiResponse(responseCode = "403", description = "No autorizado"),
             @ApiResponse(responseCode = "404", description = "Historial no encontrado")
     })
+    /**
+     * Devuelve el detalle del historial para un request específico.
+     *
+     * @param requestId id del request de vuelo.
+     * @param httpRequest request HTTP para resolver usuario.
+     * @return detalle del historial o 401 si no está autenticado.
+     */
     public ResponseEntity<PredictHistoryDetailDTO> getHistoryDetail(
             @Parameter(description = "ID del request de vuelo", example = "123")
             @PathVariable Long requestId,
@@ -220,6 +258,13 @@ public class PredictController {
             @ApiResponse(responseCode = "401", description = "No autenticado"),
             @ApiResponse(responseCode = "404", description = "Predicción no encontrada")
     })
+    /**
+     * Obtiene la última predicción para un request del usuario.
+     *
+     * @param requestId id del request de vuelo.
+     * @param httpRequest request HTTP para resolver usuario.
+     * @return predicción más reciente o 401 si no está autenticado.
+     */
     public ResponseEntity<PredictResponseDTO> getLatest(
             @Parameter(description = "ID del request de vuelo", example = "123")
             @PathVariable Long requestId,
@@ -234,12 +279,24 @@ public class PredictController {
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
+    /**
+     * Maneja errores de validación de datos de entrada.
+     *
+     * @param ex excepción lanzada por validaciones.
+     * @return respuesta con detalle del error.
+     */
     public ResponseEntity<ErrorResponse> handleValidationError(IllegalArgumentException ex) {
         log.warn("Validation error in predict flow: {}", ex.getMessage());
         return ResponseEntity.badRequest().body(new ErrorResponse(ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
+    /**
+     * Maneja errores de validación de argumentos anotados.
+     *
+     * @param ex excepción de validación de argumentos.
+     * @return respuesta con mensaje de error.
+     */
     public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
         String message = ex.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
@@ -250,25 +307,50 @@ public class PredictController {
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
+    /**
+     * Maneja el caso de archivos CSV que exceden el tamaño permitido.
+     *
+     * @param ex excepción por tamaño máximo excedido.
+     * @return respuesta 413 con mensaje.
+     */
     public ResponseEntity<ErrorResponse> handleUploadTooLarge(MaxUploadSizeExceededException ex) {
         log.warn("CSV upload too large: {}", ex.getMessage());
         return ResponseEntity.status(413).body(new ErrorResponse("CSV file is too large"));
     }
 
     @ExceptionHandler(WebClientResponseException.class)
+    /**
+     * Maneja errores devueltos por el servicio de modelo.
+     *
+     * @param ex excepción del cliente web.
+     * @return respuesta 503.
+     */
     public ResponseEntity<ErrorResponse> handleModelError(WebClientResponseException ex) {
         log.error("Model service error status={} body={}", ex.getStatusCode().value(), ex.getResponseBodyAsString(), ex);
         return ResponseEntity.status(503).body(new ErrorResponse("Model service unavailable"));
     }
 
     @ExceptionHandler(Exception.class)
+    /**
+     * Maneja errores inesperados dentro del flujo de predicción.
+     *
+     * @param ex excepción inesperada.
+     * @return respuesta 503.
+     */
     public ResponseEntity<ErrorResponse> handleUnexpectedError(Exception ex) {
         log.error("Unexpected error in predict flow", ex);
         return ResponseEntity.status(503).body(new ErrorResponse("Model service unavailable"));
     }
 
+    /**
+     * Resuelve el userId desde el contexto de seguridad o desde el token JWT.
+     *
+     * @param httpRequest request HTTP para leer el header Authorization si es necesario.
+     * @return userId resuelto o null si no se pudo determinar.
+     */
     private Long resolveUserId(HttpServletRequest httpRequest) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        // Si el contexto no está autenticado, intenta resolver desde el token.
         if (authentication == null
                 || !authentication.isAuthenticated()
                 || authentication instanceof AnonymousAuthenticationToken) {
@@ -285,6 +367,7 @@ public class PredictController {
                 return resolveUserIdFromToken(httpRequest).orElse(null);
             }
         }
+        // Si el principal es UserDetails, intenta interpretar como id o por email.
         if (principal instanceof UserDetails userDetails) {
             return parseUserId(userDetails.getUsername())
                     .or(() -> resolveUserIdByEmail(userDetails.getUsername()))
@@ -295,6 +378,12 @@ public class PredictController {
                 .orElse(null);
     }
 
+    /**
+     * Intenta convertir un string a userId numérico.
+     *
+     * @param value string a convertir.
+     * @return optional con el userId si aplica.
+     */
     private Optional<Long> parseUserId(String value) {
         if (value == null || value.isBlank()) {
             return Optional.empty();
@@ -306,10 +395,22 @@ public class PredictController {
         }
     }
 
+    /**
+     * Resuelve un userId consultando por email.
+     *
+     * @param email email del usuario.
+     * @return optional con el userId si existe.
+     */
     private Optional<Long> resolveUserIdByEmail(String email) {
         return userLookupService.findUserIdByEmail(email);
     }
 
+    /**
+     * Resuelve el userId desde un token JWT en el header Authorization.
+     *
+     * @param httpRequest request HTTP con headers.
+     * @return optional con el userId si el token es válido.
+     */
     private Optional<Long> resolveUserIdFromToken(HttpServletRequest httpRequest) {
         if (httpRequest == null) {
             return Optional.empty();
@@ -325,12 +426,18 @@ public class PredictController {
         return Optional.ofNullable(jwtTokenProvider.getUserIdFromToken(token));
     }
 
-/**
- * Registro ErrorResponse.
- */
+    /**
+     * Registro ErrorResponse.
+     */
     public record ErrorResponse(String message) {
     }
 
+    /**
+     * Loggea un payload JSON en modo info, con manejo de errores de serialización.
+     *
+     * @param message mensaje base de log.
+     * @param payload objeto a serializar.
+     */
     private void logJson(String message, Object payload) {
         try {
             log.info("{} payload={}", message, objectMapper.writeValueAsString(payload));
@@ -339,6 +446,12 @@ public class PredictController {
         }
     }
 
+    /**
+     * Convierte el DTO de request en el modelo de dominio de predicción.
+     *
+     * @param request DTO de entrada.
+     * @return request de dominio o null si el DTO es null.
+     */
     private PredictFlightRequest toPredictFlightRequest(PredictRequestDTO request) {
         if (request == null) {
             return null;
@@ -352,6 +465,12 @@ public class PredictController {
         );
     }
 
+    /**
+     * Convierte el resultado de predicción a DTO de salida.
+     *
+     * @param result resultado de dominio.
+     * @return DTO de respuesta o null si result es null.
+     */
     private PredictResponseDTO toPredictResponseDto(PredictionResult result) {
         if (result == null) {
             return null;
@@ -366,6 +485,12 @@ public class PredictController {
         );
     }
 
+    /**
+     * Convierte un ítem de historial de dominio a DTO.
+     *
+     * @param item ítem de historial.
+     * @return DTO correspondiente o null si item es null.
+     */
     private PredictHistoryItemDTO toHistoryItemDto(PredictHistoryItem item) {
         if (item == null) {
             return null;
@@ -387,6 +512,12 @@ public class PredictController {
         );
     }
 
+    /**
+     * Convierte el detalle de historial a DTO de salida.
+     *
+     * @param detail detalle de historial.
+     * @return DTO correspondiente o null si detail es null.
+     */
     private PredictHistoryDetailDTO toHistoryDetailDto(PredictHistoryDetail detail) {
         if (detail == null) {
             return null;
@@ -406,6 +537,12 @@ public class PredictController {
         );
     }
 
+    /**
+     * Convierte una predicción histórica a DTO.
+     *
+     * @param prediction predicción histórica.
+     * @return DTO correspondiente o null si prediction es null.
+     */
     private PredictHistoryPredictionDTO toHistoryPredictionDto(PredictHistoryPrediction prediction) {
         if (prediction == null) {
             return null;

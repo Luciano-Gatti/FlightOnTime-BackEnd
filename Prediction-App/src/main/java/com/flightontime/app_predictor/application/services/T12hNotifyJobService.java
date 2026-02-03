@@ -47,6 +47,18 @@ public class T12hNotifyJobService {
     private final NotificationLogRepositoryPort notificationLogRepositoryPort;
     private final DistanceUseCase distanceUseCase;
 
+    /**
+     * Construye el servicio de notificaciones T-12h.
+     *
+     * @param flightFollowRepositoryPort repositorio de seguimientos de vuelo.
+     * @param flightRequestRepositoryPort repositorio de solicitudes de vuelo.
+     * @param userPredictionRepositoryPort repositorio de snapshots de predicción por usuario.
+     * @param predictionRepositoryPort repositorio de predicciones persistidas.
+     * @param modelPredictionPort puerto hacia el modelo de predicción.
+     * @param notificationPort puerto de envío de notificaciones.
+     * @param notificationLogRepositoryPort repositorio de logs de notificaciones.
+     * @param distanceUseCase caso de uso para calcular distancia entre aeropuertos.
+     */
     public T12hNotifyJobService(
             FlightFollowRepositoryPort flightFollowRepositoryPort,
             FlightRequestRepositoryPort flightRequestRepositoryPort,
@@ -67,6 +79,9 @@ public class T12hNotifyJobService {
         this.distanceUseCase = distanceUseCase;
     }
 
+    /**
+     * Ejecuta el job de notificaciones T-12h para vuelos dentro de la ventana temporal.
+     */
     public void notifyUsers() {
         long startMillis = System.currentTimeMillis();
         OffsetDateTime startTimestamp = OffsetDateTime.now(ZoneOffset.UTC);
@@ -135,6 +150,17 @@ public class T12hNotifyJobService {
                 errors);
     }
 
+    /**
+     * Evalúa si corresponde notificar a un usuario por cambios en la predicción.
+     *
+     * @param userId identificador del usuario.
+     * @param baselineSnapshotId snapshot base de referencia.
+     * @param request solicitud del vuelo.
+     * @param now timestamp actual en UTC.
+     * @param lateNotification indica si la notificación es tardía.
+     * @param notificationsByUser mapa acumulador de notificaciones por usuario.
+     * @param cacheStats acumulador de métricas de cache.
+     */
     private void processUserNotification(
             Long userId,
             Long baselineSnapshotId,
@@ -178,6 +204,13 @@ public class T12hNotifyJobService {
                 .add(candidate);
     }
 
+    /**
+     * Envía notificaciones agrupadas por usuario y persiste el log de envío.
+     *
+     * @param notificationsByUser mapa de notificaciones agrupadas por usuario.
+     * @param now timestamp actual en UTC.
+     * @return cantidad total de mensajes enviados.
+     */
     private int dispatchNotifications(
             Map<Long, List<NotificationCandidate>> notificationsByUser,
             OffsetDateTime now
@@ -212,6 +245,15 @@ public class T12hNotifyJobService {
         return emailsSent;
     }
 
+    /**
+     * Construye el mensaje de notificación en base al cambio de estado.
+     *
+     * @param request solicitud del vuelo.
+     * @param baseline predicción base.
+     * @param current predicción actual.
+     * @param lateNotification indica si la notificación es tardía.
+     * @return mensaje listo para enviar.
+     */
     private String buildMessage(
             FlightRequest request,
             Prediction baseline,
@@ -229,6 +271,13 @@ public class T12hNotifyJobService {
         return baseMessage + " (notificación tardía)";
     }
 
+    /**
+     * Verifica si el cambio de estado entre baseline y actual es relevante.
+     *
+     * @param baselineStatus estado base.
+     * @param currentStatus estado actual.
+     * @return true si el cambio es entre estados soportados y distintos.
+     */
     private boolean isRelevantStatusChange(String baselineStatus, String currentStatus) {
         if (baselineStatus == null || currentStatus == null) {
             return false;
@@ -238,14 +287,34 @@ public class T12hNotifyJobService {
         return baselineSupported && currentSupported && !baselineStatus.equals(currentStatus);
     }
 
+    /**
+     * Indica si el estado es uno de los soportados para comparación (ON_TIME/DELAYED).
+     *
+     * @param status estado a evaluar.
+     * @return true si el estado es ON_TIME o DELAYED.
+     */
     private boolean isOnTimeOrDelayed(String status) {
         return "ON_TIME".equals(status) || "DELAYED".equals(status);
     }
 
+    /**
+     * Verifica si el número de vuelo es válido y no está vacío.
+     *
+     * @param flightNumber número de vuelo recibido.
+     * @return true si existe y no está en blanco.
+     */
     private boolean hasFlightNumber(String flightNumber) {
         return flightNumber != null && !flightNumber.isBlank();
     }
 
+    /**
+     * Obtiene una predicción actual usando cache por bucket o invocando el modelo.
+     *
+     * @param request solicitud del vuelo.
+     * @param now timestamp actual en UTC.
+     * @param cacheStats acumulador de métricas de cache.
+     * @return predicción persistida (cacheada o nueva).
+     */
     private Prediction getOrCreateCurrentPrediction(
             FlightRequest request,
             OffsetDateTime now,
@@ -281,6 +350,12 @@ public class T12hNotifyJobService {
         return predictionRepositoryPort.save(prediction);
     }
 
+    /**
+     * Construye el comando de predicción a partir de una solicitud de vuelo.
+     *
+     * @param request solicitud del vuelo.
+     * @return comando listo para invocar el modelo.
+     */
     private PredictFlightCommand buildCommand(FlightRequest request) {
         double distance = request.distance() > 0 ? request.distance()
                 : distanceUseCase.calculateDistance(request.originIata(), request.destIata());
@@ -294,6 +369,12 @@ public class T12hNotifyJobService {
         );
     }
 
+    /**
+     * Normaliza un timestamp al inicio del bucket de 3 horas.
+     *
+     * @param timestamp timestamp base.
+     * @return inicio del bucket correspondiente.
+     */
     private OffsetDateTime resolveBucketStart(OffsetDateTime timestamp) {
         // Ajusta a buckets de 3 horas para mantener consistencia en las predicciones.
         OffsetDateTime normalized = timestamp.withMinute(0).withSecond(0).withNano(0);
@@ -301,6 +382,12 @@ public class T12hNotifyJobService {
         return normalized.minusHours(offset);
     }
 
+    /**
+     * Convierte una fecha/hora a UTC conservando el instante.
+     *
+     * @param value fecha/hora original.
+     * @return fecha/hora en UTC o null si el valor era null.
+     */
     private OffsetDateTime toUtc(OffsetDateTime value) {
         if (value == null) {
             return null;
@@ -308,6 +395,14 @@ public class T12hNotifyJobService {
         return value.withOffsetSameInstant(ZoneOffset.UTC);
     }
 
+    /**
+     * Resuelve el snapshot base de referencia para comparar cambios.
+     *
+     * @param userId identificador del usuario.
+     * @param baselineSnapshotId snapshot base explícito (opcional).
+     * @param flightRequestId identificador de la solicitud de vuelo.
+     * @return snapshot base si existe y es válido.
+     */
     private Optional<UserPrediction> resolveBaselineSnapshot(
             Long userId,
             Long baselineSnapshotId,
@@ -322,10 +417,19 @@ public class T12hNotifyJobService {
         return userPredictionRepositoryPort.findLatestByUserIdAndRequestId(userId, flightRequestId);
     }
 
+    /**
+     * Verifica si el modo de refresco habilita notificaciones T-12h.
+     *
+     * @param refreshMode modo de refresco configurado.
+     * @return true si corresponde notificar.
+     */
     private boolean isRelevantRefreshMode(RefreshMode refreshMode) {
         return RefreshMode.T72_REFRESH.equals(refreshMode) || RefreshMode.T12_ONLY.equals(refreshMode);
     }
 
+    /**
+     * Contenedor de datos para notificaciones pendientes.
+     */
     private record NotificationCandidate(
             Long userId,
             FlightRequest request,
@@ -335,6 +439,9 @@ public class T12hNotifyJobService {
     ) {
     }
 
+    /**
+     * Acumulador simple de métricas de cache en memoria.
+     */
     private static class PredictionCacheStats {
         private int cacheHits;
         private int predictionsCreated;
