@@ -33,6 +33,19 @@ public class StatsController {
     private final StatsAccuracyByLeadTimeUseCase statsAccuracyByLeadTimeUseCase;
     private final StatsSummaryUseCase statsSummaryUseCase;
 
+    /**
+     * Ejecuta la operación stats controller.
+     * @param statsAccuracyByLeadTimeUseCase variable de entrada statsAccuracyByLeadTimeUseCase.
+     * @param statsSummaryUseCase variable de entrada statsSummaryUseCase.
+     */
+
+    /**
+     * Ejecuta la operación stats controller.
+     * @param statsAccuracyByLeadTimeUseCase variable de entrada statsAccuracyByLeadTimeUseCase.
+     * @param statsSummaryUseCase variable de entrada statsSummaryUseCase.
+     * @return resultado de la operación stats controller.
+     */
+
     public StatsController(
             StatsAccuracyByLeadTimeUseCase statsAccuracyByLeadTimeUseCase,
             StatsSummaryUseCase statsSummaryUseCase
@@ -75,11 +88,20 @@ public class StatsController {
             @ApiResponse(responseCode = "401", description = "No autenticado"),
             @ApiResponse(responseCode = "403", description = "No autorizado")
     })
+    /**
+     * Ejecuta la operación get accuracy by lead time.
+     * @return resultado de la operación get accuracy by lead time.
+     */
     public ResponseEntity<StatsAccuracyByLeadTimeResponseDTO> getAccuracyByLeadTime() {
         StatsAccuracyByLeadTime accuracy = statsAccuracyByLeadTimeUseCase.getAccuracyByLeadTime();
         return ResponseEntity.ok(toAccuracyDto(accuracy));
     }
 
+    /**
+     * Ejecuta la operación handle validation error.
+     * @param ex variable de entrada ex.
+     * @return resultado de la operación handle validation error.
+     */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleValidationError(IllegalArgumentException ex) {
         return ResponseEntity.badRequest().body(new ErrorResponse(ex.getMessage()));
@@ -87,9 +109,17 @@ public class StatsController {
 
 /**
  * Registro ErrorResponse.
+     * @param message variable de entrada message.
+     * @return resultado de la operación resultado.
  */
     public record ErrorResponse(String message) {
     }
+
+    /**
+     * Ejecuta la operación to summary dto.
+     * @param summary variable de entrada summary.
+     * @return resultado de la operación to summary dto.
+     */
 
     private StatsSummaryResponseDTO toSummaryDto(StatsSummary summary) {
         if (summary == null) {
@@ -107,6 +137,12 @@ public class StatsController {
         );
     }
 
+    /**
+     * Ejecuta la operación to top flight dto.
+     * @param flight variable de entrada flight.
+     * @return resultado de la operación to top flight dto.
+     */
+
     private StatsTopFlightDTO toTopFlightDto(StatsTopFlight flight) {
         if (flight == null) {
             return null;
@@ -122,6 +158,12 @@ public class StatsController {
         );
     }
 
+    /**
+     * Ejecuta la operación to accuracy dto.
+     * @param accuracy variable de entrada accuracy.
+     * @return resultado de la operación to accuracy dto.
+     */
+
     private StatsAccuracyByLeadTimeResponseDTO toAccuracyDto(StatsAccuracyByLeadTime accuracy) {
         if (accuracy == null) {
             return null;
@@ -132,6 +174,12 @@ public class StatsController {
                         .toList()
         );
     }
+
+    /**
+     * Ejecuta la operación to accuracy bin dto.
+     * @param bin variable de entrada bin.
+     * @return resultado de la operación to accuracy bin dto.
+     */
 
     private StatsAccuracyBinDTO toAccuracyBinDto(StatsAccuracyBin bin) {
         if (bin == null) {

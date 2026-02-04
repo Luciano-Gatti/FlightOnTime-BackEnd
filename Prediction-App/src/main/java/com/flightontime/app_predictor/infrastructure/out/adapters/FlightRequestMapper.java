@@ -9,6 +9,11 @@ import java.time.ZoneOffset;
  * Clase FlightRequestMapper.
  */
 public class FlightRequestMapper {
+    /**
+     * Ejecuta la operación to domain.
+     * @param entity variable de entrada entity.
+     * @return resultado de la operación to domain.
+     */
     public FlightRequest toDomain(FlightRequestEntity entity) {
         if (entity == null) {
             return null;
@@ -27,6 +32,13 @@ public class FlightRequestMapper {
                 entity.getClosedAt()
         );
     }
+
+    /**
+     * Ejecuta la operación to entity.
+     * @param request variable de entrada request.
+     * @param entity variable de entrada entity.
+     * @return resultado de la operación to entity.
+     */
 
     public FlightRequestEntity toEntity(FlightRequest request, FlightRequestEntity entity) {
         if (request == null) {
@@ -47,6 +59,12 @@ public class FlightRequestMapper {
         }
         return target;
     }
+
+    /**
+     * Ejecuta la operación to utc.
+     * @param value variable de entrada value.
+     * @return resultado de la operación to utc.
+     */
 
     private OffsetDateTime toUtc(OffsetDateTime value) {
         if (value == null) {

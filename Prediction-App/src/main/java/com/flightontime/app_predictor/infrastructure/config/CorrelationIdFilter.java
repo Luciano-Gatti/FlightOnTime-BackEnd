@@ -18,6 +18,12 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
     public static final String HEADER_NAME = "X-Correlation-Id";
     public static final String MDC_KEY = "correlationId";
 
+    /**
+     * Ejecuta la operación do filter internal.
+     * @param request variable de entrada request.
+     * @param response variable de entrada response.
+     * @param filterChain variable de entrada filterChain.
+     */
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,

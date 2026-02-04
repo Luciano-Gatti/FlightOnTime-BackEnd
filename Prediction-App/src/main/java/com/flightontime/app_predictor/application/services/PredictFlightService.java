@@ -220,6 +220,12 @@ public class PredictFlightService implements PredictFlightUseCase {
         }
     }
 
+    /**
+     * Ejecuta la operación normalize request.
+     * @param request variable de entrada request.
+     * @return resultado de la operación normalize request.
+     */
+
     private PredictFlightRequest normalizeRequest(PredictFlightRequest request) {
         if (request == null) {
             return null;
@@ -233,6 +239,13 @@ public class PredictFlightService implements PredictFlightUseCase {
         );
     }
 
+    /**
+     * Ejecuta la operación normalize token.
+     * @param value variable de entrada value.
+     * @param upperCase variable de entrada upperCase.
+     * @return resultado de la operación normalize token.
+     */
+
     private String normalizeToken(String value, boolean upperCase) {
         if (value == null) {
             return null;
@@ -243,6 +256,12 @@ public class PredictFlightService implements PredictFlightUseCase {
         }
         return upperCase ? normalized.toUpperCase() : normalized;
     }
+
+    /**
+     * Ejecuta la operación has internal whitespace.
+     * @param value variable de entrada value.
+     * @return resultado de la operación has internal whitespace.
+     */
 
     private boolean hasInternalWhitespace(String value) {
         return value != null && value.chars().anyMatch(Character::isWhitespace);

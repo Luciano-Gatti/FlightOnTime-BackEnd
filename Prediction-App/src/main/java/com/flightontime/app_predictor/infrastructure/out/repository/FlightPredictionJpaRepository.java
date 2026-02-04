@@ -12,6 +12,12 @@ import org.springframework.data.repository.query.Param;
  * Interfaz FlightPredictionJpaRepository.
  */
 public interface FlightPredictionJpaRepository extends JpaRepository<FlightPredictionEntity, Long> {
+    /**
+     * Ejecuta la operación find by flight request id and forecast bucket utc.
+     * @param flightRequestId variable de entrada flightRequestId.
+     * @param forecastBucketUtc variable de entrada forecastBucketUtc.
+     * @return resultado de la operación find by flight request id and forecast bucket utc.
+     */
     Optional<FlightPredictionEntity> findByFlightRequestIdAndForecastBucketUtc(
             Long flightRequestId,
             OffsetDateTime forecastBucketUtc
@@ -31,6 +37,12 @@ public interface FlightPredictionJpaRepository extends JpaRepository<FlightPredi
             @Param("userId") Long userId
     );
 
+    /**
+     * Ejecuta la operación count by predicted status.
+     * @param predictedStatus variable de entrada predictedStatus.
+     * @return resultado de la operación count by predicted status.
+     */
+
     long countByPredictedStatus(String predictedStatus);
 
     @Query("""
@@ -45,5 +57,9 @@ public interface FlightPredictionJpaRepository extends JpaRepository<FlightPredi
               on actual.flightRequestId = request.id
             where actual.actualStatus <> 'CANCELLED'
             """)
+    /**
+     * Ejecuta la operación find accuracy samples excluding cancelled.
+     * @return resultado de la operación find accuracy samples excluding cancelled.
+     */
     List<PredictionAccuracyView> findAccuracySamplesExcludingCancelled();
 }

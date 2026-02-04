@@ -26,6 +26,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class AirportController {
     private final AirportService airportService;
 
+    /**
+     * Ejecuta la operación airport controller.
+     * @param airportService variable de entrada airportService.
+     */
+
+    /**
+     * Ejecuta la operación airport controller.
+     * @param airportService variable de entrada airportService.
+     * @return resultado de la operación airport controller.
+     */
+
     public AirportController(AirportService airportService) {
         this.airportService = airportService;
     }
@@ -48,15 +59,31 @@ public class AirportController {
         return ResponseEntity.ok(airportService.getAirportByIata(normalizedIata));
     }
 
+    /**
+     * Ejecuta la operación handle validation error.
+     * @param ex variable de entrada ex.
+     * @return resultado de la operación handle validation error.
+     */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleValidationError(IllegalArgumentException ex) {
         return ResponseEntity.badRequest().body(new ErrorResponse(ex.getMessage()));
     }
 
+    /**
+     * Ejecuta la operación handle not found.
+     * @param ex variable de entrada ex.
+     * @return resultado de la operación handle not found.
+     */
     @ExceptionHandler(AirportNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(AirportNotFoundException ex) {
         return ResponseEntity.status(404).body(new ErrorResponse(ex.getMessage()));
     }
+
+    /**
+     * Ejecuta la operación normalize iata.
+     * @param iata variable de entrada iata.
+     * @return resultado de la operación normalize iata.
+     */
 
     private String normalizeIata(String iata) {
         if (iata == null) {
@@ -71,6 +98,8 @@ public class AirportController {
 
 /**
  * Registro ErrorResponse.
+     * @param message variable de entrada message.
+     * @return resultado de la operación resultado.
  */
     public record ErrorResponse(String message) {
     }

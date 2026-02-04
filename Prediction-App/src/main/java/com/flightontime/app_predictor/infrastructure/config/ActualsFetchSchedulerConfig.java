@@ -13,10 +13,24 @@ import org.springframework.scheduling.annotation.Scheduled;
 public class ActualsFetchSchedulerConfig {
     private final ActualsFetchJobService actualsFetchJobService;
 
+    /**
+     * Ejecuta la operación actuals fetch scheduler config.
+     * @param actualsFetchJobService variable de entrada actualsFetchJobService.
+     */
+
+    /**
+     * Ejecuta la operación actuals fetch scheduler config.
+     * @param actualsFetchJobService variable de entrada actualsFetchJobService.
+     * @return resultado de la operación actuals fetch scheduler config.
+     */
+
     public ActualsFetchSchedulerConfig(ActualsFetchJobService actualsFetchJobService) {
         this.actualsFetchJobService = actualsFetchJobService;
     }
 
+    /**
+     * Ejecuta la operación fetch actuals.
+     */
     @Scheduled(cron = "0 59 23 * * *", zone = "America/Argentina/Buenos_Aires")
     public void fetchActuals() {
         actualsFetchJobService.fetchActuals();

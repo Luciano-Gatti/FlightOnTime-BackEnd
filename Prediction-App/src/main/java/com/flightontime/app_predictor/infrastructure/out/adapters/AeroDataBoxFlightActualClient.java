@@ -37,6 +37,12 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * Ejecuta la operación fetch by flight number.
+     * @param flightNumber variable de entrada flightNumber.
+     * @param flightDate variable de entrada flightDate.
+     * @return resultado de la operación fetch by flight number.
+     */
     @Override
     public Optional<FlightActualResult> fetchByFlightNumber(String flightNumber, OffsetDateTime flightDate) {
         if (flightNumber == null || flightNumber.isBlank() || flightDate == null) {
@@ -51,12 +57,25 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
                     .retrieve()
                     .bodyToMono(String.class)
                     .block();
+            /**
+             * Ejecuta la operación parse flight actual response.
+             * @param response variable de entrada response.
+             * @return resultado de la operación parse flight actual response.
+             */
             return parseFlightActualResponse(response);
         } catch (WebClientResponseException.NotFound ex) {
             return Optional.empty();
         }
     }
 
+    /**
+     * Ejecuta la operación fetch by route and window.
+     * @param originIata variable de entrada originIata.
+     * @param destIata variable de entrada destIata.
+     * @param windowStart variable de entrada windowStart.
+     * @param windowEnd variable de entrada windowEnd.
+     * @return resultado de la operación fetch by route and window.
+     */
     @Override
     public Optional<FlightActualResult> fetchByRouteAndWindow(
             String originIata,
@@ -77,11 +96,22 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
                     .retrieve()
                     .bodyToMono(String.class)
                     .block();
+            /**
+             * Ejecuta la operación parse flight actual response.
+             * @param response variable de entrada response.
+             * @return resultado de la operación parse flight actual response.
+             */
             return parseFlightActualResponse(response);
         } catch (WebClientResponseException.NotFound ex) {
             return Optional.empty();
         }
     }
+
+    /**
+     * Ejecuta la operación parse flight actual response.
+     * @param responseBody variable de entrada responseBody.
+     * @return resultado de la operación parse flight actual response.
+     */
 
     private Optional<FlightActualResult> parseFlightActualResponse(String responseBody) {
         if (responseBody == null || responseBody.isBlank()) {
@@ -105,6 +135,13 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
         return Optional.empty();
     }
 
+    /**
+     * Ejecuta la operación parse payload.
+     * @param parser variable de entrada parser.
+     * @param responseBody variable de entrada responseBody.
+     * @return resultado de la operación parse payload.
+     */
+
     private Object parsePayload(JsonParser parser, String responseBody) {
         String trimmed = responseBody.trim();
         if (trimmed.startsWith("[")) {
@@ -116,6 +153,12 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
         return Collections.emptyList();
     }
 
+    /**
+     * Ejecuta la operación to flight actual result.
+     * @param response variable de entrada response.
+     * @return resultado de la operación to flight actual result.
+     */
+
     private Optional<FlightActualResult> toFlightActualResult(AeroDataBoxFlightActualResponse response) {
         if (response == null) {
             return Optional.empty();
@@ -126,9 +169,23 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
         return Optional.of(new FlightActualResult(status, actualDeparture, actualArrival));
     }
 
+    /**
+     * Ejecuta la operación first non null.
+     * @param primary variable de entrada primary.
+     * @param fallback variable de entrada fallback.
+     * @return resultado de la operación first non null.
+     */
+
     private OffsetDateTime firstNonNull(OffsetDateTime primary, OffsetDateTime fallback) {
         return primary != null ? primary : fallback;
     }
+
+    /**
+     * Ejecuta la operación to response.
+     * @param Map<? variable de entrada Map<?.
+     * @param map variable de entrada map.
+     * @return resultado de la operación to response.
+     */
 
     private AeroDataBoxFlightActualResponse toResponse(Map<?, ?> map) {
         String status = readString(map.get("status"));
@@ -147,11 +204,22 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
         );
     }
 
+    /**
+     * Ejecuta la operación read offset date time.
+     * @param value variable de entrada value.
+     * @return resultado de la operación read offset date time.
+     */
+
     private OffsetDateTime readOffsetDateTime(Object value) {
         if (value == null) {
             return null;
         }
         if (value instanceof String text) {
+            /**
+             * Ejecuta la operación parse offset date time.
+             * @param text variable de entrada text.
+             * @return resultado de la operación parse offset date time.
+             */
             return parseOffsetDateTime(text);
         }
         if (value instanceof Map<?, ?> map) {
@@ -176,6 +244,12 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
         return null;
     }
 
+    /**
+     * Ejecuta la operación parse offset date time.
+     * @param value variable de entrada value.
+     * @return resultado de la operación parse offset date time.
+     */
+
     private OffsetDateTime parseOffsetDateTime(String value) {
         if (value == null || value.isBlank()) {
             return null;
@@ -186,6 +260,12 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
             return null;
         }
     }
+
+    /**
+     * Ejecuta la operación read string.
+     * @param value variable de entrada value.
+     * @return resultado de la operación read string.
+     */
 
     private String readString(Object value) {
         if (value == null) {

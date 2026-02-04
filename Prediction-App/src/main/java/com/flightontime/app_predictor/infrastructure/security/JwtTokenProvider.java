@@ -44,6 +44,14 @@ public class JwtTokenProvider {
         this.expirationMinutes = expirationMinutes;
     }
 
+    /**
+     * Ejecuta la operación generate token.
+     * @param userId variable de entrada userId.
+     * @param roles variable de entrada roles.
+     * @param email variable de entrada email.
+     * @return resultado de la operación generate token.
+     */
+
     public String generateToken(Long userId, String roles, String email) {
         Objects.requireNonNull(userId, "userId is required");
         String resolvedRoles = roles == null || roles.isBlank() ? "ROLE_USER" : roles;
@@ -59,6 +67,12 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    /**
+     * Ejecuta la operación validate token.
+     * @param token variable de entrada token.
+     * @return resultado de la operación validate token.
+     */
+
     public boolean validateToken(String token) {
         try {
             parseClaims(token);
@@ -68,6 +82,12 @@ public class JwtTokenProvider {
         }
     }
 
+    /**
+     * Ejecuta la operación get authentication.
+     * @param token variable de entrada token.
+     * @return resultado de la operación get authentication.
+     */
+
     public Authentication getAuthentication(String token) {
         Claims claims = parseClaims(token);
         String subject = claims.getSubject();
@@ -75,10 +95,22 @@ public class JwtTokenProvider {
         return new UsernamePasswordAuthenticationToken(subject, token, authorities);
     }
 
+    /**
+     * Ejecuta la operación get user id from token.
+     * @param token variable de entrada token.
+     * @return resultado de la operación get user id from token.
+     */
+
     public Long getUserIdFromToken(String token) {
         Claims claims = parseClaims(token);
         return Long.valueOf(claims.getSubject());
     }
+
+    /**
+     * Ejecuta la operación extract authorities.
+     * @param claims variable de entrada claims.
+     * @return resultado de la operación extract authorities.
+     */
 
     private Collection<GrantedAuthority> extractAuthorities(Claims claims) {
         Object rolesClaim = claims.get(ROLES_CLAIM);
@@ -89,6 +121,11 @@ public class JwtTokenProvider {
             List<String> roles = roleCollection.stream()
                     .map(Object::toString)
                     .collect(Collectors.toList());
+            /**
+             * Ejecuta la operación to authorities.
+             * @param roles variable de entrada roles.
+             * @return resultado de la operación to authorities.
+             */
             return toAuthorities(roles);
         }
         String rolesString = rolesClaim.toString();
@@ -96,14 +133,31 @@ public class JwtTokenProvider {
                 .map(String::trim)
                 .filter(role -> !role.isBlank())
                 .collect(Collectors.toList());
+        /**
+         * Ejecuta la operación to authorities.
+         * @param roles variable de entrada roles.
+         * @return resultado de la operación to authorities.
+         */
         return toAuthorities(roles);
     }
+
+    /**
+     * Ejecuta la operación to authorities.
+     * @param roles variable de entrada roles.
+     * @return resultado de la operación to authorities.
+     */
 
     private Collection<GrantedAuthority> toAuthorities(List<String> roles) {
         return roles.stream()
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Ejecuta la operación build signing key.
+     * @param secret variable de entrada secret.
+     * @return resultado de la operación build signing key.
+     */
 
     private Key buildSigningKey(String secret) {
         if (secret == null || secret.isBlank()) {
@@ -121,6 +175,12 @@ public class JwtTokenProvider {
         }
         return Keys.hmacShaKeyFor(keyBytes);
     }
+
+    /**
+     * Ejecuta la operación parse claims.
+     * @param token variable de entrada token.
+     * @return resultado de la operación parse claims.
+     */
 
     private Claims parseClaims(String token) {
         return Jwts.parser()

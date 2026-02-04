@@ -13,10 +13,24 @@ import org.springframework.scheduling.annotation.Scheduled;
 public class CloseExpiredFlightsSchedulerConfig {
     private final CloseExpiredFlightsJobService closeExpiredFlightsJobService;
 
+    /**
+     * Ejecuta la operación close expired flights scheduler config.
+     * @param closeExpiredFlightsJobService variable de entrada closeExpiredFlightsJobService.
+     */
+
+    /**
+     * Ejecuta la operación close expired flights scheduler config.
+     * @param closeExpiredFlightsJobService variable de entrada closeExpiredFlightsJobService.
+     * @return resultado de la operación close expired flights scheduler config.
+     */
+
     public CloseExpiredFlightsSchedulerConfig(CloseExpiredFlightsJobService closeExpiredFlightsJobService) {
         this.closeExpiredFlightsJobService = closeExpiredFlightsJobService;
     }
 
+    /**
+     * Ejecuta la operación close expired flights.
+     */
     @Scheduled(cron = "0 10 0 * * *", zone = "America/Argentina/Buenos_Aires")
     public void closeExpiredFlights() {
         closeExpiredFlightsJobService.closeExpiredFlights();

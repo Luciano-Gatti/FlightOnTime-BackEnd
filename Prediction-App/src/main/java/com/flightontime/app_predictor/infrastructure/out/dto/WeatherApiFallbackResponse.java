@@ -5,6 +5,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Registro WeatherApiFallbackResponse.
+ * @param location variable de entrada location.
+ * @param current variable de entrada current.
+ * @return resultado de la operación resultado.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record WeatherApiFallbackResponse(

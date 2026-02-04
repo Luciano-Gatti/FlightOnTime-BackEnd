@@ -18,10 +18,26 @@ public class FlightRequestJpaAdapter implements FlightRequestRepositoryPort {
     private final FlightRequestJpaRepository flightRequestJpaRepository;
     private final FlightRequestMapper flightRequestMapper = new FlightRequestMapper();
 
+    /**
+     * Ejecuta la operación flight request jpa adapter.
+     * @param flightRequestJpaRepository variable de entrada flightRequestJpaRepository.
+     */
+
+    /**
+     * Ejecuta la operación flight request jpa adapter.
+     * @param flightRequestJpaRepository variable de entrada flightRequestJpaRepository.
+     * @return resultado de la operación flight request jpa adapter.
+     */
+
     public FlightRequestJpaAdapter(FlightRequestJpaRepository flightRequestJpaRepository) {
         this.flightRequestJpaRepository = flightRequestJpaRepository;
     }
 
+    /**
+     * Ejecuta la operación save.
+     * @param request variable de entrada request.
+     * @return resultado de la operación save.
+     */
     @Override
     public FlightRequest save(FlightRequest request) {
         if (request == null) {
@@ -32,12 +48,25 @@ public class FlightRequestJpaAdapter implements FlightRequestRepositoryPort {
         return flightRequestMapper.toDomain(flightRequestJpaRepository.save(entity));
     }
 
+    /**
+     * Ejecuta la operación find by id.
+     * @param id variable de entrada id.
+     * @return resultado de la operación find by id.
+     */
     @Override
     public Optional<FlightRequest> findById(Long id) {
         return flightRequestJpaRepository.findById(id)
                 .map(flightRequestMapper::toDomain);
     }
 
+    /**
+     * Ejecuta la operación find by flight.
+     * @param flightDateUtc variable de entrada flightDateUtc.
+     * @param airlineCode variable de entrada airlineCode.
+     * @param originIata variable de entrada originIata.
+     * @param destIata variable de entrada destIata.
+     * @return resultado de la operación find by flight.
+     */
     @Override
     public Optional<FlightRequest> findByFlight(
             OffsetDateTime flightDateUtc,
@@ -55,6 +84,11 @@ public class FlightRequestJpaAdapter implements FlightRequestRepositoryPort {
                 .map(flightRequestMapper::toDomain);
     }
 
+    /**
+     * Ejecuta la operación find by user id.
+     * @param userId variable de entrada userId.
+     * @return resultado de la operación find by user id.
+     */
     @Override
     public List<FlightRequest> findByUserId(Long userId) {
         return flightRequestJpaRepository.findByUserIdOrderByCreatedAtDesc(userId)
@@ -63,6 +97,11 @@ public class FlightRequestJpaAdapter implements FlightRequestRepositoryPort {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Ejecuta la operación find by ids.
+     * @param ids variable de entrada ids.
+     * @return resultado de la operación find by ids.
+     */
     @Override
     public List<FlightRequest> findByIds(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
@@ -74,6 +113,12 @@ public class FlightRequestJpaAdapter implements FlightRequestRepositoryPort {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Ejecuta la operación find by flight date between with user predictions.
+     * @param start variable de entrada start.
+     * @param end variable de entrada end.
+     * @return resultado de la operación find by flight date between with user predictions.
+     */
     @Override
     public List<FlightRequest> findByFlightDateBetweenWithUserPredictions(
             OffsetDateTime start,
@@ -85,6 +130,12 @@ public class FlightRequestJpaAdapter implements FlightRequestRepositoryPort {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Ejecuta la operación find by flight date between without actuals.
+     * @param start variable de entrada start.
+     * @param end variable de entrada end.
+     * @return resultado de la operación find by flight date between without actuals.
+     */
     @Override
     public List<FlightRequest> findByFlightDateBetweenWithoutActuals(
             OffsetDateTime start,
@@ -96,6 +147,11 @@ public class FlightRequestJpaAdapter implements FlightRequestRepositoryPort {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Ejecuta la operación find by flight date before and active.
+     * @param cutoff variable de entrada cutoff.
+     * @return resultado de la operación find by flight date before and active.
+     */
     @Override
     public List<FlightRequest> findByFlightDateBeforeAndActive(OffsetDateTime cutoff) {
         return flightRequestJpaRepository.findByFlightDateBeforeAndActive(cutoff)
@@ -103,6 +159,12 @@ public class FlightRequestJpaAdapter implements FlightRequestRepositoryPort {
                 .map(flightRequestMapper::toDomain)
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Ejecuta la operación resolve entity.
+     * @param id variable de entrada id.
+     * @return resultado de la operación resolve entity.
+     */
 
     private FlightRequestEntity resolveEntity(Long id) {
         if (id == null) {

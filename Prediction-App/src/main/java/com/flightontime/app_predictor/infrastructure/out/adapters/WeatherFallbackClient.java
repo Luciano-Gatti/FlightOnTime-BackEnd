@@ -31,6 +31,12 @@ public class WeatherFallbackClient {
         this.readTimeout = readTimeout;
     }
 
+    /**
+     * Ejecuta la operación get weather for iata.
+     * @param iata variable de entrada iata.
+     * @return resultado de la operación get weather for iata.
+     */
+
     public WeatherApiFallbackResponse getWeatherForIata(String iata) {
         ensureApiKey();
         String uri = UriComponentsBuilder.fromUriString(baseUrl)
@@ -51,6 +57,13 @@ public class WeatherFallbackClient {
         }
     }
 
+    /**
+     * Ejecuta la operación get weather for coordinates.
+     * @param latitude variable de entrada latitude.
+     * @param longitude variable de entrada longitude.
+     * @return resultado de la operación get weather for coordinates.
+     */
+
     public WeatherApiFallbackResponse getWeatherForCoordinates(double latitude, double longitude) {
         ensureApiKey();
         String uri = UriComponentsBuilder.fromUriString(baseUrl)
@@ -70,6 +83,10 @@ public class WeatherFallbackClient {
             throw new RuntimeException("Fallback weather provider connection error for coordinates " + latitude + "," + longitude, ex);
         }
     }
+
+    /**
+     * Ejecuta la operación ensure api key.
+     */
 
     private void ensureApiKey() {
         if (apiKey == null || apiKey.isBlank()) {

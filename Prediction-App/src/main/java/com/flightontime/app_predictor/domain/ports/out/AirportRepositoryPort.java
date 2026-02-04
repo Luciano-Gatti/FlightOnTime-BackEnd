@@ -8,7 +8,18 @@ import java.util.Optional;
  * Interfaz AirportRepositoryPort.
  */
 public interface AirportRepositoryPort {
+    /**
+     * Ejecuta la operación find by iata.
+     * @param airportIata variable de entrada airportIata.
+     * @return resultado de la operación find by iata.
+     */
     Optional<Airport> findByIata(String airportIata);
+
+    /**
+     * Ejecuta la operación save all.
+     * @param airports variable de entrada airports.
+     * @return resultado de la operación save all.
+     */
 
     List<Airport> saveAll(List<Airport> airports);
 }

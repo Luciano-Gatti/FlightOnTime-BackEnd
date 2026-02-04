@@ -11,9 +11,26 @@ import org.springframework.stereotype.Service;
 public class UserLookupService {
     private final UserRepositoryPort userRepositoryPort;
 
+    /**
+     * Ejecuta la operación user lookup service.
+     * @param userRepositoryPort variable de entrada userRepositoryPort.
+     */
+
+    /**
+     * Ejecuta la operación user lookup service.
+     * @param userRepositoryPort variable de entrada userRepositoryPort.
+     * @return resultado de la operación user lookup service.
+     */
+
     public UserLookupService(UserRepositoryPort userRepositoryPort) {
         this.userRepositoryPort = userRepositoryPort;
     }
+
+    /**
+     * Ejecuta la operación find user id by email.
+     * @param email variable de entrada email.
+     * @return resultado de la operación find user id by email.
+     */
 
     public Optional<Long> findUserIdByEmail(String email) {
         if (email == null || email.isBlank()) {

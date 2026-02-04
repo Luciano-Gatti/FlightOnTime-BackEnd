@@ -16,16 +16,37 @@ import org.springframework.stereotype.Component;
 public class AirportJpaAdapter implements AirportRepositoryPort {
     private final AirportJpaRepository airportJpaRepository;
 
+    /**
+     * Ejecuta la operación airport jpa adapter.
+     * @param airportJpaRepository variable de entrada airportJpaRepository.
+     */
+
+    /**
+     * Ejecuta la operación airport jpa adapter.
+     * @param airportJpaRepository variable de entrada airportJpaRepository.
+     * @return resultado de la operación airport jpa adapter.
+     */
+
     public AirportJpaAdapter(AirportJpaRepository airportJpaRepository) {
         this.airportJpaRepository = airportJpaRepository;
     }
 
+    /**
+     * Ejecuta la operación find by iata.
+     * @param airportIata variable de entrada airportIata.
+     * @return resultado de la operación find by iata.
+     */
     @Override
     public Optional<Airport> findByIata(String airportIata) {
         return airportJpaRepository.findByAirportIata(airportIata)
                 .map(this::toDomain);
     }
 
+    /**
+     * Ejecuta la operación save all.
+     * @param airports variable de entrada airports.
+     * @return resultado de la operación save all.
+     */
     @Override
     public List<Airport> saveAll(List<Airport> airports) {
         List<AirportEntity> entities = airports.stream()
@@ -35,6 +56,12 @@ public class AirportJpaAdapter implements AirportRepositoryPort {
                 .map(this::toDomain)
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Ejecuta la operación to domain.
+     * @param entity variable de entrada entity.
+     * @return resultado de la operación to domain.
+     */
 
     private Airport toDomain(AirportEntity entity) {
         return new Airport(
@@ -49,6 +76,12 @@ public class AirportJpaAdapter implements AirportRepositoryPort {
                 entity.getGoogleMaps()
         );
     }
+
+    /**
+     * Ejecuta la operación to entity.
+     * @param airport variable de entrada airport.
+     * @return resultado de la operación to entity.
+     */
 
     private AirportEntity toEntity(Airport airport) {
         AirportEntity entity = new AirportEntity();

@@ -17,9 +17,24 @@ public class CloseExpiredFlightsJobService {
     private static final Logger log = LoggerFactory.getLogger(CloseExpiredFlightsJobService.class);
     private final FlightRequestRepositoryPort flightRequestRepositoryPort;
 
+    /**
+     * Ejecuta la operación close expired flights job service.
+     * @param flightRequestRepositoryPort variable de entrada flightRequestRepositoryPort.
+     */
+
+    /**
+     * Ejecuta la operación close expired flights job service.
+     * @param flightRequestRepositoryPort variable de entrada flightRequestRepositoryPort.
+     * @return resultado de la operación close expired flights job service.
+     */
+
     public CloseExpiredFlightsJobService(FlightRequestRepositoryPort flightRequestRepositoryPort) {
         this.flightRequestRepositoryPort = flightRequestRepositoryPort;
     }
+
+    /**
+     * Ejecuta la operación close expired flights.
+     */
 
     public void closeExpiredFlights() {
         long startMillis = System.currentTimeMillis();
