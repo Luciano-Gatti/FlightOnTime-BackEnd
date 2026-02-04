@@ -14,7 +14,10 @@ spring:
     enabled: true
   main:
     allow-bean-definition-overriding: true
-
+  task:
+    scheduling:
+      enabled: true
+      
 model:
   service:
     url: http://localhost:0

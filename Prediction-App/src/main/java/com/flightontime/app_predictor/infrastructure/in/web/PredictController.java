@@ -49,6 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.flightontime.app_predictor.infrastructure.in.dto.PredictHistoryPredictionDTO;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
 /**
