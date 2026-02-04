@@ -4,7 +4,6 @@ import com.flightontime.app_predictor.application.dto.AirportDTO;
 import com.flightontime.app_predictor.domain.model.Airport;
 import com.flightontime.app_predictor.domain.ports.out.AirportInfoPort;
 import com.flightontime.app_predictor.domain.ports.out.AirportRepositoryPort;
-import java.util.List;
 import org.springframework.stereotype.Service;
 
 /**
@@ -48,8 +47,7 @@ public class AirportService {
     private Airport fetchAndStoreAirport(String airportIata) {
         Airport airport = airportInfoPort.findByIata(airportIata)
                 .orElseThrow(() -> new AirportNotFoundException("Airport not found: " + airportIata));
-        List<Airport> saved = airportRepositoryPort.saveAll(List.of(airport));
-        return saved.isEmpty() ? airport : saved.get(0);
+        return airportRepositoryPort.save(airport);
     }
 
     /**
@@ -60,7 +58,7 @@ public class AirportService {
      */
     private String normalizeIata(String airportIata) {
         if (airportIata == null) {
-            throw new IllegalArgumentException("iata must be length 3");
+            throw new IllegalArgumentException("iata is required");
         }
         String normalized = airportIata.trim().toUpperCase();
         validateIata(normalized);
@@ -73,7 +71,7 @@ public class AirportService {
      * @param airportIata IATA a validar.
      */
     private void validateIata(String airportIata) {
-        if (airportIata == null || airportIata.length() != 3) {
+        if (airportIata.length() != 3) {
             throw new IllegalArgumentException("iata must be length 3");
         }
     }

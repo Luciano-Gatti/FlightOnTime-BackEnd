@@ -4,7 +4,6 @@ import com.flightontime.app_predictor.domain.model.Airport;
 import com.flightontime.app_predictor.domain.ports.in.DistanceUseCase;
 import com.flightontime.app_predictor.domain.ports.out.AirportInfoPort;
 import com.flightontime.app_predictor.domain.ports.out.AirportRepositoryPort;
-import java.util.List;
 import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,8 +75,7 @@ public class DistanceService implements DistanceUseCase {
      */
     private Airport storeAirport(Airport airport) {
         log.info("Storing airport from external source for distance calculation: {}", airport.airportIata());
-        airportRepositoryPort.saveAll(List.of(airport));
-        return airport;
+        return airportRepositoryPort.save(airport);
     }
 
     /**
@@ -87,10 +85,14 @@ public class DistanceService implements DistanceUseCase {
      * @return IATA normalizado o null si el valor era null.
      */
     private String normalizeIata(String airportIata) {
-        if (airportIata == null) {
-            return null;
+        if (airportIata == null || airportIata.isBlank()) {
+            throw new IllegalArgumentException("iata is required");
         }
-        return airportIata.trim().toUpperCase(Locale.ROOT);
+        String normalized = airportIata.trim().toUpperCase(Locale.ROOT);
+        if (normalized.length() != 3) {
+            throw new IllegalArgumentException("iata must be length 3");
+        }
+        return normalized;
     }
 
     /**
