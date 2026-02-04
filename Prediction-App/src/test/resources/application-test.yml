@@ -16,7 +16,7 @@ spring:
     allow-bean-definition-overriding: true
   task:
     scheduling:
-      enabled: true
+      enabled: false
       
 model:
   service:
