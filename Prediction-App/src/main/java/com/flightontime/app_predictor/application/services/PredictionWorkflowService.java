@@ -56,8 +56,6 @@ public class PredictionWorkflowService {
      * @param userPredictionRepositoryPort repositorio de snapshots de predicción por usuario.
      * @param clock variable de entrada clock.
      */
-     * @return resultado de la operación resultado.
-     */
     public PredictionWorkflowService(
             ModelPredictionPort modelPredictionPort,
             DistanceUseCase distanceUseCase,
