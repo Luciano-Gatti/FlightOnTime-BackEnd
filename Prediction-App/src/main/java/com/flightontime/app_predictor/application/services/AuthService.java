@@ -2,13 +2,11 @@ package com.flightontime.app_predictor.application.services;
 
 import com.flightontime.app_predictor.domain.model.User;
 import com.flightontime.app_predictor.domain.model.UserAuthData;
+import com.flightontime.app_predictor.domain.ports.out.PasswordHasherPort;
 import com.flightontime.app_predictor.domain.ports.out.UserRepositoryPort;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Clase AuthService.
@@ -16,17 +14,17 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class AuthService {
     private final UserRepositoryPort userRepositoryPort;
-    private final PasswordEncoder passwordEncoder;
+    private final PasswordHasherPort passwordHasherPort;
 
     /**
      * Construye el servicio de autenticación.
      *
      * @param userRepositoryPort repositorio de usuarios.
-     * @param passwordEncoder encoder de contraseñas.
+     * @param passwordHasherPort encoder de contraseñas.
      */
-    public AuthService(UserRepositoryPort userRepositoryPort, PasswordEncoder passwordEncoder) {
+    public AuthService(UserRepositoryPort userRepositoryPort, PasswordHasherPort passwordHasherPort) {
         this.userRepositoryPort = userRepositoryPort;
-        this.passwordEncoder = passwordEncoder;
+        this.passwordHasherPort = passwordHasherPort;
     }
 
     /**
@@ -45,7 +43,7 @@ public class AuthService {
             String rawPassword
     ) {
         if (userRepositoryPort.existsByEmail(email)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
+            throw new EmailAlreadyRegisteredException("Email already registered");
         }
         OffsetDateTime createdAt = OffsetDateTime.now(ZoneOffset.UTC);
         User user = new User(
@@ -56,7 +54,7 @@ public class AuthService {
                 "ROLE_USER",
                 createdAt
         );
-        return userRepositoryPort.save(user, passwordEncoder.encode(rawPassword));
+        return userRepositoryPort.save(user, passwordHasherPort.hash(rawPassword));
     }
 
     /**
@@ -68,9 +66,9 @@ public class AuthService {
      */
     public User login(String email, String rawPassword) {
         UserAuthData authData = userRepositoryPort.findAuthDataByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
-        if (!passwordEncoder.matches(rawPassword, authData.passwordHash())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+                .orElseThrow(() -> new InvalidCredentialsException("Invalid credentials"));
+        if (!passwordHasherPort.matches(rawPassword, authData.passwordHash())) {
+            throw new InvalidCredentialsException("Invalid credentials");
         }
         return new User(
                 authData.id(),

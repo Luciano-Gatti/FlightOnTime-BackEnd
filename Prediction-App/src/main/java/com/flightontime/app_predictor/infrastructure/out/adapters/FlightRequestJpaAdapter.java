@@ -148,6 +148,19 @@ public class FlightRequestJpaAdapter implements FlightRequestRepositoryPort {
     }
 
     /**
+     * Ejecuta la operación find active requests with flight date utc before.
+     * @param cutoffUtc variable de entrada cutoffUtc.
+     * @return resultado de la operación find active requests with flight date utc before.
+     */
+    @Override
+    public List<FlightRequest> findActiveRequestsWithFlightDateUtcBefore(OffsetDateTime cutoffUtc) {
+        return flightRequestJpaRepository.findActiveRequestsWithFlightDateUtcBefore(cutoffUtc)
+                .stream()
+                .map(flightRequestMapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Ejecuta la operación find by flight date before and active.
      * @param cutoff variable de entrada cutoff.
      * @return resultado de la operación find by flight date before and active.

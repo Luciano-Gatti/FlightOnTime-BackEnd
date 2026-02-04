@@ -31,7 +31,7 @@ public class ActualsFetchSchedulerConfig {
     /**
      * Ejecuta la operación fetch actuals.
      */
-    @Scheduled(cron = "0 59 23 * * *", zone = "America/Argentina/Buenos_Aires")
+    @Scheduled(cron = "0 59 11,23 * * *", zone = "America/Argentina/Buenos_Aires")
     public void fetchActuals() {
         actualsFetchJobService.fetchActuals();
     }
