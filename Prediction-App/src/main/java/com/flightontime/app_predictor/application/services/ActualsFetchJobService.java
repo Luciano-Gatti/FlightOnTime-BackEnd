@@ -28,21 +28,6 @@ public class ActualsFetchJobService {
     private final FlightActualRepositoryPort flightActualRepositoryPort;
     private final FlightActualPort flightActualPort;
 
-    /**
-     * Ejecuta la operación actuals fetch job service.
-     * @param flightRequestRepositoryPort variable de entrada flightRequestRepositoryPort.
-     * @param flightActualRepositoryPort variable de entrada flightActualRepositoryPort.
-     * @param flightActualPort variable de entrada flightActualPort.
-     */
-
-    /**
-     * Ejecuta la operación actuals fetch job service.
-     * @param flightRequestRepositoryPort variable de entrada flightRequestRepositoryPort.
-     * @param flightActualRepositoryPort variable de entrada flightActualRepositoryPort.
-     * @param flightActualPort variable de entrada flightActualPort.
-     * @return resultado de la operación actuals fetch job service.
-     */
-
     public ActualsFetchJobService(
             FlightRequestRepositoryPort flightRequestRepositoryPort,
             FlightActualRepositoryPort flightActualRepositoryPort,
@@ -56,7 +41,6 @@ public class ActualsFetchJobService {
     /**
      * Ejecuta la operación fetch actuals.
      */
-
     public void fetchActuals() {
         long startMillis = System.currentTimeMillis();
         OffsetDateTime startTimestamp = OffsetDateTime.now(ZoneOffset.UTC);
@@ -94,30 +78,17 @@ public class ActualsFetchJobService {
 
     /**
      * Ejecuta la operación process request.
-     * @param request variable de entrada request.
-     * @param nowUtc variable de entrada nowUtc.
-     * @return resultado de la operación process request.
+     * @param FlightRequest variable de entrada request.
+     * @param OffsetDateTime variable de entrada nowUtc.
+     * @return ProcessResult.
      */
-
     private ProcessResult processRequest(FlightRequest request, OffsetDateTime nowUtc) {
         Optional<FlightActualResult> actualResult = fetchActualResult(request);
-        if (actualResult.isEmpty()) {
-            /**
-             * Ejecuta la operación close if expired.
-             * @param request variable de entrada request.
-             * @param nowUtc variable de entrada nowUtc.
-             * @return resultado de la operación close if expired.
-             */
+        if (actualResult.isEmpty()) { 
             return closeIfExpired(request, nowUtc);
         }
         FlightActualResult result = actualResult.get();
         if (!isPersistableStatus(result.actualStatus())) {
-            /**
-             * Ejecuta la operación close if expired.
-             * @param request variable de entrada request.
-             * @param nowUtc variable de entrada nowUtc.
-             * @return resultado de la operación close if expired.
-             */
             return closeIfExpired(request, nowUtc);
         }
         FlightActual actual = new FlightActual(
