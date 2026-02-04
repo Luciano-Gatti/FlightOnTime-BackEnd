@@ -12,6 +12,7 @@ import com.flightontime.app_predictor.domain.ports.out.FlightRequestRepositoryPo
 import com.flightontime.app_predictor.domain.ports.out.ModelPredictionPort;
 import com.flightontime.app_predictor.domain.ports.out.PredictionRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.UserPredictionRepositoryPort;
+import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
@@ -39,6 +40,7 @@ public class PredictionWorkflowService {
     private final FlightRequestRepositoryPort flightRequestRepositoryPort;
     private final PredictionRepositoryPort predictionRepositoryPort;
     private final UserPredictionRepositoryPort userPredictionRepositoryPort;
+    private final Clock clock;
 
     /**
      * Construye el servicio que orquesta el flujo de predicción.
@@ -54,13 +56,15 @@ public class PredictionWorkflowService {
             DistanceUseCase distanceUseCase,
             FlightRequestRepositoryPort flightRequestRepositoryPort,
             PredictionRepositoryPort predictionRepositoryPort,
-            UserPredictionRepositoryPort userPredictionRepositoryPort
+            UserPredictionRepositoryPort userPredictionRepositoryPort,
+            Clock clock
     ) {
         this.modelPredictionPort = modelPredictionPort;
         this.distanceUseCase = distanceUseCase;
         this.flightRequestRepositoryPort = flightRequestRepositoryPort;
         this.predictionRepositoryPort = predictionRepositoryPort;
         this.userPredictionRepositoryPort = userPredictionRepositoryPort;
+        this.clock = clock;
     }
 
     /**
@@ -97,7 +101,7 @@ public class PredictionWorkflowService {
                 flightNumber,
                 distance
         );
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime now = OffsetDateTime.now(clock);
         if (userId == null && !persistWhenAnonymous) {
             log.info("Anonymous prediction request, skipping persistence.");
             var prediction = modelPredictionPort.requestPrediction(command);
@@ -166,7 +170,7 @@ public class PredictionWorkflowService {
                 flightRequest.flightNumber(),
                 distance
         );
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime now = OffsetDateTime.now(clock);
         Prediction prediction = getOrCreatePrediction(flightRequest.id(), command, now);
         log.info("Resolved prediction id={} for flightRequestId={}", prediction.id(), flightRequest.id());
         PredictionResult result = new PredictionResult(

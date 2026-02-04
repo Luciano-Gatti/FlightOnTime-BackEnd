@@ -15,6 +15,7 @@ import com.flightontime.app_predictor.domain.ports.out.NotificationLogRepository
 import com.flightontime.app_predictor.domain.ports.out.NotificationPort;
 import com.flightontime.app_predictor.domain.ports.out.PredictionRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.UserPredictionRepositoryPort;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -46,6 +47,7 @@ public class T12hNotifyJobService {
     private final NotificationPort notificationPort;
     private final NotificationLogRepositoryPort notificationLogRepositoryPort;
     private final DistanceUseCase distanceUseCase;
+    private final Clock clock;
 
     /**
      * Construye el servicio de notificaciones T-12h.
@@ -67,7 +69,8 @@ public class T12hNotifyJobService {
             ModelPredictionPort modelPredictionPort,
             NotificationPort notificationPort,
             NotificationLogRepositoryPort notificationLogRepositoryPort,
-            DistanceUseCase distanceUseCase
+            DistanceUseCase distanceUseCase,
+            Clock clock
     ) {
         this.flightFollowRepositoryPort = flightFollowRepositoryPort;
         this.flightRequestRepositoryPort = flightRequestRepositoryPort;
@@ -77,6 +80,7 @@ public class T12hNotifyJobService {
         this.notificationPort = notificationPort;
         this.notificationLogRepositoryPort = notificationLogRepositoryPort;
         this.distanceUseCase = distanceUseCase;
+        this.clock = clock;
     }
 
     /**
@@ -84,7 +88,7 @@ public class T12hNotifyJobService {
      */
     public void notifyUsers() {
         long startMillis = System.currentTimeMillis();
-        OffsetDateTime startTimestamp = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime startTimestamp = OffsetDateTime.now(clock);
         OffsetDateTime windowStart = startTimestamp;
         OffsetDateTime windowEnd = startTimestamp.plusHours(13);
         log.info("Starting T12h notification job timestamp={} windowStart={} windowEnd={}",
@@ -139,7 +143,7 @@ public class T12hNotifyJobService {
         long durationMs = System.currentTimeMillis() - startMillis;
         log.info("Finished T12h notification job timestamp={} durationMs={} subscriptionsEvaluated={} flightsInWindow={} "
                         + "cacheHits={} predictionsCreated={} changesDetected={} emailsSent={} errors={}",
-                OffsetDateTime.now(ZoneOffset.UTC),
+                OffsetDateTime.now(clock),
                 durationMs,
                 subscriptionsEvaluated,
                 flightsInWindow,
