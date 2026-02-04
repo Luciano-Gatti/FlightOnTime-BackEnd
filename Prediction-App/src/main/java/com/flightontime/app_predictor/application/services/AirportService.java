@@ -57,8 +57,9 @@ public class AirportService {
      * @return IATA normalizado.
      */
     private String normalizeIata(String airportIata) {
-        if (airportIata == null) throw new IllegalArgumentException("iata is required");
-
+        if (airportIata == null) {
+            throw new IllegalArgumentException("iata is required");
+        }
         String normalized = airportIata.trim().toUpperCase();
         if (normalized.isBlank()) throw new IllegalArgumentException("iata is required");
         if (normalized.chars().anyMatch(Character::isWhitespace)) {
