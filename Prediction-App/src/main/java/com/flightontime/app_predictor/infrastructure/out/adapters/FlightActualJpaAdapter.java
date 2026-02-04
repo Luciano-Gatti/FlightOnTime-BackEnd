@@ -46,6 +46,26 @@ public class FlightActualJpaAdapter implements FlightActualRepositoryPort {
     }
 
     /**
+     * Ejecuta la operación upsert by flight request id.
+     * @param flightActual variable de entrada flightActual.
+     * @return resultado de la operación upsert by flight request id.
+     */
+    @Override
+    public FlightActual upsertByFlightRequestId(FlightActual flightActual) {
+        if (flightActual == null) {
+            throw new IllegalArgumentException("Flight actual is required");
+        }
+        if (flightActual.flightRequestId() == null) {
+            return save(flightActual);
+        }
+        FlightOutcomeEntity entity = flightOutcomeJpaRepository
+                .findByFlightRequestId(flightActual.flightRequestId())
+                .orElseGet(FlightOutcomeEntity::new);
+        flightActualMapper.toEntity(flightActual, entity);
+        return flightActualMapper.toDomain(flightOutcomeJpaRepository.save(entity));
+    }
+
+    /**
      * Ejecuta la operación find by id.
      * @param id variable de entrada id.
      * @return resultado de la operación find by id.
