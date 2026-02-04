@@ -15,6 +15,13 @@ public interface FlightActualRepositoryPort {
     FlightActual save(FlightActual flightActual);
 
     /**
+     * Ejecuta la operación upsert by flight request id.
+     * @param flightActual variable de entrada flightActual.
+     * @return resultado de la operación upsert by flight request id.
+     */
+    FlightActual upsertByFlightRequestId(FlightActual flightActual);
+
+    /**
      * Ejecuta la operación find by id.
      * @param id variable de entrada id.
      * @return resultado de la operación find by id.
