@@ -86,7 +86,7 @@ public class BulkPredictRowValidator {
         if (hasInternalWhitespace(airlineCode) || !AIRLINE_CODE_PATTERN.matcher(airlineCode).matches()) {
             return ValidationResult.error(new BulkPredictError(
                     row.rowNumber(),
-                    "carrier must be 2 uppercase IATA characters",
+                    "carrier must be 2 uppercase alphanumeric characters",
                     row.rawRow()
             ));
         }
@@ -123,7 +123,7 @@ public class BulkPredictRowValidator {
             ));
         }
 
-        if (originIata.equalsIgnoreCase(destIata)) {
+        if (originIata.equals(destIata)) {
             return ValidationResult.error(new BulkPredictError(
                     row.rowNumber(),
                     "origin and dest cannot be the same",
@@ -154,10 +154,9 @@ public class BulkPredictRowValidator {
     }
 
     private String normalizeFlightNumber(String flightNumber) {
-        if (flightNumber == null || flightNumber.isBlank()) {
-            return null;
-        }
-        return flightNumber;
+        if (flightNumber == null) return null;
+        String normalized = flightNumber.trim();
+        return normalized.isBlank() ? null : normalized;
     }
 
     private boolean hasInternalWhitespace(String value) {

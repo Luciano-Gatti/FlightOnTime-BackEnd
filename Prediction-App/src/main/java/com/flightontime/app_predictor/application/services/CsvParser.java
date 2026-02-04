@@ -61,6 +61,7 @@ public class CsvParser {
                 throw new IllegalArgumentException("Missing CSV header");
             }
             if (!headerLine.isBlank()) {
+                headerLine = headerLine.replace("\uFEFF", "");
                 headerFields.addAll(parseLine(headerLine));
             }
             if (headerFields.isEmpty()) {
