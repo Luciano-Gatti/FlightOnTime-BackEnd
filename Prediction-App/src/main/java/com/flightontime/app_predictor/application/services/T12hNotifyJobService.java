@@ -62,8 +62,6 @@ public class T12hNotifyJobService {
      * @param distanceUseCase caso de uso para calcular distancia entre aeropuertos.
      * @param clock variable de entrada clock.
      */
-     * @return resultado de la operación resultado.
-     */
     public T12hNotifyJobService(
             FlightFollowRepositoryPort flightFollowRepositoryPort,
             FlightRequestRepositoryPort flightRequestRepositoryPort,

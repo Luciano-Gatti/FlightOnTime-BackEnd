@@ -46,8 +46,8 @@ public class AuthService {
             String rawPassword
     ) {
         String normalizedEmail = normalizeEmail(email);
-        validateRequired("firstName", firstName);
-        validateRequired("lastName", lastName);
+        String fn = requireTrimmed("firstName", firstName);
+        String ln = requireTrimmed("lastName", lastName);
         validateRequired("rawPassword", rawPassword);
         if (userRepositoryPort.existsByEmail(normalizedEmail)) {
             throw new EmailAlreadyRegisteredException("Email already registered");
@@ -56,14 +56,21 @@ public class AuthService {
         User user = new User(
                 null,
                 normalizedEmail,
-                firstName,
-                lastName,
+                fn,
+                ln,
                 DEFAULT_ROLE,
                 createdAt
         );
         return userRepositoryPort.save(user, passwordHasherPort.hash(rawPassword));
     }
 
+    private String requireTrimmed(String field, String value) {
+        if (value == null) throw new IllegalArgumentException(field + " is required");
+        String v = value.trim();
+        if (v.isEmpty()) throw new IllegalArgumentException(field + " is required");
+        return v;
+    }
+    
     /**
      * Autentica un usuario por email y contraseña.
      *

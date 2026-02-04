@@ -79,7 +79,7 @@ public class BulkPredictService implements BulkPredictUseCase {
         int unexpectedErrors = 0;
 
         CsvParser.CsvParseResult parseResult = csvParser.parse(inputStream);
-        int totalRows = parseResult.rows().size();
+        int totalRows = parseResult.rows().size() + parseResult.errors().size();
         log.info("Starting CSV import userId={} totalRows={} dryRun={}", userId, totalRows, dryRun);
         if (!EXPECTED_HEADER.equals(parseResult.header())) {
             throw new IllegalArgumentException(
