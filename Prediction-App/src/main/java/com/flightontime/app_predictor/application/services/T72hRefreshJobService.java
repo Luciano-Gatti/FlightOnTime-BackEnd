@@ -43,8 +43,6 @@ public class T72hRefreshJobService {
      * @param distanceUseCase caso de uso para calcular distancia entre aeropuertos.
      * @param clock variable de entrada clock.
      */
-     * @return resultado de la operación resultado.
-     */
     public T72hRefreshJobService(
             FlightFollowRepositoryPort flightFollowRepositoryPort,
             FlightRequestRepositoryPort flightRequestRepositoryPort,

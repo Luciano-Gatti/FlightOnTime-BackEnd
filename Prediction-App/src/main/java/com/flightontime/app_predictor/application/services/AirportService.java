@@ -61,6 +61,11 @@ public class AirportService {
             throw new IllegalArgumentException("iata is required");
         }
         String normalized = airportIata.trim().toUpperCase();
+        if (normalized.isBlank()) throw new IllegalArgumentException("iata is required");
+        if (normalized.chars().anyMatch(Character::isWhitespace)) {
+            throw new IllegalArgumentException("iata must not contain whitespace");
+        }
+        
         validateIata(normalized);
         return normalized;
     }
