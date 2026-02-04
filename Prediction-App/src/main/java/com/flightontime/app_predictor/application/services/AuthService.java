@@ -6,6 +6,7 @@ import com.flightontime.app_predictor.domain.ports.out.PasswordHasherPort;
 import com.flightontime.app_predictor.domain.ports.out.UserRepositoryPort;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Locale;
 import org.springframework.stereotype.Service;
 
 /**
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class AuthService {
+    private static final String DEFAULT_ROLE = "ROLE_USER";
+
     private final UserRepositoryPort userRepositoryPort;
     private final PasswordHasherPort passwordHasherPort;
 
@@ -42,16 +45,20 @@ public class AuthService {
             String lastName,
             String rawPassword
     ) {
-        if (userRepositoryPort.existsByEmail(email)) {
+        String normalizedEmail = normalizeEmail(email);
+        validateRequired("firstName", firstName);
+        validateRequired("lastName", lastName);
+        validateRequired("rawPassword", rawPassword);
+        if (userRepositoryPort.existsByEmail(normalizedEmail)) {
             throw new EmailAlreadyRegisteredException("Email already registered");
         }
         OffsetDateTime createdAt = OffsetDateTime.now(ZoneOffset.UTC);
         User user = new User(
                 null,
-                email,
+                normalizedEmail,
                 firstName,
                 lastName,
-                "ROLE_USER",
+                DEFAULT_ROLE,
                 createdAt
         );
         return userRepositoryPort.save(user, passwordHasherPort.hash(rawPassword));
@@ -65,7 +72,9 @@ public class AuthService {
      * @return usuario autenticado.
      */
     public User login(String email, String rawPassword) {
-        UserAuthData authData = userRepositoryPort.findAuthDataByEmail(email)
+        String normalizedEmail = normalizeEmail(email);
+        validateRequired("rawPassword", rawPassword);
+        UserAuthData authData = userRepositoryPort.findAuthDataByEmail(normalizedEmail)
                 .orElseThrow(() -> new InvalidCredentialsException("Invalid credentials"));
         if (!passwordHasherPort.matches(rawPassword, authData.passwordHash())) {
             throw new InvalidCredentialsException("Invalid credentials");
@@ -78,5 +87,22 @@ public class AuthService {
                 authData.roles(),
                 authData.createdAt()
         );
+    }
+
+    private String normalizeEmail(String email) {
+        if (email == null) {
+            throw new IllegalArgumentException("email is required");
+        }
+        String normalized = email.trim().toLowerCase(Locale.ROOT);
+        if (normalized.isBlank()) {
+            throw new IllegalArgumentException("email is required");
+        }
+        return normalized;
+    }
+
+    private void validateRequired(String fieldName, String value) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " is required");
+        }
     }
 }
