@@ -13,6 +13,12 @@ import org.springframework.data.repository.query.Param;
  * Interfaz FlightSubscriptionJpaRepository.
  */
 public interface FlightSubscriptionJpaRepository extends JpaRepository<FlightSubscriptionEntity, Long> {
+    /**
+     * Ejecuta la operación find first by user id and flight request id.
+     * @param userId variable de entrada userId.
+     * @param flightRequestId variable de entrada flightRequestId.
+     * @return resultado de la operación find first by user id and flight request id.
+     */
     Optional<FlightSubscriptionEntity> findFirstByUserIdAndFlightRequestId(Long userId, Long flightRequestId);
 
     @Query("""

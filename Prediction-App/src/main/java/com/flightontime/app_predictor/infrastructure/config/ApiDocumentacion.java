@@ -30,8 +30,17 @@ import org.springframework.context.annotation.Configuration;
                 @Tag(name = "Admin", description = "Operaciones administrativas")
         }
 )
+/**
+ * Class ApiDocumentacion.
+ *
+ * <p>Responsable de api documentacion.</p>
+ */
 public class ApiDocumentacion {
 
+    /**
+     * Ejecuta la operación custom open api.
+     * @return resultado de la operación custom open api.
+     */
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()

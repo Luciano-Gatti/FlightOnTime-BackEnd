@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Registro OpenMeteoWeatherResponse.
+ * @param current variable de entrada current.
+ * @return resultado de la operación resultado.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record OpenMeteoWeatherResponse(Current current) {

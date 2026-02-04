@@ -60,6 +60,9 @@ public class T12hNotifyJobService {
      * @param notificationPort puerto de envío de notificaciones.
      * @param notificationLogRepositoryPort repositorio de logs de notificaciones.
      * @param distanceUseCase caso de uso para calcular distancia entre aeropuertos.
+     * @param clock variable de entrada clock.
+     */
+     * @return resultado de la operación resultado.
      */
     public T12hNotifyJobService(
             FlightFollowRepositoryPort flightFollowRepositoryPort,
@@ -164,6 +167,7 @@ public class T12hNotifyJobService {
      * @param lateNotification indica si la notificación es tardía.
      * @param notificationsByUser mapa acumulador de notificaciones por usuario.
      * @param cacheStats acumulador de métricas de cache.
+     * @param Map<Long variable de entrada Map<Long.
      */
     private void processUserNotification(
             Long userId,
@@ -214,6 +218,7 @@ public class T12hNotifyJobService {
      * @param notificationsByUser mapa de notificaciones agrupadas por usuario.
      * @param now timestamp actual en UTC.
      * @return cantidad total de mensajes enviados.
+     * @param Map<Long variable de entrada Map<Long.
      */
     private int dispatchNotifications(
             Map<Long, List<NotificationCandidate>> notificationsByUser,
@@ -433,6 +438,12 @@ public class T12hNotifyJobService {
 
     /**
      * Contenedor de datos para notificaciones pendientes.
+     * @param userId variable de entrada userId.
+     * @param request variable de entrada request.
+     * @param userPredictionId variable de entrada userPredictionId.
+     * @param predictedStatus variable de entrada predictedStatus.
+     * @param message variable de entrada message.
+     * @return resultado de la operación resultado.
      */
     private record NotificationCandidate(
             Long userId,

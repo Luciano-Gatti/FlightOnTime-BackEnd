@@ -28,6 +28,21 @@ public class ActualsFetchJobService {
     private final FlightActualRepositoryPort flightActualRepositoryPort;
     private final FlightActualPort flightActualPort;
 
+    /**
+     * Ejecuta la operación actuals fetch job service.
+     * @param flightRequestRepositoryPort variable de entrada flightRequestRepositoryPort.
+     * @param flightActualRepositoryPort variable de entrada flightActualRepositoryPort.
+     * @param flightActualPort variable de entrada flightActualPort.
+     */
+
+    /**
+     * Ejecuta la operación actuals fetch job service.
+     * @param flightRequestRepositoryPort variable de entrada flightRequestRepositoryPort.
+     * @param flightActualRepositoryPort variable de entrada flightActualRepositoryPort.
+     * @param flightActualPort variable de entrada flightActualPort.
+     * @return resultado de la operación actuals fetch job service.
+     */
+
     public ActualsFetchJobService(
             FlightRequestRepositoryPort flightRequestRepositoryPort,
             FlightActualRepositoryPort flightActualRepositoryPort,
@@ -37,6 +52,10 @@ public class ActualsFetchJobService {
         this.flightActualRepositoryPort = flightActualRepositoryPort;
         this.flightActualPort = flightActualPort;
     }
+
+    /**
+     * Ejecuta la operación fetch actuals.
+     */
 
     public void fetchActuals() {
         long startMillis = System.currentTimeMillis();
@@ -73,13 +92,32 @@ public class ActualsFetchJobService {
                 errors);
     }
 
+    /**
+     * Ejecuta la operación process request.
+     * @param request variable de entrada request.
+     * @param nowUtc variable de entrada nowUtc.
+     * @return resultado de la operación process request.
+     */
+
     private ProcessResult processRequest(FlightRequest request, OffsetDateTime nowUtc) {
         Optional<FlightActualResult> actualResult = fetchActualResult(request);
         if (actualResult.isEmpty()) {
+            /**
+             * Ejecuta la operación close if expired.
+             * @param request variable de entrada request.
+             * @param nowUtc variable de entrada nowUtc.
+             * @return resultado de la operación close if expired.
+             */
             return closeIfExpired(request, nowUtc);
         }
         FlightActualResult result = actualResult.get();
         if (!isPersistableStatus(result.actualStatus())) {
+            /**
+             * Ejecuta la operación close if expired.
+             * @param request variable de entrada request.
+             * @param nowUtc variable de entrada nowUtc.
+             * @return resultado de la operación close if expired.
+             */
             return closeIfExpired(request, nowUtc);
         }
         FlightActual actual = new FlightActual(
@@ -99,6 +137,12 @@ public class ActualsFetchJobService {
         ProcessResult closeResult = closeIfExpired(request, nowUtc);
         return new ProcessResult(1, closeResult.closedRequests());
     }
+
+    /**
+     * Ejecuta la operación fetch actual result.
+     * @param request variable de entrada request.
+     * @return resultado de la operación fetch actual result.
+     */
 
     private Optional<FlightActualResult> fetchActualResult(FlightRequest request) {
         if (request == null || request.flightDateUtc() == null) {
@@ -122,11 +166,21 @@ public class ActualsFetchJobService {
         );
     }
 
+    /**
+     * Ejecuta la operación resolve yesterday window start.
+     * @return resultado de la operación resolve yesterday window start.
+     */
+
     private OffsetDateTime resolveYesterdayWindowStart() {
         LocalDate yesterday = LocalDate.now(EXECUTION_ZONE).minusDays(1);
         return yesterday.atStartOfDay(EXECUTION_ZONE).toOffsetDateTime()
                 .withOffsetSameInstant(ZoneOffset.UTC);
     }
+
+    /**
+     * Ejecuta la operación resolve yesterday window end.
+     * @return resultado de la operación resolve yesterday window end.
+     */
 
     private OffsetDateTime resolveYesterdayWindowEnd() {
         LocalDate yesterday = LocalDate.now(EXECUTION_ZONE).minusDays(1);
@@ -134,13 +188,32 @@ public class ActualsFetchJobService {
                 .withOffsetSameInstant(ZoneOffset.UTC);
     }
 
+    /**
+     * Ejecuta la operación has flight number.
+     * @param flightNumber variable de entrada flightNumber.
+     * @return resultado de la operación has flight number.
+     */
+
     private boolean hasFlightNumber(String flightNumber) {
         return flightNumber != null && !flightNumber.isBlank();
     }
 
+    /**
+     * Ejecuta la operación is persistable status.
+     * @param status variable de entrada status.
+     * @return resultado de la operación is persistable status.
+     */
+
     private boolean isPersistableStatus(String status) {
         return "ON_TIME".equals(status) || "DELAYED".equals(status) || "CANCELLED".equals(status);
     }
+
+    /**
+     * Ejecuta la operación close if expired.
+     * @param request variable de entrada request.
+     * @param nowUtc variable de entrada nowUtc.
+     * @return resultado de la operación close if expired.
+     */
 
     private ProcessResult closeIfExpired(FlightRequest request, OffsetDateTime nowUtc) {
         if (request == null || request.flightDateUtc() == null || !request.active()) {
@@ -166,12 +239,34 @@ public class ActualsFetchJobService {
         return new ProcessResult(0, 0);
     }
 
+    /**
+     * Ejecuta la operación to utc.
+     * @param value variable de entrada value.
+     * @return resultado de la operación to utc.
+     */
+
     private OffsetDateTime toUtc(OffsetDateTime value) {
         if (value == null) {
             return null;
         }
         return value.withOffsetSameInstant(ZoneOffset.UTC);
     }
+
+    /**
+     * Ejecuta la operación process result.
+     * @param actualsSaved variable de entrada actualsSaved.
+     * @param closedRequests variable de entrada closedRequests.
+     * @return resultado de la operación process result.
+     */
+
+    /**
+     * Record ProcessResult.
+     *
+     * <p>Responsable de process result.</p>
+     * @param actualsSaved variable de entrada actualsSaved.
+     * @param closedRequests variable de entrada closedRequests.
+     * @return resultado de la operación resultado.
+     */
 
     private record ProcessResult(int actualsSaved, int closedRequests) {
     }

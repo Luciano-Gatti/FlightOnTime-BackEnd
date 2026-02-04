@@ -36,6 +36,11 @@ public class AirportApiClient implements AirportInfoPort {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * Ejecuta la operación find by iata.
+     * @param airportIata variable de entrada airportIata.
+     * @return resultado de la operación find by iata.
+     */
     @Override
     public Optional<Airport> findByIata(String airportIata) {
         try {
@@ -60,10 +65,21 @@ public class AirportApiClient implements AirportInfoPort {
         }
     }
 
+    /**
+     * Ejecuta la operación search by text.
+     * @param text variable de entrada text.
+     * @return resultado de la operación search by text.
+     */
     @Override
     public List<Airport> searchByText(String text) {
         return Collections.emptyList();
     }
+
+    /**
+     * Ejecuta la operación to domain.
+     * @param response variable de entrada response.
+     * @return resultado de la operación to domain.
+     */
 
     private Airport toDomain(AirportApiResponse response) {
         return new Airport(
@@ -78,6 +94,12 @@ public class AirportApiClient implements AirportInfoPort {
                 response.googleMaps() != null ? response.googleMaps().googleMaps() : null
         );
     }
+
+    /**
+     * Ejecuta la operación log json.
+     * @param message variable de entrada message.
+     * @param payload variable de entrada payload.
+     */
 
     private void logJson(String message, Object payload) {
         if (payload == null) {

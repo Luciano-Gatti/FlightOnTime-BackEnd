@@ -16,10 +16,26 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
 
+    /**
+     * Ejecuta la operación jwt auth filter.
+     * @param jwtTokenProvider variable de entrada jwtTokenProvider.
+     */
+
+    /**
+     * Ejecuta la operación jwt auth filter.
+     * @param jwtTokenProvider variable de entrada jwtTokenProvider.
+     * @return resultado de la operación jwt auth filter.
+     */
+
     public JwtAuthFilter(JwtTokenProvider jwtTokenProvider) {
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
+    /**
+     * Ejecuta la operación should not filter.
+     * @param request variable de entrada request.
+     * @return resultado de la operación should not filter.
+     */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
@@ -29,6 +45,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             || path.equals("/swagger-ui.html");
     }
 
+    /**
+     * Ejecuta la operación do filter internal.
+     * @param request variable de entrada request.
+     * @param response variable de entrada response.
+     * @param filterChain variable de entrada filterChain.
+     */
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,

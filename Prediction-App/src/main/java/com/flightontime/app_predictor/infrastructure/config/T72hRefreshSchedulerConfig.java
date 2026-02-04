@@ -13,10 +13,24 @@ import org.springframework.scheduling.annotation.Scheduled;
 public class T72hRefreshSchedulerConfig {
     private final T72hRefreshJobService refreshJobService;
 
+    /**
+     * Ejecuta la operación t72h refresh scheduler config.
+     * @param refreshJobService variable de entrada refreshJobService.
+     */
+
+    /**
+     * Ejecuta la operación t72h refresh scheduler config.
+     * @param refreshJobService variable de entrada refreshJobService.
+     * @return resultado de la operación t72h refresh scheduler config.
+     */
+
     public T72hRefreshSchedulerConfig(T72hRefreshJobService refreshJobService) {
         this.refreshJobService = refreshJobService;
     }
 
+    /**
+     * Ejecuta la operación refresh predictions.
+     */
     @Scheduled(fixedRateString = "PT3H")
     public void refreshPredictions() {
         refreshJobService.refreshPredictions();

@@ -28,6 +28,23 @@ public class StatsSummaryService implements StatsSummaryUseCase {
     private final UserPredictionRepositoryPort userPredictionRepositoryPort;
     private final FlightRequestRepositoryPort flightRequestRepositoryPort;
 
+    /**
+     * Ejecuta la operación stats summary service.
+     * @param predictionRepositoryPort variable de entrada predictionRepositoryPort.
+     * @param flightActualRepositoryPort variable de entrada flightActualRepositoryPort.
+     * @param userPredictionRepositoryPort variable de entrada userPredictionRepositoryPort.
+     * @param flightRequestRepositoryPort variable de entrada flightRequestRepositoryPort.
+     */
+
+    /**
+     * Ejecuta la operación stats summary service.
+     * @param predictionRepositoryPort variable de entrada predictionRepositoryPort.
+     * @param flightActualRepositoryPort variable de entrada flightActualRepositoryPort.
+     * @param userPredictionRepositoryPort variable de entrada userPredictionRepositoryPort.
+     * @param flightRequestRepositoryPort variable de entrada flightRequestRepositoryPort.
+     * @return resultado de la operación stats summary service.
+     */
+
     public StatsSummaryService(
             PredictionRepositoryPort predictionRepositoryPort,
             FlightActualRepositoryPort flightActualRepositoryPort,
@@ -40,6 +57,11 @@ public class StatsSummaryService implements StatsSummaryUseCase {
         this.flightRequestRepositoryPort = flightRequestRepositoryPort;
     }
 
+    /**
+     * Ejecuta la operación get summary.
+     * @param topN variable de entrada topN.
+     * @return resultado de la operación get summary.
+     */
     @Override
     public StatsSummary getSummary(int topN) {
         long totalPredictions = predictionRepositoryPort.countAll();
@@ -57,6 +79,12 @@ public class StatsSummaryService implements StatsSummaryUseCase {
                 topFlights
         );
     }
+
+    /**
+     * Ejecuta la operación resolve top flights.
+     * @param topN variable de entrada topN.
+     * @return resultado de la operación resolve top flights.
+     */
 
     private List<StatsTopFlight> resolveTopFlights(int topN) {
         if (topN <= 0) {
@@ -80,6 +108,13 @@ public class StatsSummaryService implements StatsSummaryUseCase {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Ejecuta la operación to top flight.
+     * @param popularity variable de entrada popularity.
+     * @param request variable de entrada request.
+     * @return resultado de la operación to top flight.
+     */
+
     private StatsTopFlight toTopFlight(FlightRequestPopularity popularity, FlightRequest request) {
         if (request == null) {
             return null;
@@ -94,6 +129,12 @@ public class StatsSummaryService implements StatsSummaryUseCase {
                 popularity.uniqueUsers()
         );
     }
+
+    /**
+     * Ejecuta la operación to utc.
+     * @param value variable de entrada value.
+     * @return resultado de la operación to utc.
+     */
 
     private OffsetDateTime toUtc(OffsetDateTime value) {
         if (value == null) {

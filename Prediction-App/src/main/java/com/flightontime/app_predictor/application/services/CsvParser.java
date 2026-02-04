@@ -14,18 +14,30 @@ import java.util.List;
 public class CsvParser {
     /**
      * Registro CsvRow.
+     * @param rowNumber variable de entrada rowNumber.
+     * @param rawRow variable de entrada rawRow.
+     * @param fields variable de entrada fields.
+     * @return resultado de la operación resultado.
      */
     public record CsvRow(int rowNumber, String rawRow, List<String> fields) {
     }
 
     /**
      * Registro CsvParseError.
+     * @param rowNumber variable de entrada rowNumber.
+     * @param message variable de entrada message.
+     * @param rawRow variable de entrada rawRow.
+     * @return resultado de la operación resultado.
      */
     public record CsvParseError(int rowNumber, String message, String rawRow) {
     }
 
     /**
      * Registro CsvParseResult.
+     * @param header variable de entrada header.
+     * @param rows variable de entrada rows.
+     * @param errors variable de entrada errors.
+     * @return resultado de la operación resultado.
      */
     public record CsvParseResult(List<String> header, List<CsvRow> rows, List<CsvParseError> errors) {
     }

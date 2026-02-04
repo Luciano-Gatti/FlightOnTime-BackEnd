@@ -9,6 +9,11 @@ import java.time.ZoneOffset;
  * Clase FlightActualMapper.
  */
 public class FlightActualMapper {
+    /**
+     * Ejecuta la operación to domain.
+     * @param entity variable de entrada entity.
+     * @return resultado de la operación to domain.
+     */
     public FlightActual toDomain(FlightOutcomeEntity entity) {
         if (entity == null) {
             return null;
@@ -27,6 +32,13 @@ public class FlightActualMapper {
                 entity.getCreatedAt()
         );
     }
+
+    /**
+     * Ejecuta la operación to entity.
+     * @param flightActual variable de entrada flightActual.
+     * @param entity variable de entrada entity.
+     * @return resultado de la operación to entity.
+     */
 
     public FlightOutcomeEntity toEntity(FlightActual flightActual, FlightOutcomeEntity entity) {
         if (flightActual == null) {
@@ -47,6 +59,12 @@ public class FlightActualMapper {
         }
         return target;
     }
+
+    /**
+     * Ejecuta la operación to utc.
+     * @param value variable de entrada value.
+     * @return resultado de la operación to utc.
+     */
 
     private OffsetDateTime toUtc(OffsetDateTime value) {
         if (value == null) {

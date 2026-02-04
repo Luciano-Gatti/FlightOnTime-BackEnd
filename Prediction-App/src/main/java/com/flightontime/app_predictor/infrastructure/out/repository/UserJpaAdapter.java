@@ -16,16 +16,37 @@ import org.springframework.stereotype.Component;
 public class UserJpaAdapter implements UserRepositoryPort {
     private final UserJpaRepository userJpaRepository;
 
+    /**
+     * Ejecuta la operación user jpa adapter.
+     * @param userJpaRepository variable de entrada userJpaRepository.
+     */
+
+    /**
+     * Ejecuta la operación user jpa adapter.
+     * @param userJpaRepository variable de entrada userJpaRepository.
+     * @return resultado de la operación user jpa adapter.
+     */
+
     public UserJpaAdapter(UserJpaRepository userJpaRepository) {
         this.userJpaRepository = userJpaRepository;
     }
 
+    /**
+     * Ejecuta la operación find by email.
+     * @param email variable de entrada email.
+     * @return resultado de la operación find by email.
+     */
     @Override
     public Optional<User> findByEmail(String email) {
         return userJpaRepository.findByEmail(email)
                 .map(this::toDomain);
     }
 
+    /**
+     * Ejecuta la operación find auth data by email.
+     * @param email variable de entrada email.
+     * @return resultado de la operación find auth data by email.
+     */
     @Override
     public Optional<UserAuthData> findAuthDataByEmail(String email) {
         return userJpaRepository.findByEmail(email)
@@ -40,6 +61,12 @@ public class UserJpaAdapter implements UserRepositoryPort {
                 ));
     }
 
+    /**
+     * Ejecuta la operación save.
+     * @param user variable de entrada user.
+     * @param passwordHash variable de entrada passwordHash.
+     * @return resultado de la operación save.
+     */
     @Override
     public User save(User user, String passwordHash) {
         if (user == null) {
@@ -80,10 +107,21 @@ public class UserJpaAdapter implements UserRepositoryPort {
         return toDomain(userJpaRepository.save(entity));
     }
 
+    /**
+     * Ejecuta la operación exists by email.
+     * @param email variable de entrada email.
+     * @return resultado de la operación exists by email.
+     */
     @Override
     public boolean existsByEmail(String email) {
         return userJpaRepository.existsByEmail(email);
     }
+
+    /**
+     * Ejecuta la operación resolve entity.
+     * @param id variable de entrada id.
+     * @return resultado de la operación resolve entity.
+     */
 
     private UserEntity resolveEntity(Long id) {
         if (id == null) {
@@ -92,12 +130,24 @@ public class UserJpaAdapter implements UserRepositoryPort {
         return userJpaRepository.findById(id).orElseGet(UserEntity::new);
     }
 
+    /**
+     * Ejecuta la operación resolve roles.
+     * @param roles variable de entrada roles.
+     * @return resultado de la operación resolve roles.
+     */
+
     private String resolveRoles(String roles) {
         if (roles == null || roles.isBlank()) {
             return "ROLE_USER";
         }
         return roles;
     }
+
+    /**
+     * Ejecuta la operación to domain.
+     * @param entity variable de entrada entity.
+     * @return resultado de la operación to domain.
+     */
 
     private User toDomain(UserEntity entity) {
         return new User(

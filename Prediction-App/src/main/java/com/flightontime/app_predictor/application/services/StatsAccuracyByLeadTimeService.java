@@ -22,10 +22,25 @@ public class StatsAccuracyByLeadTimeService implements StatsAccuracyByLeadTimeUs
 
     private final PredictionRepositoryPort predictionRepositoryPort;
 
+    /**
+     * Ejecuta la operación stats accuracy by lead time service.
+     * @param predictionRepositoryPort variable de entrada predictionRepositoryPort.
+     */
+
+    /**
+     * Ejecuta la operación stats accuracy by lead time service.
+     * @param predictionRepositoryPort variable de entrada predictionRepositoryPort.
+     * @return resultado de la operación stats accuracy by lead time service.
+     */
+
     public StatsAccuracyByLeadTimeService(PredictionRepositoryPort predictionRepositoryPort) {
         this.predictionRepositoryPort = predictionRepositoryPort;
     }
 
+    /**
+     * Ejecuta la operación get accuracy by lead time.
+     * @return resultado de la operación get accuracy by lead time.
+     */
     @Override
     public StatsAccuracyByLeadTime getAccuracyByLeadTime() {
         List<PredictionAccuracySample> samples = predictionRepositoryPort.findAccuracySamplesExcludingCancelled();
@@ -51,6 +66,11 @@ public class StatsAccuracyByLeadTimeService implements StatsAccuracyByLeadTimeUs
         return new StatsAccuracyByLeadTime(responseBins);
     }
 
+    /**
+     * Ejecuta la operación initialize bins.
+     * @return resultado de la operación initialize bins.
+     */
+
     private List<BinAccumulator> initializeBins() {
         List<BinAccumulator> bins = new ArrayList<>();
         for (int start = 0; start < MAX_BIN_EDGE_HOURS; start += BIN_SIZE_HOURS) {
@@ -60,6 +80,13 @@ public class StatsAccuracyByLeadTimeService implements StatsAccuracyByLeadTimeUs
         bins.add(new BinAccumulator(MAX_BIN_EDGE_HOURS + "+"));
         return bins;
     }
+
+    /**
+     * Ejecuta la operación compute lead time hours.
+     * @param predictedAt variable de entrada predictedAt.
+     * @param flightDate variable de entrada flightDate.
+     * @return resultado de la operación compute lead time hours.
+     */
 
     private int computeLeadTimeHours(OffsetDateTime predictedAt, OffsetDateTime flightDate) {
         if (predictedAt == null || flightDate == null) {
@@ -77,12 +104,25 @@ public class StatsAccuracyByLeadTimeService implements StatsAccuracyByLeadTimeUs
         return (int) hours;
     }
 
+    /**
+     * Ejecuta la operación resolve bin index.
+     * @param hours variable de entrada hours.
+     * @return resultado de la operación resolve bin index.
+     */
+
     private int resolveBinIndex(int hours) {
         if (hours >= MAX_BIN_EDGE_HOURS) {
             return MAX_BIN_EDGE_HOURS / BIN_SIZE_HOURS;
         }
         return hours / BIN_SIZE_HOURS;
     }
+
+    /**
+     * Ejecuta la operación is correct.
+     * @param predictedStatus variable de entrada predictedStatus.
+     * @param actualStatus variable de entrada actualStatus.
+     * @return resultado de la operación is correct.
+     */
 
     private boolean isCorrect(String predictedStatus, String actualStatus) {
         if (predictedStatus == null || actualStatus == null) {
@@ -91,10 +131,22 @@ public class StatsAccuracyByLeadTimeService implements StatsAccuracyByLeadTimeUs
         return predictedStatus.equals(actualStatus);
     }
 
+    /**
+     * Class BinAccumulator.
+     *
+     * <p>Responsable de bin accumulator.</p>
+     */
+
     private static class BinAccumulator {
         private final String label;
         private long total;
         private long correct;
+
+        /**
+         * Ejecuta la operación bin accumulator.
+         * @param label variable de entrada label.
+         * @return resultado de la operación bin accumulator.
+         */
 
         private BinAccumulator(String label) {
             this.label = label;
