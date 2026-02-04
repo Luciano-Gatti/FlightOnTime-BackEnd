@@ -81,6 +81,14 @@ public interface FlightRequestRepositoryPort {
     );
 
     /**
+     * Ejecuta la operación find active requests with flight date utc before.
+     * @param cutoffUtc variable de entrada cutoffUtc.
+     * @return resultado de la operación find active requests with flight date utc before.
+     */
+
+    List<FlightRequest> findActiveRequestsWithFlightDateUtcBefore(OffsetDateTime cutoffUtc);
+
+    /**
      * Ejecuta la operación find by flight date before and active.
      * @param cutoff variable de entrada cutoff.
      * @return resultado de la operación find by flight date before and active.

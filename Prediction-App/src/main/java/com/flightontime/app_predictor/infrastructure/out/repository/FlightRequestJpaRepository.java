@@ -75,5 +75,13 @@ public interface FlightRequestJpaRepository extends JpaRepository<FlightRequestE
             where request.flightDateUtc < :cutoff
               and request.active = true
             """)
+    List<FlightRequestEntity> findActiveRequestsWithFlightDateUtcBefore(@Param("cutoff") OffsetDateTime cutoff);
+
+    @Query("""
+            select request
+            from FlightRequestEntity request
+            where request.flightDateUtc < :cutoff
+              and request.active = true
+            """)
     List<FlightRequestEntity> findByFlightDateBeforeAndActive(@Param("cutoff") OffsetDateTime cutoff);
 }

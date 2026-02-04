@@ -16,6 +16,13 @@ public interface AirportRepositoryPort {
     Optional<Airport> findByIata(String airportIata);
 
     /**
+     * Ejecuta la operación save.
+     * @param airport variable de entrada airport.
+     * @return resultado de la operación save.
+     */
+    Airport save(Airport airport);
+
+    /**
      * Ejecuta la operación save all.
      * @param airports variable de entrada airports.
      * @return resultado de la operación save all.

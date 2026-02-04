@@ -7,6 +7,7 @@ import com.flightontime.app_predictor.infrastructure.out.repository.AirportJpaRe
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
 /**
@@ -40,6 +41,26 @@ public class AirportJpaAdapter implements AirportRepositoryPort {
     public Optional<Airport> findByIata(String airportIata) {
         return airportJpaRepository.findByAirportIata(airportIata)
                 .map(this::toDomain);
+    }
+
+    /**
+     * Ejecuta la operación save.
+     * @param airport variable de entrada airport.
+     * @return resultado de la operación save.
+     */
+    @Override
+    public Airport save(Airport airport) {
+        if (airport == null) {
+            throw new IllegalArgumentException("Airport is required");
+        }
+        try {
+            AirportEntity entity = airportJpaRepository.save(toEntity(airport));
+            return toDomain(entity);
+        } catch (DataIntegrityViolationException ex) {
+            return airportJpaRepository.findByAirportIata(airport.airportIata())
+                    .map(this::toDomain)
+                    .orElseThrow(() -> ex);
+        }
     }
 
     /**
