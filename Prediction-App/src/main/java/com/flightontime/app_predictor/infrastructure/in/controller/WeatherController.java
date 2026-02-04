@@ -29,6 +29,17 @@ public class WeatherController {
 
     private final WeatherService weatherService;
 
+    /**
+     * Ejecuta la operación weather controller.
+     * @param weatherService variable de entrada weatherService.
+     */
+
+    /**
+     * Ejecuta la operación weather controller.
+     * @param weatherService variable de entrada weatherService.
+     * @return resultado de la operación weather controller.
+     */
+
     public WeatherController(WeatherService weatherService) {
         this.weatherService = weatherService;
     }
@@ -54,11 +65,21 @@ public class WeatherController {
         return ResponseEntity.ok(weatherService.getCurrentWeather(iata, nowUtc));
     }
 
+    /**
+     * Ejecuta la operación handle validation error.
+     * @param ex variable de entrada ex.
+     * @return resultado de la operación handle validation error.
+     */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleValidationError(IllegalArgumentException ex) {
         return ResponseEntity.badRequest().body(new ErrorResponse(ex.getMessage()));
     }
 
+    /**
+     * Ejecuta la operación handle provider error.
+     * @param ex variable de entrada ex.
+     * @return resultado de la operación handle provider error.
+     */
     @ExceptionHandler(WeatherProviderException.class)
     public ResponseEntity<ErrorResponse> handleProviderError(WeatherProviderException ex) {
         return ResponseEntity.status(503).body(new ErrorResponse("Weather provider unavailable"));
@@ -66,6 +87,8 @@ public class WeatherController {
 
 /**
  * Registro ErrorResponse.
+     * @param message variable de entrada message.
+     * @return resultado de la operación resultado.
  */
     public record ErrorResponse(String message) {
     }

@@ -34,11 +34,29 @@ public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
     private final CorrelationIdFilter correlationIdFilter;
 
+    /**
+     * Ejecuta la operación security config.
+     * @param jwtTokenProvider variable de entrada jwtTokenProvider.
+     * @param correlationIdFilter variable de entrada correlationIdFilter.
+     */
+
+    /**
+     * Ejecuta la operación security config.
+     * @param jwtTokenProvider variable de entrada jwtTokenProvider.
+     * @param correlationIdFilter variable de entrada correlationIdFilter.
+     * @return resultado de la operación security config.
+     */
+
     public SecurityConfig(JwtTokenProvider jwtTokenProvider, CorrelationIdFilter correlationIdFilter) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.correlationIdFilter = correlationIdFilter;
     }
 
+    /**
+     * Ejecuta la operación security filter chain.
+     * @param http variable de entrada http.
+     * @return resultado de la operación security filter chain.
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         JwtAuthFilter jwtAuthFilter = new JwtAuthFilter(jwtTokenProvider);
@@ -63,32 +81,34 @@ public class SecurityConfig {
                     "/swagger-ui/**",
                     "/swagger-ui.html"
                 ).permitAll()
-
                 // ✅ Error endpoint (por las dudas)
                 .requestMatchers("/error").permitAll()
-
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
                 .requestMatchers(HttpMethod.POST, "/predict/bulk-import").hasAuthority("ROLE_ADMIN")
                 .requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login", "/predict").permitAll()
                 .requestMatchers(HttpMethod.GET, "/airports/**").permitAll()
                 .requestMatchers("/predict/history").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
                 .requestMatchers("/stats/model-accuracy").hasAuthority("ROLE_ADMIN")
                 .requestMatchers("/stats/**").hasAuthority("ROLE_ADMIN")
-
                 .anyRequest().authenticated()
             )
             .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
-
+    /**
+     * Ejecuta la operación password encoder.
+     * @return resultado de la operación password encoder.
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Ejecuta la operación cors configuration source.
+     * @return resultado de la operación cors configuration source.
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -104,6 +124,13 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+    /**
+     * Ejecuta la operación write error.
+     * @param response variable de entrada response.
+     * @param request variable de entrada request.
+     * @param status variable de entrada status.
+     * @param message variable de entrada message.
+     */
 
     private void writeError(
             HttpServletResponse response,
@@ -121,6 +148,26 @@ public class SecurityConfig {
         )));
     }
 
+    /**
+     * Ejecuta la operación error response.
+     * @param timestamp variable de entrada timestamp.
+     * @param status variable de entrada status.
+     * @param message variable de entrada message.
+     * @param path variable de entrada path.
+     * @return resultado de la operación error response.
+     */
+
+    /**
+     * Record ErrorResponse.
+     *
+     * <p>Responsable de error response.</p>
+     * @param timestamp variable de entrada timestamp.
+     * @param status variable de entrada status.
+     * @param message variable de entrada message.
+     * @param path variable de entrada path.
+     * @return resultado de la operación resultado.
+     */
+
     private record ErrorResponse(
             OffsetDateTime timestamp,
             int status,
@@ -128,6 +175,12 @@ public class SecurityConfig {
             String path
     ) {
     }
+
+    /**
+     * Ejecuta la operación to json.
+     * @param response variable de entrada response.
+     * @return resultado de la operación to json.
+     */
 
     private String toJson(ErrorResponse response) {
         if (response == null) {
@@ -141,6 +194,12 @@ public class SecurityConfig {
                 + "\"message\":\"" + escapeJson(response.message()) + "\","
                 + "\"path\":\"" + escapeJson(response.path()) + "\"}";
     }
+
+    /**
+     * Ejecuta la operación escape json.
+     * @param value variable de entrada value.
+     * @return resultado de la operación escape json.
+     */
 
     private String escapeJson(String value) {
         if (value == null) {

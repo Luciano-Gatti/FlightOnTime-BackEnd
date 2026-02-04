@@ -44,5 +44,10 @@ public interface UserPredictionSnapshotJpaRepository extends JpaRepository<UserP
             group by userPrediction.flightRequestId
             order by count(distinct userPrediction.userId) desc
             """)
+    /**
+     * Ejecuta la operación find top request popularity.
+     * @param pageable variable de entrada pageable.
+     * @return resultado de la operación find top request popularity.
+     */
     List<Object[]> findTopRequestPopularity(Pageable pageable);
 }

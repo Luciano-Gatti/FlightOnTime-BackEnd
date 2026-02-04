@@ -429,6 +429,8 @@ public class PredictController {
 
     /**
      * Registro ErrorResponse.
+     * @param message variable de entrada message.
+     * @return resultado de la operación resultado.
      */
     public record ErrorResponse(String message) {
     }

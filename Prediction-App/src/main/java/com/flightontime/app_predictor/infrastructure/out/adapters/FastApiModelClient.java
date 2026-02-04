@@ -28,6 +28,11 @@ public class FastApiModelClient implements ModelPredictionPort {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * Ejecuta la operación request prediction.
+     * @param command variable de entrada command.
+     * @return resultado de la operación request prediction.
+     */
     @Override
     public ModelPrediction requestPrediction(PredictFlightCommand command) {
         int schedMinuteOfDay = (command.flightDateUtc().getHour() * 60) + command.flightDateUtc().getMinute();
@@ -69,6 +74,12 @@ public class FastApiModelClient implements ModelPredictionPort {
         );
     }
 
+    /**
+     * Ejecuta la operación normalize status.
+     * @param status variable de entrada status.
+     * @return resultado de la operación normalize status.
+     */
+
     private String normalizeStatus(String status) {
         if (status == null || status.isBlank()) {
             return null;
@@ -82,6 +93,12 @@ public class FastApiModelClient implements ModelPredictionPort {
         }
         return normalized.replace(' ', '_');
     }
+
+    /**
+     * Ejecuta la operación log json.
+     * @param message variable de entrada message.
+     * @param payload variable de entrada payload.
+     */
 
     private void logJson(String message, Object payload) {
         try {

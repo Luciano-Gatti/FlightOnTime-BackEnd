@@ -13,10 +13,24 @@ import org.springframework.scheduling.annotation.Scheduled;
 public class T12hNotifySchedulerConfig {
     private final T12hNotifyJobService notifyJobService;
 
+    /**
+     * Ejecuta la operación t12h notify scheduler config.
+     * @param notifyJobService variable de entrada notifyJobService.
+     */
+
+    /**
+     * Ejecuta la operación t12h notify scheduler config.
+     * @param notifyJobService variable de entrada notifyJobService.
+     * @return resultado de la operación t12h notify scheduler config.
+     */
+
     public T12hNotifySchedulerConfig(T12hNotifyJobService notifyJobService) {
         this.notifyJobService = notifyJobService;
     }
 
+    /**
+     * Ejecuta la operación notify users.
+     */
     @Scheduled(fixedRateString = "PT1H")
     public void notifyUsers() {
         notifyJobService.notifyUsers();

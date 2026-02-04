@@ -13,6 +13,11 @@ import org.springframework.stereotype.Component;
 public class NotificationAdapter implements NotificationPort {
     private static final Logger logger = LoggerFactory.getLogger(NotificationAdapter.class);
 
+    /**
+     * Ejecuta la operación send t12h summary.
+     * @param userId variable de entrada userId.
+     * @param messages variable de entrada messages.
+     */
     @Override
     public void sendT12hSummary(Long userId, List<String> messages) {
         if (messages == null || messages.isEmpty()) {

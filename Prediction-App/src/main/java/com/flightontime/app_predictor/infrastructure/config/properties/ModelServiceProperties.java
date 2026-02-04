@@ -9,9 +9,19 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class ModelServiceProperties {
     private String url;
 
+    /**
+     * Ejecuta la operación get url.
+     * @return resultado de la operación get url.
+     */
+
     public String getUrl() {
         return url;
     }
+
+    /**
+     * Ejecuta la operación set url.
+     * @param url variable de entrada url.
+     */
 
     public void setUrl(String url) {
         this.url = url;

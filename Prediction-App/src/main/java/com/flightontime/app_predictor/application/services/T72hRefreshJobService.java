@@ -41,6 +41,9 @@ public class T72hRefreshJobService {
      * @param predictionRepositoryPort repositorio de predicciones persistidas.
      * @param modelPredictionPort puerto hacia el modelo de predicción.
      * @param distanceUseCase caso de uso para calcular distancia entre aeropuertos.
+     * @param clock variable de entrada clock.
+     */
+     * @return resultado de la operación resultado.
      */
     public T72hRefreshJobService(
             FlightFollowRepositoryPort flightFollowRepositoryPort,

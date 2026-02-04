@@ -17,6 +17,10 @@ public record ModelPredictResponse(
         @JsonAlias({"detalles", "details"})
         ModelPredictDetails details
 ) {
+    /**
+     * Ejecuta la operación threshold used.
+     * @return resultado de la operación threshold used.
+     */
     public Double thresholdUsed() {
         if (details == null) {
             return null;

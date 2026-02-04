@@ -53,6 +53,11 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Solicitud inválida"),
             @ApiResponse(responseCode = "409", description = "Email ya registrado")
     })
+    /**
+     * Ejecuta la operación register.
+     * @param request variable de entrada request.
+     * @return resultado de la operación register.
+     */
     public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) {
         User savedUser = authService.register(
                 request.email(),
@@ -73,10 +78,21 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "Login exitoso"),
             @ApiResponse(responseCode = "401", description = "Credenciales inválidas")
     })
+    /**
+     * Ejecuta la operación login.
+     * @param request variable de entrada request.
+     * @return resultado de la operación login.
+     */
     public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
         User user = authService.login(request.email(), request.password());
         return ResponseEntity.ok(buildAuthResponse(user));
     }
+
+    /**
+     * Ejecuta la operación build auth response.
+     * @param user variable de entrada user.
+     * @return resultado de la operación build auth response.
+     */
 
     private AuthResponseDTO buildAuthResponse(User user) {
         String token = jwtTokenProvider.generateToken(user.id(), user.roles(), user.email());

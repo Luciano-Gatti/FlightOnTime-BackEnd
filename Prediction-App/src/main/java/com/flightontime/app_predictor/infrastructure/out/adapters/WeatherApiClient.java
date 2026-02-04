@@ -56,6 +56,12 @@ public class WeatherApiClient implements WeatherPort {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * Ejecuta la operación get current weather.
+     * @param iata variable de entrada iata.
+     * @param instantUtc variable de entrada instantUtc.
+     * @return resultado de la operación get current weather.
+     */
     @Override
     public AirportWeatherDTO getCurrentWeather(String iata, OffsetDateTime instantUtc) {
         String normalizedIata = iata.toUpperCase(Locale.ROOT);
@@ -91,6 +97,12 @@ public class WeatherApiClient implements WeatherPort {
         }
     }
 
+    /**
+     * Ejecuta la operación fetch primary.
+     * @param airport variable de entrada airport.
+     * @return resultado de la operación fetch primary.
+     */
+
     private AirportWeatherDTO fetchPrimary(Airport airport) {
         log.info("Calling OpenMeteo weather for iata={} lat={} lon={}",
                 airport.airportIata(), airport.latitude(), airport.longitude());
@@ -107,8 +119,19 @@ public class WeatherApiClient implements WeatherPort {
                 .block();
         OpenMeteoWeatherResponse safeResponse = Objects.requireNonNull(response, "OpenMeteo response is required");
         logJson("OpenMeteo response payload", safeResponse);
+        /**
+         * Ejecuta la operación map to dto.
+         * @param safeResponse variable de entrada safeResponse.
+         * @return resultado de la operación map to dto.
+         */
         return mapToDto(safeResponse);
     }
+
+    /**
+     * Ejecuta la operación fetch fallback.
+     * @param airport variable de entrada airport.
+     * @return resultado de la operación fetch fallback.
+     */
 
     private AirportWeatherDTO fetchFallback(Airport airport) {
         log.info("Calling fallback weather for iata={} lat={} lon={}",
@@ -119,8 +142,19 @@ public class WeatherApiClient implements WeatherPort {
         );
         WeatherApiFallbackResponse safeResponse = Objects.requireNonNull(response, "Fallback weather response is required");
         logJson("Fallback weather response payload", safeResponse);
+        /**
+         * Ejecuta la operación map to dto.
+         * @param safeResponse variable de entrada safeResponse.
+         * @return resultado de la operación map to dto.
+         */
         return mapToDto(safeResponse);
     }
+
+    /**
+     * Ejecuta la operación map to dto.
+     * @param response variable de entrada response.
+     * @return resultado de la operación map to dto.
+     */
 
     private AirportWeatherDTO mapToDto(OpenMeteoWeatherResponse response) {
         OpenMeteoWeatherResponse.Current current = Objects.requireNonNull(response.current(), "OpenMeteo current weather is required");
@@ -137,6 +171,12 @@ public class WeatherApiClient implements WeatherPort {
                 updatedAt
         );
     }
+
+    /**
+     * Ejecuta la operación map to dto.
+     * @param response variable de entrada response.
+     * @return resultado de la operación map to dto.
+     */
 
     private AirportWeatherDTO mapToDto(WeatherApiFallbackResponse response) {
         WeatherApiFallbackResponse.Current current = Objects.requireNonNull(response.current(), "Fallback current weather is required");
@@ -155,6 +195,12 @@ public class WeatherApiClient implements WeatherPort {
         );
     }
 
+    /**
+     * Ejecuta la operación resolve airport.
+     * @param normalizedIata variable de entrada normalizedIata.
+     * @return resultado de la operación resolve airport.
+     */
+
     private Airport resolveAirport(String normalizedIata) {
         Airport airport = airportRepositoryPort.findByIata(normalizedIata)
                 .orElseGet(() -> airportInfoPort.findByIata(normalizedIata)
@@ -166,11 +212,23 @@ public class WeatherApiClient implements WeatherPort {
         return airport;
     }
 
+    /**
+     * Ejecuta la operación store airport.
+     * @param airport variable de entrada airport.
+     * @return resultado de la operación store airport.
+     */
+
     private Airport storeAirport(Airport airport) {
         log.info("Storing airport from external source for weather iata={}", airport.airportIata());
         airportRepositoryPort.saveAll(List.of(airport));
         return airport;
     }
+
+    /**
+     * Ejecuta la operación log json.
+     * @param message variable de entrada message.
+     * @param payload variable de entrada payload.
+     */
 
     private void logJson(String message, Object payload) {
         try {
@@ -179,6 +237,12 @@ public class WeatherApiClient implements WeatherPort {
             log.warn("{}: <failed to serialize payload>", message, ex);
         }
     }
+
+    /**
+     * Ejecuta la operación parse open meteo timestamp.
+     * @param time variable de entrada time.
+     * @return resultado de la operación parse open meteo timestamp.
+     */
 
     private OffsetDateTime parseOpenMeteoTimestamp(String time) {
         if (time == null || time.isBlank()) {
@@ -192,6 +256,13 @@ public class WeatherApiClient implements WeatherPort {
         }
     }
 
+    /**
+     * Ejecuta la operación parse weather api timestamp.
+     * @param lastUpdated variable de entrada lastUpdated.
+     * @param localtime variable de entrada localtime.
+     * @return resultado de la operación parse weather api timestamp.
+     */
+
     private OffsetDateTime parseWeatherApiTimestamp(String lastUpdated, String localtime) {
         String timeValue = lastUpdated != null && !lastUpdated.isBlank() ? lastUpdated : localtime;
         if (timeValue == null || timeValue.isBlank()) {
@@ -204,6 +275,22 @@ public class WeatherApiClient implements WeatherPort {
             return null;
         }
     }
+
+    /**
+     * Ejecuta la operación cache entry.
+     * @param weather variable de entrada weather.
+     * @param expiresAt variable de entrada expiresAt.
+     * @return resultado de la operación cache entry.
+     */
+
+    /**
+     * Record CacheEntry.
+     *
+     * <p>Responsable de cache entry.</p>
+     * @param weather variable de entrada weather.
+     * @param expiresAt variable de entrada expiresAt.
+     * @return resultado de la operación resultado.
+     */
 
     private record CacheEntry(AirportWeatherDTO weather, OffsetDateTime expiresAt) {
     }

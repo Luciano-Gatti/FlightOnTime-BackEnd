@@ -24,6 +24,21 @@ public class PredictHistoryService implements PredictHistoryUseCase {
     private final PredictionRepositoryPort predictionRepositoryPort;
     private final UserPredictionRepositoryPort userPredictionRepositoryPort;
 
+    /**
+     * Ejecuta la operación predict history service.
+     * @param flightRequestRepositoryPort variable de entrada flightRequestRepositoryPort.
+     * @param predictionRepositoryPort variable de entrada predictionRepositoryPort.
+     * @param userPredictionRepositoryPort variable de entrada userPredictionRepositoryPort.
+     */
+
+    /**
+     * Ejecuta la operación predict history service.
+     * @param flightRequestRepositoryPort variable de entrada flightRequestRepositoryPort.
+     * @param predictionRepositoryPort variable de entrada predictionRepositoryPort.
+     * @param userPredictionRepositoryPort variable de entrada userPredictionRepositoryPort.
+     * @return resultado de la operación predict history service.
+     */
+
     public PredictHistoryService(
             FlightRequestRepositoryPort flightRequestRepositoryPort,
             PredictionRepositoryPort predictionRepositoryPort,
@@ -34,6 +49,11 @@ public class PredictHistoryService implements PredictHistoryUseCase {
         this.userPredictionRepositoryPort = userPredictionRepositoryPort;
     }
 
+    /**
+     * Ejecuta la operación get history.
+     * @param userId variable de entrada userId.
+     * @return resultado de la operación get history.
+     */
     @Override
     public List<PredictHistoryItem> getHistory(Long userId) {
         List<FlightRequest> requests = flightRequestRepositoryPort.findByUserId(userId);
@@ -42,6 +62,12 @@ public class PredictHistoryService implements PredictHistoryUseCase {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Ejecuta la operación get history detail.
+     * @param userId variable de entrada userId.
+     * @param requestId variable de entrada requestId.
+     * @return resultado de la operación get history detail.
+     */
     @Override
     public PredictHistoryDetail getHistoryDetail(Long userId, Long requestId) {
         FlightRequest request = flightRequestRepositoryPort.findById(requestId)
@@ -67,6 +93,13 @@ public class PredictHistoryService implements PredictHistoryUseCase {
         );
     }
 
+    /**
+     * Ejecuta la operación to history item.
+     * @param userId variable de entrada userId.
+     * @param request variable de entrada request.
+     * @return resultado de la operación to history item.
+     */
+
     private PredictHistoryItem toHistoryItem(Long userId, FlightRequest request) {
         List<Prediction> predictions = predictionRepositoryPort
                 .findByRequestIdAndUserId(request.id(), userId);
@@ -89,6 +122,12 @@ public class PredictHistoryService implements PredictHistoryUseCase {
                 uniqueUsersCount
         );
     }
+
+    /**
+     * Ejecuta la operación to prediction dto.
+     * @param prediction variable de entrada prediction.
+     * @return resultado de la operación to prediction dto.
+     */
 
     private PredictHistoryPrediction toPredictionDto(Prediction prediction) {
         return new PredictHistoryPrediction(

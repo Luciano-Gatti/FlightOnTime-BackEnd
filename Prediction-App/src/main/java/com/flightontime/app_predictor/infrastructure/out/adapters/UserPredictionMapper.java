@@ -9,6 +9,11 @@ import java.time.ZoneOffset;
  * Clase UserPredictionMapper.
  */
 public class UserPredictionMapper {
+    /**
+     * Ejecuta la operación to domain.
+     * @param entity variable de entrada entity.
+     * @return resultado de la operación to domain.
+     */
     public UserPrediction toDomain(UserPredictionSnapshotEntity entity) {
         if (entity == null) {
             return null;
@@ -22,6 +27,13 @@ public class UserPredictionMapper {
                 entity.getCreatedAt()
         );
     }
+
+    /**
+     * Ejecuta la operación to entity.
+     * @param userPrediction variable de entrada userPrediction.
+     * @param entity variable de entrada entity.
+     * @return resultado de la operación to entity.
+     */
 
     public UserPredictionSnapshotEntity toEntity(UserPrediction userPrediction, UserPredictionSnapshotEntity entity) {
         if (userPrediction == null) {
@@ -37,6 +49,12 @@ public class UserPredictionMapper {
         }
         return target;
     }
+
+    /**
+     * Ejecuta la operación to utc.
+     * @param value variable de entrada value.
+     * @return resultado de la operación to utc.
+     */
 
     private OffsetDateTime toUtc(OffsetDateTime value) {
         if (value == null) {

@@ -7,6 +7,11 @@ import com.flightontime.app_predictor.infrastructure.out.entities.FlightSubscrip
  * Clase FlightFollowMapper.
  */
 public class FlightFollowMapper {
+    /**
+     * Ejecuta la operación to domain.
+     * @param entity variable de entrada entity.
+     * @return resultado de la operación to domain.
+     */
     public FlightFollow toDomain(FlightSubscriptionEntity entity) {
         if (entity == null) {
             return null;
@@ -21,6 +26,13 @@ public class FlightFollowMapper {
                 entity.getUpdatedAt()
         );
     }
+
+    /**
+     * Ejecuta la operación to entity.
+     * @param flightFollow variable de entrada flightFollow.
+     * @param entity variable de entrada entity.
+     * @return resultado de la operación to entity.
+     */
 
     public FlightSubscriptionEntity toEntity(FlightFollow flightFollow, FlightSubscriptionEntity entity) {
         FlightSubscriptionEntity target = entity == null ? new FlightSubscriptionEntity() : entity;

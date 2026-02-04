@@ -28,6 +28,10 @@ public class PredictionWorkflowService {
     private static final Logger log = LoggerFactory.getLogger(PredictionWorkflowService.class);
     /**
      * Registro PredictionWorkflowResult.
+     * @param flightRequest variable de entrada flightRequest.
+     * @param prediction variable de entrada prediction.
+     * @param result variable de entrada result.
+     * @return resultado de la operación resultado.
      */
     public record PredictionWorkflowResult(
             FlightRequest flightRequest,
@@ -50,6 +54,9 @@ public class PredictionWorkflowService {
      * @param flightRequestRepositoryPort repositorio de solicitudes de vuelo.
      * @param predictionRepositoryPort repositorio de predicciones persistidas.
      * @param userPredictionRepositoryPort repositorio de snapshots de predicción por usuario.
+     * @param clock variable de entrada clock.
+     */
+     * @return resultado de la operación resultado.
      */
     public PredictionWorkflowService(
             ModelPredictionPort modelPredictionPort,
