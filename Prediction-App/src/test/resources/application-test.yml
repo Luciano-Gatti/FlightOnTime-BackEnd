@@ -1,0 +1,37 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:flightontime_test;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+  main:
+    allow-bean-definition-overriding: true
+
+model:
+  service:
+    url: http://localhost:0
+weather:
+  service:
+    base-url: http://localhost:0
+  openmeteo:
+    base-url: http://localhost:0
+    geocoding-base-url: http://localhost:0
+  fallback:
+    base-url: http://localhost:0
+aerodatabox:
+  service:
+    url: http://localhost:0
+airport:
+  service:
+    url: http://localhost:0
+api:
+  market:
+    key: test

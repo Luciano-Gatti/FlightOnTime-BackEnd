@@ -11,6 +11,7 @@ import com.flightontime.app_predictor.domain.ports.out.FlightFollowRepositoryPor
 import com.flightontime.app_predictor.domain.ports.out.FlightRequestRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.ModelPredictionPort;
 import com.flightontime.app_predictor.domain.ports.out.PredictionRepositoryPort;
+import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -30,6 +31,7 @@ public class T72hRefreshJobService {
     private final PredictionRepositoryPort predictionRepositoryPort;
     private final ModelPredictionPort modelPredictionPort;
     private final DistanceUseCase distanceUseCase;
+    private final Clock clock;
 
     /**
      * Construye el servicio que refresca predicciones en la ventana T-72h.
@@ -45,13 +47,15 @@ public class T72hRefreshJobService {
             FlightRequestRepositoryPort flightRequestRepositoryPort,
             PredictionRepositoryPort predictionRepositoryPort,
             ModelPredictionPort modelPredictionPort,
-            DistanceUseCase distanceUseCase
+            DistanceUseCase distanceUseCase,
+            Clock clock
     ) {
         this.flightFollowRepositoryPort = flightFollowRepositoryPort;
         this.flightRequestRepositoryPort = flightRequestRepositoryPort;
         this.predictionRepositoryPort = predictionRepositoryPort;
         this.modelPredictionPort = modelPredictionPort;
         this.distanceUseCase = distanceUseCase;
+        this.clock = clock;
     }
 
     /**
@@ -59,7 +63,7 @@ public class T72hRefreshJobService {
      */
     public void refreshPredictions() {
         long startMillis = System.currentTimeMillis();
-        OffsetDateTime startTimestamp = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime startTimestamp = OffsetDateTime.now(clock);
         OffsetDateTime end = startTimestamp.plusHours(72);
         log.info("Starting T72h refresh job timestamp={} windowStart={} windowEnd={}",
                 startTimestamp, startTimestamp, end);
@@ -91,7 +95,7 @@ public class T72hRefreshJobService {
         long durationMs = System.currentTimeMillis() - startMillis;
         log.info("Finished T72h refresh job timestamp={} durationMs={} subscriptionsEvaluated={} flightsInWindow={} "
                         + "cacheHits={} predictionsCreated={} errors={}",
-                OffsetDateTime.now(ZoneOffset.UTC),
+                OffsetDateTime.now(clock),
                 durationMs,
                 subscriptionsEvaluated,
                 flightsInWindow,
