@@ -1,6 +1,7 @@
 package com.flightontime.app_predictor.infrastructure.out.repository;
 
 import com.flightontime.app_predictor.infrastructure.out.entities.FlightOutcomeEntity;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
@@ -13,4 +14,11 @@ public interface FlightOutcomeJpaRepository extends JpaRepository<FlightOutcomeE
      * @return resultado de la operación count by actual status.
      */
     long countByActualStatus(String actualStatus);
+
+    /**
+     * Ejecuta la operación find by flight request id.
+     * @param flightRequestId variable de entrada flightRequestId.
+     * @return resultado de la operación find by flight request id.
+     */
+    Optional<FlightOutcomeEntity> findByFlightRequestId(Long flightRequestId);
 }
