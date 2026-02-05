@@ -5,6 +5,7 @@ import com.flightontime.app_predictor.domain.ports.out.AirportRepositoryPort;
 import com.flightontime.app_predictor.infrastructure.out.persistence.entities.AirportEntity;
 import com.flightontime.app_predictor.infrastructure.out.persistence.repository.AirportJpaRepository;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -39,7 +40,11 @@ public class AirportJpaAdapter implements AirportRepositoryPort {
      */
     @Override
     public Optional<Airport> findByIata(String airportIata) {
-        return airportJpaRepository.findByAirportIata(airportIata)
+        if (airportIata == null) {
+            return Optional.empty();
+        }
+        String normalizedIata = airportIata.trim().toUpperCase(Locale.ROOT);
+        return airportJpaRepository.findByAirportIata(normalizedIata)
                 .map(this::toDomain);
     }
 
@@ -106,7 +111,9 @@ public class AirportJpaAdapter implements AirportRepositoryPort {
 
     private AirportEntity toEntity(Airport airport) {
         AirportEntity entity = new AirportEntity();
-        entity.setAirportIata(airport.airportIata());
+        entity.setAirportIata(airport.airportIata() == null
+                ? null
+                : airport.airportIata().trim().toUpperCase(Locale.ROOT));
         entity.setAirportName(airport.airportName());
         entity.setCountry(airport.country());
         entity.setCityName(airport.cityName());
@@ -114,7 +121,9 @@ public class AirportJpaAdapter implements AirportRepositoryPort {
         entity.setLongitude(airport.longitude());
         entity.setElevation(airport.elevation());
         entity.setTimeZone(airport.timeZone());
-        entity.setGoogleMaps(airport.googleMaps());
+        entity.setGoogleMaps((airport.googleMaps() == null || airport.googleMaps().isBlank())
+                ? "https://maps.google.com/?q=" + entity.getAirportIata()
+                : airport.googleMaps());
         return entity;
     }
 }
