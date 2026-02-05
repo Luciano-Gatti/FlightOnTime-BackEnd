@@ -44,6 +44,7 @@ public class FlightRequestMapper {
             return entity;
         }
         FlightRequestEntity target = entity == null ? new FlightRequestEntity() : entity;
+        // userId se propaga solo en memoria para mapear al dominio; no se persiste en flight_request.
         target.setUserId(request.userId());
         target.setFlightDateUtc(toUtc(request.flightDateUtc()));
         target.setAirlineCode(request.airlineCode());

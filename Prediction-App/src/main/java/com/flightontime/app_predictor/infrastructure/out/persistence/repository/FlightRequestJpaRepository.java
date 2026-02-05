@@ -27,6 +27,9 @@ public interface FlightRequestJpaRepository extends JpaRepository<FlightRequestE
             String destIata
     );
 
+    /**
+     * Filtra requests por usuario a través de snapshots, ya que FlightRequestEntity.userId es transient.
+     */
     @Query("""
             select distinct request
             from FlightRequestEntity request

@@ -27,6 +27,13 @@ public class FlightRequestEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /**
+     * Usuario asociado al request solo en memoria.
+     * <p>
+     * No existe columna {@code user_id} en {@code flight_request}; la relación usuario-request
+     * se reconstruye desde {@code user_prediction_snapshot}. Se mantiene transient para evitar
+     * su persistencia accidental y preservar el esquema actual.
+     */
     @Transient
     private Long userId;
 
