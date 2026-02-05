@@ -1,7 +1,7 @@
 package com.flightontime.app_predictor.infrastructure.security;
 
-import com.flightontime.app_predictor.infrastructure.out.entities.UserEntity;
-import com.flightontime.app_predictor.infrastructure.out.repository.UserJpaRepository;
+import com.flightontime.app_predictor.infrastructure.out.persistence.entities.UserEntity;
+import com.flightontime.app_predictor.infrastructure.out.persistence.repository.UserJpaRepository;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
