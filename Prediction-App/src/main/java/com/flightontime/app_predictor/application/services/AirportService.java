@@ -1,9 +1,14 @@
 package com.flightontime.app_predictor.application.services;
 
 import com.flightontime.app_predictor.application.dto.AirportDTO;
+import com.flightontime.app_predictor.domain.exception.ExternalApiException;
 import com.flightontime.app_predictor.domain.model.Airport;
 import com.flightontime.app_predictor.domain.ports.out.AirportInfoPort;
 import com.flightontime.app_predictor.domain.ports.out.AirportRepositoryPort;
+<<<<<<< codex/fix-airport-iata-retrieval-flow-fhvjm5
+=======
+import com.flightontime.app_predictor.infrastructure.out.http.ExternalProviderException;
+>>>>>>> main
 import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,6 +73,7 @@ public class AirportService {
      * @return aeropuerto encontrado o guardado.
      */
     private Airport fetchAndStoreAirport(String airportIata) {
+<<<<<<< codex/fix-airport-iata-retrieval-flow-fhvjm5
         log.info("Airport not present in DB, fetching from external provider iata={}", airportIata);
         Airport airport = airportInfoPort.findByIata(airportIata)
                 .map(found -> new Airport(
@@ -83,6 +89,26 @@ public class AirportService {
                 ))
                 .orElseThrow(() -> new AirportNotFoundException("Airport not found: " + airportIata));
         return airportRepositoryPort.save(airport);
+=======
+        try {
+            Airport airport = airportInfoPort.findByIata(airportIata)
+                    .map(found -> new Airport(
+                            airportIata,
+                            found.airportName(),
+                            found.country(),
+                            found.cityName(),
+                            found.latitude(),
+                            found.longitude(),
+                            found.elevation(),
+                            found.timeZone(),
+                            found.googleMaps()
+                    ))
+                    .orElseThrow(() -> new AirportNotFoundException("Airport not found: " + airportIata));
+            return airportRepositoryPort.save(airport);
+        } catch (ExternalProviderException ex) {
+            throw new ExternalApiException("Airport provider unavailable", ex);
+        }
+>>>>>>> main
     }
 
     /**
