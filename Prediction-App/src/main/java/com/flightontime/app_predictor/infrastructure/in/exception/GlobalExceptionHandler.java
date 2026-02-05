@@ -146,7 +146,7 @@ public class GlobalExceptionHandler {
          * @param null variable de entrada null.
          * @return resultado de la operación build response.
          */
-        return buildResponse(HttpStatus.BAD_GATEWAY, "External service unavailable", request, null);
+        return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, "External service unavailable", request, null);
     }
 
     /**
