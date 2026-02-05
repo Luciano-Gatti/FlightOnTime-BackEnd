@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
@@ -74,6 +75,19 @@ public class AirportApiClient implements AirportInfoPort {
                     airportIata,
                     providerException.getStatusCode(),
                     providerException.getBodyTruncated());
+            throw providerException;
+        } catch (WebClientRequestException ex) {
+            ExternalProviderException providerException = new ExternalProviderException(
+                    "airport-api",
+                    503,
+                    "Airport API unavailable for iata=" + airportIata,
+                    null,
+                    ex
+            );
+            log.error("Airport API unavailable provider={} iata={} reason={}",
+                    providerException.getProvider(),
+                    airportIata,
+                    ex.getMessage());
             throw providerException;
         }
     }

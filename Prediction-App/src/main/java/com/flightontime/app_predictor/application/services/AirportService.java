@@ -4,6 +4,7 @@ import com.flightontime.app_predictor.application.dto.AirportDTO;
 import com.flightontime.app_predictor.domain.model.Airport;
 import com.flightontime.app_predictor.domain.ports.out.AirportInfoPort;
 import com.flightontime.app_predictor.domain.ports.out.AirportRepositoryPort;
+import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -67,7 +68,19 @@ public class AirportService {
      * @return aeropuerto encontrado o guardado.
      */
     private Airport fetchAndStoreAirport(String airportIata) {
+        log.info("Airport not present in DB, fetching from external provider iata={}", airportIata);
         Airport airport = airportInfoPort.findByIata(airportIata)
+                .map(found -> new Airport(
+                        airportIata,
+                        found.airportName(),
+                        found.country(),
+                        found.cityName(),
+                        found.latitude(),
+                        found.longitude(),
+                        found.elevation(),
+                        found.timeZone(),
+                        found.googleMaps()
+                ))
                 .orElseThrow(() -> new AirportNotFoundException("Airport not found: " + airportIata));
         return airportRepositoryPort.save(airport);
     }
@@ -82,7 +95,7 @@ public class AirportService {
         if (airportIata == null) {
             throw new IllegalArgumentException("iata is required");
         }
-        String normalized = airportIata.trim().toUpperCase();
+        String normalized = airportIata.trim().toUpperCase(Locale.ROOT);
         if (normalized.isBlank()) throw new IllegalArgumentException("iata is required");
         if (normalized.chars().anyMatch(Character::isWhitespace)) {
             throw new IllegalArgumentException("iata must not contain whitespace");
