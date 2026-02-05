@@ -6,18 +6,15 @@ import com.flightontime.app_predictor.infrastructure.out.dto.AeroDataBoxFlightAc
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.json.JsonParser;
-import org.springframework.boot.json.JsonParserFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -150,40 +147,27 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
         if (responseBody == null || responseBody.isBlank()) {
             return Optional.empty();
         }
-        JsonParser parser = JsonParserFactory.getJsonParser();
-        Object parsed = parsePayload(parser, responseBody);
-        if (parsed instanceof List<?> list) {
-            if (list.isEmpty()) {
+        try {
+            JsonNode root = objectMapper.readTree(responseBody);
+            JsonNode payload;
+            if (root.isArray()) {
+                if (root.isEmpty()) {
+                    return Optional.empty();
+                }
+                payload = root.get(0);
+            } else if (root.isObject()) {
+                payload = root;
+            } else {
                 return Optional.empty();
             }
-            Object first = list.getFirst();
-            if (first instanceof Map<?, ?> map) {
-                return toFlightActualResult(toResponse(map));
+            if (!payload.isObject()) {
+                return Optional.empty();
             }
+            Map<?, ?> payloadMap = objectMapper.convertValue(payload, Map.class);
+            return toFlightActualResult(toResponse(payloadMap));
+        } catch (Exception ex) {
             return Optional.empty();
         }
-        if (parsed instanceof Map<?, ?> map) {
-            return toFlightActualResult(toResponse(map));
-        }
-        return Optional.empty();
-    }
-
-    /**
-     * Ejecuta la operación parse payload.
-     * @param parser variable de entrada parser.
-     * @param responseBody variable de entrada responseBody.
-     * @return resultado de la operación parse payload.
-     */
-
-    private Object parsePayload(JsonParser parser, String responseBody) {
-        String trimmed = responseBody.trim();
-        if (trimmed.startsWith("[")) {
-            return parser.parseList(trimmed);
-        }
-        if (trimmed.startsWith("{")) {
-            return parser.parseMap(trimmed);
-        }
-        return Collections.emptyList();
     }
 
     /**
