@@ -33,6 +33,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
     private final CorrelationIdFilter correlationIdFilter;
+    private final RequestObservabilityFilter requestObservabilityFilter;
 
     /**
      * Ejecuta la operación security config.
@@ -47,9 +48,14 @@ public class SecurityConfig {
      * @return resultado de la operación security config.
      */
 
-    public SecurityConfig(JwtTokenProvider jwtTokenProvider, CorrelationIdFilter correlationIdFilter) {
+    public SecurityConfig(
+            JwtTokenProvider jwtTokenProvider,
+            CorrelationIdFilter correlationIdFilter,
+            RequestObservabilityFilter requestObservabilityFilter
+    ) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.correlationIdFilter = correlationIdFilter;
+        this.requestObservabilityFilter = requestObservabilityFilter;
     }
 
     /**
@@ -93,7 +99,8 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterAfter(jwtAuthFilter, CorrelationIdFilter.class)
+            .addFilterAfter(requestObservabilityFilter, JwtAuthFilter.class);
         return http.build();
     }
     /**
