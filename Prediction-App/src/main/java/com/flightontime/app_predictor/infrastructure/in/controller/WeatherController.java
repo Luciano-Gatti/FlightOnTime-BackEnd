@@ -2,7 +2,7 @@ package com.flightontime.app_predictor.infrastructure.in.controller;
 
 import com.flightontime.app_predictor.application.dto.AirportWeatherDTO;
 import com.flightontime.app_predictor.application.services.WeatherService;
-import com.flightontime.app_predictor.infrastructure.out.adapters.WeatherProviderException;
+import com.flightontime.app_predictor.application.exception.WeatherProviderException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

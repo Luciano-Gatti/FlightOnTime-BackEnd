@@ -4,7 +4,7 @@ import com.flightontime.app_predictor.domain.exception.AirportNotFoundException;
 import com.flightontime.app_predictor.domain.exception.BusinessException;
 import com.flightontime.app_predictor.domain.exception.DomainException;
 import com.flightontime.app_predictor.domain.exception.ExternalApiException;
-import com.flightontime.app_predictor.infrastructure.out.adapters.WeatherProviderException;
+import com.flightontime.app_predictor.application.exception.WeatherProviderException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.time.OffsetDateTime;
