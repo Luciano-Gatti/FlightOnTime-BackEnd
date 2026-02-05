@@ -40,15 +40,34 @@ public class DistanceService implements DistanceUseCase {
      * @return distancia en kilómetros.
      */
     public double calculateDistance(String originIata, String destinationIata) {
-        String normalizedOrigin = normalizeIata(originIata);
-        String normalizedDestination = normalizeIata(destinationIata);
-        Airport origin = resolveAirport(normalizedOrigin);
-        Airport destination = resolveAirport(normalizedDestination);
-        if (origin.latitude() == null || origin.longitude() == null
-                || destination.latitude() == null || destination.longitude() == null) {
-            throw new IllegalArgumentException("Airport coordinates are required to calculate distance");
+        long startMs = UseCaseLogSupport.start(
+                log,
+                "DistanceService.calculateDistance",
+                null,
+                "originIata=" + originIata + ", destinationIata=" + destinationIata
+        );
+        try {
+            String normalizedOrigin = normalizeIata(originIata);
+            String normalizedDestination = normalizeIata(destinationIata);
+            Airport origin = resolveAirport(normalizedOrigin);
+            Airport destination = resolveAirport(normalizedDestination);
+            if (origin.latitude() == null || origin.longitude() == null
+                    || destination.latitude() == null || destination.longitude() == null) {
+                throw new IllegalArgumentException("Airport coordinates are required to calculate distance");
+            }
+            double distance = haversine(origin.latitude(), origin.longitude(), destination.latitude(), destination.longitude());
+            UseCaseLogSupport.end(
+                    log,
+                    "DistanceService.calculateDistance",
+                    null,
+                    startMs,
+                    "distanceKm=" + distance
+            );
+            return distance;
+        } catch (Exception ex) {
+            UseCaseLogSupport.fail(log, "DistanceService.calculateDistance", null, startMs, ex);
+            throw ex;
         }
-        return haversine(origin.latitude(), origin.longitude(), destination.latitude(), destination.longitude());
     }
 
     /**

@@ -64,20 +64,45 @@ public class StatsSummaryService implements StatsSummaryUseCase {
      */
     @Override
     public StatsSummary getSummary(int topN) {
-        long totalPredictions = predictionRepositoryPort.countAll();
-        long totalOnTimePredicted = predictionRepositoryPort.countByStatus("ON_TIME");
-        long totalDelayedPredicted = predictionRepositoryPort.countByStatus("DELAYED");
-        long totalFlightsWithActual = flightActualRepositoryPort.countAll();
-        long totalCancelled = flightActualRepositoryPort.countByActualStatus("CANCELLED");
-        List<StatsTopFlight> topFlights = resolveTopFlights(topN);
-        return new StatsSummary(
-                totalPredictions,
-                totalOnTimePredicted,
-                totalDelayedPredicted,
-                totalFlightsWithActual,
-                totalCancelled,
-                topFlights
+        long startMs = UseCaseLogSupport.start(
+                org.slf4j.LoggerFactory.getLogger(StatsSummaryService.class),
+                "StatsSummaryService.getSummary",
+                null,
+                "topN=" + topN
         );
+        try {
+            long totalPredictions = predictionRepositoryPort.countAll();
+            long totalOnTimePredicted = predictionRepositoryPort.countByStatus("ON_TIME");
+            long totalDelayedPredicted = predictionRepositoryPort.countByStatus("DELAYED");
+            long totalFlightsWithActual = flightActualRepositoryPort.countAll();
+            long totalCancelled = flightActualRepositoryPort.countByActualStatus("CANCELLED");
+            List<StatsTopFlight> topFlights = resolveTopFlights(topN);
+            StatsSummary result = new StatsSummary(
+                    totalPredictions,
+                    totalOnTimePredicted,
+                    totalDelayedPredicted,
+                    totalFlightsWithActual,
+                    totalCancelled,
+                    topFlights
+            );
+            UseCaseLogSupport.end(
+                    org.slf4j.LoggerFactory.getLogger(StatsSummaryService.class),
+                    "StatsSummaryService.getSummary",
+                    null,
+                    startMs,
+                    "totalPredictions=" + totalPredictions + ", topFlights=" + topFlights.size()
+            );
+            return result;
+        } catch (Exception ex) {
+            UseCaseLogSupport.fail(
+                    org.slf4j.LoggerFactory.getLogger(StatsSummaryService.class),
+                    "StatsSummaryService.getSummary",
+                    null,
+                    startMs,
+                    ex
+            );
+            throw ex;
+        }
     }
 
     /**

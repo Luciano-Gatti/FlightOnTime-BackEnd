@@ -43,27 +43,52 @@ public class StatsAccuracyByLeadTimeService implements StatsAccuracyByLeadTimeUs
      */
     @Override
     public StatsAccuracyByLeadTime getAccuracyByLeadTime() {
-        List<PredictionAccuracySample> samples = predictionRepositoryPort.findAccuracySamplesExcludingCancelled();
-        List<BinAccumulator> bins = initializeBins();
-        for (PredictionAccuracySample sample : samples) {
-            int hours = computeLeadTimeHours(sample.forecastBucketUtc(), sample.flightDateUtc());
-            int index = resolveBinIndex(hours);
-            BinAccumulator bin = bins.get(index);
-            bin.total++;
-            if (isCorrect(sample.predictedStatus(), sample.actualStatus())) {
-                bin.correct++;
+        long startMs = UseCaseLogSupport.start(
+                org.slf4j.LoggerFactory.getLogger(StatsAccuracyByLeadTimeService.class),
+                "StatsAccuracyByLeadTimeService.getAccuracyByLeadTime",
+                null,
+                "binSizeHours=" + BIN_SIZE_HOURS
+        );
+        try {
+            List<PredictionAccuracySample> samples = predictionRepositoryPort.findAccuracySamplesExcludingCancelled();
+            List<BinAccumulator> bins = initializeBins();
+            for (PredictionAccuracySample sample : samples) {
+                int hours = computeLeadTimeHours(sample.forecastBucketUtc(), sample.flightDateUtc());
+                int index = resolveBinIndex(hours);
+                BinAccumulator bin = bins.get(index);
+                bin.total++;
+                if (isCorrect(sample.predictedStatus(), sample.actualStatus())) {
+                    bin.correct++;
+                }
             }
+            List<StatsAccuracyBin> responseBins = new ArrayList<>();
+            for (BinAccumulator bin : bins) {
+                responseBins.add(new StatsAccuracyBin(
+                        bin.label,
+                        bin.total,
+                        bin.correct,
+                        bin.total == 0 ? 0.0 : (double) bin.correct / bin.total
+                ));
+            }
+            StatsAccuracyByLeadTime result = new StatsAccuracyByLeadTime(responseBins);
+            UseCaseLogSupport.end(
+                    org.slf4j.LoggerFactory.getLogger(StatsAccuracyByLeadTimeService.class),
+                    "StatsAccuracyByLeadTimeService.getAccuracyByLeadTime",
+                    null,
+                    startMs,
+                    "samples=" + samples.size() + ", bins=" + responseBins.size()
+            );
+            return result;
+        } catch (Exception ex) {
+            UseCaseLogSupport.fail(
+                    org.slf4j.LoggerFactory.getLogger(StatsAccuracyByLeadTimeService.class),
+                    "StatsAccuracyByLeadTimeService.getAccuracyByLeadTime",
+                    null,
+                    startMs,
+                    ex
+            );
+            throw ex;
         }
-        List<StatsAccuracyBin> responseBins = new ArrayList<>();
-        for (BinAccumulator bin : bins) {
-            responseBins.add(new StatsAccuracyBin(
-                    bin.label,
-                    bin.total,
-                    bin.correct,
-                    bin.total == 0 ? 0.0 : (double) bin.correct / bin.total
-            ));
-        }
-        return new StatsAccuracyByLeadTime(responseBins);
     }
 
     /**
