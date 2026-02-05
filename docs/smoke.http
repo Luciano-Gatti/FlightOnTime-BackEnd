@@ -1,0 +1,72 @@
+###
+# Smoke manual - IntelliJ HTTP Client
+# Uso:
+# 1) Ejecutar register (opcional si ya existe usuario)
+# 2) Ejecutar login (guarda token en variable global)
+# 3) Ejecutar predict
+# 4) Ejecutar predict/history
+# 5) Ejecutar airport lookup
+# 6) Ejecutar stats (admin)
+
+@host = http://localhost:8080
+@email = smoke.user@example.com
+@password = P@ssw0rd123
+@firstName = Smoke
+@lastName = User
+@iata = EZE
+
+### 1) Register
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "firstName": "{{firstName}}",
+  "lastName": "{{lastName}}",
+  "password": "{{password}}"
+}
+
+### 2) Login (captura token)
+# @name login
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+> {%
+  client.global.set("token", response.body.token);
+%}
+
+### 3) Predict (público según configuración actual)
+POST {{host}}/predict
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "flightDateUtc": "2030-01-01T18:00:00Z",
+  "airlineCode": "AR",
+  "originIata": "EZE",
+  "destIata": "SCL",
+  "flightNumber": "AR1280"
+}
+
+### 4) Predict history (requiere auth ROLE_USER/ROLE_ADMIN)
+GET {{host}}/predict/history
+Authorization: Bearer {{token}}
+
+### 5) Airport lookup (público)
+GET {{host}}/airports/{{iata}}
+
+### 6a) Stats summary (ejemplo admin)
+# Requiere ROLE_ADMIN según SecurityConfig.
+# Reemplazar token por uno admin si el usuario smoke no tiene permisos.
+GET {{host}}/stats/summary?topN=5
+Authorization: Bearer {{token}}
+
+### 6b) Stats accuracy-by-leadtime (ejemplo admin)
+# Requiere ROLE_ADMIN según SecurityConfig.
+GET {{host}}/stats/accuracy-by-leadtime
+Authorization: Bearer {{token}}

@@ -53,37 +53,51 @@ public class WeatherService {
      * @return DTO con información meteorológica.
      */
     public AirportWeatherDTO getCurrentWeather(String iata, OffsetDateTime instantUtc) {
-        String normalizedIata = iata.toUpperCase(Locale.ROOT);
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        CacheEntry cached = cache.get(normalizedIata);
-        if (cached != null && now.isBefore(cached.expiresAt())) {
-            log.info("Weather cache hit for iata={}", normalizedIata);
-            return cached.weather();
-        }
-        log.info("Weather lookup start iata={} instantUtc={}", normalizedIata, instantUtc);
-        Airport airport = resolveAirport(normalizedIata);
-
+        long startMs = UseCaseLogSupport.start(
+                log,
+                "WeatherService.getCurrentWeather",
+                null,
+                "iata=" + iata + ", instantUtc=" + instantUtc
+        );
         try {
+            String normalizedIata = iata.toUpperCase(Locale.ROOT);
+            OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+            CacheEntry cached = cache.get(normalizedIata);
+            if (cached != null && now.isBefore(cached.expiresAt())) {
+                log.info("Weather cache hit for iata={}", normalizedIata);
+                UseCaseLogSupport.end(log, "WeatherService.getCurrentWeather", null, startMs, "iata=" + normalizedIata + ", source=cache");
+                return cached.weather();
+            }
+            log.info("Weather lookup start iata={} instantUtc={}", normalizedIata, instantUtc);
+            Airport airport = resolveAirport(normalizedIata);
+
+            try {
             log.info("Calling OpenMeteo weather for iata={} lat={} lon={}",
                     airport.airportIata(), airport.latitude(), airport.longitude());
-            AirportWeatherDTO dto = weatherPrimaryProviderPort.fetchCurrentWeather(airport.latitude(), airport.longitude());
-            cache.put(normalizedIata, new CacheEntry(dto, now.plus(cacheTtl)));
-            return dto;
+                AirportWeatherDTO dto = weatherPrimaryProviderPort.fetchCurrentWeather(airport.latitude(), airport.longitude());
+                cache.put(normalizedIata, new CacheEntry(dto, now.plus(cacheTtl)));
+                UseCaseLogSupport.end(log, "WeatherService.getCurrentWeather", null, startMs, "iata=" + normalizedIata + ", source=primary");
+                return dto;
         } catch (RuntimeException primaryError) {
             try {
                 log.info("Calling fallback weather for iata={} lat={} lon={}",
                         airport.airportIata(), airport.latitude(), airport.longitude());
-                AirportWeatherDTO dto = weatherFallbackProviderPort.fetchCurrentWeather(airport.latitude(), airport.longitude());
-                cache.put(normalizedIata, new CacheEntry(dto, now.plus(cacheTtl)));
-                return dto;
+                    AirportWeatherDTO dto = weatherFallbackProviderPort.fetchCurrentWeather(airport.latitude(), airport.longitude());
+                    cache.put(normalizedIata, new CacheEntry(dto, now.plus(cacheTtl)));
+                    UseCaseLogSupport.end(log, "WeatherService.getCurrentWeather", null, startMs, "iata=" + normalizedIata + ", source=fallback");
+                    return dto;
             } catch (RuntimeException fallbackError) {
                 WeatherProviderException providerException = new WeatherProviderException(
                         "Weather provider error for IATA " + normalizedIata,
                         primaryError
                 );
                 providerException.addSuppressed(fallbackError);
-                throw providerException;
+                    throw providerException;
+                }
             }
+        } catch (Exception ex) {
+            UseCaseLogSupport.fail(log, "WeatherService.getCurrentWeather", null, startMs, ex);
+            throw ex;
         }
     }
 

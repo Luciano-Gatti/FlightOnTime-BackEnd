@@ -13,6 +13,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class PredictHistoryService implements PredictHistoryUseCase {
+    private static final Logger log = LoggerFactory.getLogger(PredictHistoryService.class);
     private final FlightRequestRepositoryPort flightRequestRepositoryPort;
     private final PredictionRepositoryPort predictionRepositoryPort;
     private final UserPredictionRepositoryPort userPredictionRepositoryPort;
@@ -56,10 +59,29 @@ public class PredictHistoryService implements PredictHistoryUseCase {
      */
     @Override
     public List<PredictHistoryItem> getHistory(Long userId) {
-        List<FlightRequest> requests = flightRequestRepositoryPort.findByUserId(userId);
-        return requests.stream()
-                .map(request -> toHistoryItem(userId, request))
-                .collect(Collectors.toList());
+        long startMs = UseCaseLogSupport.start(
+                log,
+                "PredictHistoryService.getHistory",
+                userId,
+                "userIdPresent=" + (userId != null)
+        );
+        try {
+            List<FlightRequest> requests = flightRequestRepositoryPort.findByUserId(userId);
+            List<PredictHistoryItem> items = requests.stream()
+                    .map(request -> toHistoryItem(userId, request))
+                    .collect(Collectors.toList());
+            UseCaseLogSupport.end(
+                    log,
+                    "PredictHistoryService.getHistory",
+                    userId,
+                    startMs,
+                    "items=" + items.size()
+            );
+            return items;
+        } catch (Exception ex) {
+            UseCaseLogSupport.fail(log, "PredictHistoryService.getHistory", userId, startMs, ex);
+            throw ex;
+        }
     }
 
     /**
@@ -70,27 +92,46 @@ public class PredictHistoryService implements PredictHistoryUseCase {
      */
     @Override
     public PredictHistoryDetail getHistoryDetail(Long userId, Long requestId) {
-        FlightRequest request = flightRequestRepositoryPort.findById(requestId)
-                .orElseThrow(() -> new IllegalArgumentException("Request not found"));
-        userPredictionRepositoryPort.findLatestByUserIdAndRequestId(userId, requestId)
-                .orElseThrow(() -> new IllegalArgumentException("Request not found"));
-        long uniqueUsersCount = userPredictionRepositoryPort.countDistinctUsersByRequestId(requestId);
-        List<PredictHistoryPrediction> predictions = predictionRepositoryPort
-                .findByRequestIdAndUserId(requestId, userId)
-                .stream()
-                .sorted(Comparator.comparing(Prediction::predictedAt).reversed())
-                .map(this::toPredictionDto)
-                .collect(Collectors.toList());
-        return new PredictHistoryDetail(
-                request.id(),
-                request.flightDateUtc(),
-                request.airlineCode(),
-                request.originIata(),
-                request.destIata(),
-                request.flightNumber(),
-                uniqueUsersCount,
-                predictions
+        long startMs = UseCaseLogSupport.start(
+                log,
+                "PredictHistoryService.getHistoryDetail",
+                userId,
+                "requestId=" + requestId
         );
+        try {
+            FlightRequest request = flightRequestRepositoryPort.findById(requestId)
+                    .orElseThrow(() -> new IllegalArgumentException("Request not found"));
+            userPredictionRepositoryPort.findLatestByUserIdAndRequestId(userId, requestId)
+                    .orElseThrow(() -> new IllegalArgumentException("Request not found"));
+            long uniqueUsersCount = userPredictionRepositoryPort.countDistinctUsersByRequestId(requestId);
+            List<PredictHistoryPrediction> predictions = predictionRepositoryPort
+                    .findByRequestIdAndUserId(requestId, userId)
+                    .stream()
+                    .sorted(Comparator.comparing(Prediction::predictedAt).reversed())
+                    .map(this::toPredictionDto)
+                    .collect(Collectors.toList());
+            PredictHistoryDetail detail = new PredictHistoryDetail(
+                    request.id(),
+                    request.flightDateUtc(),
+                    request.airlineCode(),
+                    request.originIata(),
+                    request.destIata(),
+                    request.flightNumber(),
+                    uniqueUsersCount,
+                    predictions
+            );
+            UseCaseLogSupport.end(
+                    log,
+                    "PredictHistoryService.getHistoryDetail",
+                    userId,
+                    startMs,
+                    "requestId=" + requestId + ", predictions=" + predictions.size()
+            );
+            return detail;
+        } catch (Exception ex) {
+            UseCaseLogSupport.fail(log, "PredictHistoryService.getHistoryDetail", userId, startMs, ex);
+            throw ex;
+        }
     }
 
     /**
