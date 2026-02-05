@@ -1,6 +1,5 @@
 package com.flightontime.app_predictor.infrastructure.in.web;
 
-import com.flightontime.app_predictor.application.services.UserLookupService;
 import com.flightontime.app_predictor.domain.model.PredictFlightRequest;
 import com.flightontime.app_predictor.domain.model.PredictHistoryDetail;
 import com.flightontime.app_predictor.domain.model.PredictHistoryItem;
@@ -16,6 +15,7 @@ import com.flightontime.app_predictor.infrastructure.in.dto.PredictHistoryItemDT
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictRequestDTO;
 import com.flightontime.app_predictor.infrastructure.in.dto.PredictResponseDTO;
 import com.flightontime.app_predictor.infrastructure.security.JwtTokenProvider;
+import com.flightontime.app_predictor.infrastructure.security.SecurityUserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -29,10 +29,6 @@ import java.util.Optional;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -65,8 +61,8 @@ public class PredictController {
     private final PredictHistoryUseCase predictHistoryUseCase;
     private final BulkPredictUseCase bulkPredictUseCase;
     private final ObjectMapper objectMapper;
-    private final UserLookupService userLookupService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final SecurityUserContext securityUserContext;
 
     /**
      * Construye el controlador de predicciones.
@@ -75,7 +71,6 @@ public class PredictController {
      * @param predictHistoryUseCase caso de uso para historial de predicciones.
      * @param bulkPredictUseCase caso de uso para importación masiva por CSV.
      * @param objectMapper serializador JSON para logging.
-     * @param userLookupService servicio de resolución de usuario.
      * @param jwtTokenProvider proveedor de JWT para validación.
      */
     public PredictController(
@@ -83,15 +78,15 @@ public class PredictController {
             PredictHistoryUseCase predictHistoryUseCase,
             BulkPredictUseCase bulkPredictUseCase,
             ObjectMapper objectMapper,
-            UserLookupService userLookupService,
-            JwtTokenProvider jwtTokenProvider
+            JwtTokenProvider jwtTokenProvider,
+            SecurityUserContext securityUserContext
     ) {
         this.predictFlightUseCase = predictFlightUseCase;
         this.predictHistoryUseCase = predictHistoryUseCase;
         this.bulkPredictUseCase = bulkPredictUseCase;
         this.objectMapper = objectMapper;
-        this.userLookupService = userLookupService;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.securityUserContext = securityUserContext;
     }
 
     @PostMapping
@@ -350,60 +345,12 @@ public class PredictController {
      * @return userId resuelto o null si no se pudo determinar.
      */
     private Long resolveUserId(HttpServletRequest httpRequest) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        // Si el contexto no está autenticado, intenta resolver desde el token.
-        if (authentication == null
-                || !authentication.isAuthenticated()
-                || authentication instanceof AnonymousAuthenticationToken) {
-            return resolveUserIdFromToken(httpRequest).orElse(null);
+        Long userIdFromContext = securityUserContext.currentUserIdOrNull();
+        if (userIdFromContext != null) {
+            return userIdFromContext;
         }
-        Object principal = authentication.getPrincipal();
-        if (principal instanceof String principalString) {
-            if ("anonymousUser".equalsIgnoreCase(principalString)) {
-                return resolveUserIdFromToken(httpRequest).orElse(null);
-            }
-            try {
-                return Long.valueOf(principalString);
-            } catch (NumberFormatException ex) {
-                return resolveUserIdFromToken(httpRequest).orElse(null);
-            }
-        }
-        // Si el principal es UserDetails, intenta interpretar como id o por email.
-        if (principal instanceof UserDetails userDetails) {
-            return parseUserId(userDetails.getUsername())
-                    .or(() -> resolveUserIdByEmail(userDetails.getUsername()))
-                    .orElse(null);
-        }
-        return parseUserId(authentication.getName())
-                .or(() -> resolveUserIdByEmail(authentication.getName()))
+        return resolveUserIdFromToken(httpRequest)
                 .orElse(null);
-    }
-
-    /**
-     * Intenta convertir un string a userId numérico.
-     *
-     * @param value string a convertir.
-     * @return optional con el userId si aplica.
-     */
-    private Optional<Long> parseUserId(String value) {
-        if (value == null || value.isBlank()) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.of(Long.valueOf(value));
-        } catch (NumberFormatException ex) {
-            return Optional.empty();
-        }
-    }
-
-    /**
-     * Resuelve un userId consultando por email.
-     *
-     * @param email email del usuario.
-     * @return optional con el userId si existe.
-     */
-    private Optional<Long> resolveUserIdByEmail(String email) {
-        return userLookupService.findUserIdByEmail(email);
     }
 
     /**
