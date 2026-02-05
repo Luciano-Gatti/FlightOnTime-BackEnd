@@ -11,6 +11,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -21,6 +22,7 @@ import tools.jackson.databind.ObjectMapper;
  * Clase AeroDataBoxFlightActualClient.
  */
 @Component
+@ConditionalOnProperty(name = "providers.stub", havingValue = "false", matchIfMissing = true)
 public class AeroDataBoxFlightActualClient implements FlightActualPort {
     private static final Logger log = LoggerFactory.getLogger(AeroDataBoxFlightActualClient.class);
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;

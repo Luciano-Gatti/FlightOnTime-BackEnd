@@ -69,24 +69,31 @@ public class BulkPredictService implements BulkPredictUseCase {
      * @return resultado con conteo de aceptados, rechazados y errores.
      */
     public BulkPredictResult importPredictionsFromCsv(InputStream inputStream, Long userId, boolean dryRun) {
-        List<BulkPredictError> errors = new ArrayList<>();
-        int accepted = 0;
-        int rejected = 0;
-        OffsetDateTime startTimestamp = OffsetDateTime.now(ZoneOffset.UTC);
-        int cacheHits = 0;
-        int modelCalls = 0;
-        int subscriptionsCreated = 0;
-        int unexpectedErrors = 0;
+        long useCaseStartMs = UseCaseLogSupport.start(
+                log,
+                "BulkPredictService.importPredictionsFromCsv",
+                userId,
+                "dryRun=" + dryRun
+        );
+        try {
+            List<BulkPredictError> errors = new ArrayList<>();
+            int accepted = 0;
+            int rejected = 0;
+            OffsetDateTime startTimestamp = OffsetDateTime.now(ZoneOffset.UTC);
+            int cacheHits = 0;
+            int modelCalls = 0;
+            int subscriptionsCreated = 0;
+            int unexpectedErrors = 0;
 
-        CsvParser.CsvParseResult parseResult = csvParser.parse(inputStream);
-        int totalRows = parseResult.rows().size() + parseResult.errors().size();
-        log.info("Starting CSV import userId={} totalRows={} dryRun={}", userId, totalRows, dryRun);
-        if (!EXPECTED_HEADER.equals(parseResult.header())) {
-            throw new IllegalArgumentException(
-                    "Invalid CSV header. Expected: " + formatHeader(EXPECTED_HEADER)
-                            + " Received: " + formatHeader(parseResult.header())
-            );
-        }
+            CsvParser.CsvParseResult parseResult = csvParser.parse(inputStream);
+            int totalRows = parseResult.rows().size() + parseResult.errors().size();
+            log.info("Starting CSV import userId={} totalRows={} dryRun={}", userId, totalRows, dryRun);
+            if (!EXPECTED_HEADER.equals(parseResult.header())) {
+                throw new IllegalArgumentException(
+                        "Invalid CSV header. Expected: " + formatHeader(EXPECTED_HEADER)
+                                + " Received: " + formatHeader(parseResult.header())
+                );
+            }
 
         for (CsvParser.CsvParseError parseError : parseResult.errors()) {
             rejected++;
@@ -166,17 +173,29 @@ public class BulkPredictService implements BulkPredictUseCase {
             }
         }
 
-        log.info("Finished CSV import userId={} totalRows={} accepted={} rejected={} modelCalls={} cacheHits={} "
-                        + "subscriptionsCreated={} unexpectedErrors={}",
-                userId,
-                totalRows,
-                accepted,
-                rejected,
-                modelCalls,
-                cacheHits,
-                subscriptionsCreated,
-                unexpectedErrors);
-        return new BulkPredictResult(accepted, rejected, errors);
+            log.info("Finished CSV import userId={} totalRows={} accepted={} rejected={} modelCalls={} cacheHits={} "
+                            + "subscriptionsCreated={} unexpectedErrors={}",
+                    userId,
+                    totalRows,
+                    accepted,
+                    rejected,
+                    modelCalls,
+                    cacheHits,
+                    subscriptionsCreated,
+                    unexpectedErrors);
+            BulkPredictResult result = new BulkPredictResult(accepted, rejected, errors);
+            UseCaseLogSupport.end(
+                    log,
+                    "BulkPredictService.importPredictionsFromCsv",
+                    userId,
+                    useCaseStartMs,
+                    "accepted=" + accepted + ", rejected=" + rejected + ", errors=" + errors.size()
+            );
+            return result;
+        } catch (Exception ex) {
+            UseCaseLogSupport.fail(log, "BulkPredictService.importPredictionsFromCsv", userId, useCaseStartMs, ex);
+            throw ex;
+        }
     }
 
     private String formatHeader(List<String> header) {

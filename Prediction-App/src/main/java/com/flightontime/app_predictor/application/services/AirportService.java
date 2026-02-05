@@ -4,6 +4,8 @@ import com.flightontime.app_predictor.application.dto.AirportDTO;
 import com.flightontime.app_predictor.domain.model.Airport;
 import com.flightontime.app_predictor.domain.ports.out.AirportInfoPort;
 import com.flightontime.app_predictor.domain.ports.out.AirportRepositoryPort;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class AirportService {
+    private static final Logger log = LoggerFactory.getLogger(AirportService.class);
     private final AirportRepositoryPort airportRepositoryPort;
     private final AirportInfoPort airportInfoPort;
 
@@ -32,10 +35,29 @@ public class AirportService {
      * @return DTO con los datos del aeropuerto.
      */
     public AirportDTO getAirportByIata(String airportIata) {
-        String normalizedIata = normalizeIata(airportIata);
-        Airport airport = airportRepositoryPort.findByIata(normalizedIata)
-                .orElseGet(() -> fetchAndStoreAirport(normalizedIata));
-        return AirportDTO.fromDomain(airport);
+        long startMs = UseCaseLogSupport.start(
+                log,
+                "AirportService.getAirportByIata",
+                null,
+                "iata=" + airportIata
+        );
+        try {
+            String normalizedIata = normalizeIata(airportIata);
+            Airport airport = airportRepositoryPort.findByIata(normalizedIata)
+                    .orElseGet(() -> fetchAndStoreAirport(normalizedIata));
+            AirportDTO result = AirportDTO.fromDomain(airport);
+            UseCaseLogSupport.end(
+                    log,
+                    "AirportService.getAirportByIata",
+                    null,
+                    startMs,
+                    "iata=" + normalizedIata + ", found=true"
+            );
+            return result;
+        } catch (Exception ex) {
+            UseCaseLogSupport.fail(log, "AirportService.getAirportByIata", null, startMs, ex);
+            throw ex;
+        }
     }
 
     /**

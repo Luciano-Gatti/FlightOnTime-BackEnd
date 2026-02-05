@@ -63,22 +63,33 @@ public class PredictFlightService implements PredictFlightUseCase {
      * @return resultado de la predicción (estado, probabilidad, confianza, umbral, versión y timestamp).
      */
     public PredictionResult predict(PredictFlightRequest request, Long userId) {
-        // Valida los campos mínimos del request antes de iniciar el flujo.
         PredictFlightRequest normalizedRequest = normalizeRequest(request);
-        validateRequest(normalizedRequest);
-        OffsetDateTime startTimestamp = OffsetDateTime.now(ZoneOffset.UTC);
-        log.info("Starting prediction workflow userId={} request={}", userId, normalizedRequest);
-        // Orquesta la resolución de predicción (cache por bucket o llamado al modelo).
-        var workflowResult = predictionWorkflowService.predict(
-                normalizedRequest.flightDateUtc(),
-                normalizedRequest.airlineCode(),
-                normalizedRequest.originIata(),
-                normalizedRequest.destIata(),
-                normalizedRequest.flightNumber(),
+        long useCaseStartMs = UseCaseLogSupport.start(
+                log,
+                "PredictFlightService.predict",
                 userId,
-                true,
-                false
+                "flightDateUtc=" + (normalizedRequest != null ? normalizedRequest.flightDateUtc() : null)
+                        + ", airlineCode=" + (normalizedRequest != null ? normalizedRequest.airlineCode() : null)
+                        + ", originIata=" + (normalizedRequest != null ? normalizedRequest.originIata() : null)
+                        + ", destIata=" + (normalizedRequest != null ? normalizedRequest.destIata() : null)
+                        + ", hasFlightNumber=" + (normalizedRequest != null && normalizedRequest.flightNumber() != null)
         );
+        try {
+            // Valida los campos mínimos del request antes de iniciar el flujo.
+            validateRequest(normalizedRequest);
+            OffsetDateTime startTimestamp = OffsetDateTime.now(ZoneOffset.UTC);
+            log.info("Starting prediction workflow userId={} request={}", userId, normalizedRequest);
+            // Orquesta la resolución de predicción (cache por bucket o llamado al modelo).
+            var workflowResult = predictionWorkflowService.predict(
+                    normalizedRequest.flightDateUtc(),
+                    normalizedRequest.airlineCode(),
+                    normalizedRequest.originIata(),
+                    normalizedRequest.destIata(),
+                    normalizedRequest.flightNumber(),
+                    userId,
+                    true,
+                    false
+            );
         if (workflowResult.prediction() != null) {
             boolean cacheHit = workflowResult.prediction().createdAt() != null
                     && workflowResult.prediction().createdAt().isBefore(startTimestamp);
@@ -112,14 +123,27 @@ public class PredictFlightService implements PredictFlightUseCase {
             log.debug("Subscription upserted userId={} flight_request_id={} refreshMode={}",
                     userId, workflowResult.flightRequest().id(), RefreshMode.T72_REFRESH);
         }
-        return new PredictionResult(
-                workflowResult.result().predictedStatus(),
-                workflowResult.result().predictedProbability(),
-                workflowResult.result().confidence(),
-                workflowResult.result().thresholdUsed(),
-                workflowResult.result().modelVersion(),
-                workflowResult.result().predictedAt()
-        );
+            PredictionResult result = new PredictionResult(
+                    workflowResult.result().predictedStatus(),
+                    workflowResult.result().predictedProbability(),
+                    workflowResult.result().confidence(),
+                    workflowResult.result().thresholdUsed(),
+                    workflowResult.result().modelVersion(),
+                    workflowResult.result().predictedAt()
+            );
+            UseCaseLogSupport.end(
+                    log,
+                    "PredictFlightService.predict",
+                    userId,
+                    useCaseStartMs,
+                    "predictedStatus=" + result.predictedStatus() + ", requestId="
+                            + (workflowResult.flightRequest() != null ? workflowResult.flightRequest().id() : null)
+            );
+            return result;
+        } catch (Exception ex) {
+            UseCaseLogSupport.fail(log, "PredictFlightService.predict", userId, useCaseStartMs, ex);
+            throw ex;
+        }
     }
 
     @Override
@@ -131,18 +155,25 @@ public class PredictFlightService implements PredictFlightUseCase {
      * @return resultado de la predicción más reciente (estado, probabilidad, confianza, umbral, versión y timestamp).
      */
     public PredictionResult getLatestPrediction(Long requestId, Long userId) {
-        if (userId == null) {
-            throw new IllegalArgumentException("User is required");
-        }
-        OffsetDateTime startTimestamp = OffsetDateTime.now(ZoneOffset.UTC);
-        log.info("Fetching latest prediction userId={} requestId={}", userId, requestId);
-        // Verifica existencia de la solicitud y de una predicción previa del usuario.
-        FlightRequest flightRequest = flightRequestRepositoryPort.findById(requestId)
-                .orElseThrow(() -> new IllegalArgumentException("Request not found"));
-        userPredictionRepositoryPort.findLatestByUserIdAndRequestId(userId, requestId)
-                .orElseThrow(() -> new IllegalArgumentException("Request not found"));
-        // Reutiliza cache por bucket o genera una nueva predicción.
-        var result = predictionWorkflowService.getOrCreatePredictionForRequest(flightRequest);
+        long useCaseStartMs = UseCaseLogSupport.start(
+                log,
+                "PredictFlightService.getLatestPrediction",
+                userId,
+                "requestId=" + requestId
+        );
+        try {
+            if (userId == null) {
+                throw new IllegalArgumentException("User is required");
+            }
+            OffsetDateTime startTimestamp = OffsetDateTime.now(ZoneOffset.UTC);
+            log.info("Fetching latest prediction userId={} requestId={}", userId, requestId);
+            // Verifica existencia de la solicitud y de una predicción previa del usuario.
+            FlightRequest flightRequest = flightRequestRepositoryPort.findById(requestId)
+                    .orElseThrow(() -> new IllegalArgumentException("Request not found"));
+            userPredictionRepositoryPort.findLatestByUserIdAndRequestId(userId, requestId)
+                    .orElseThrow(() -> new IllegalArgumentException("Request not found"));
+            // Reutiliza cache por bucket o genera una nueva predicción.
+            var result = predictionWorkflowService.getOrCreatePredictionForRequest(flightRequest);
         if (result.prediction() != null) {
             boolean cacheHit = result.prediction().createdAt() != null
                     && result.prediction().createdAt().isBefore(startTimestamp);
@@ -153,14 +184,26 @@ public class PredictFlightService implements PredictFlightUseCase {
         }
         log.info("Latest prediction resolved userId={} requestId={} predictionId={}",
                 userId, requestId, result.prediction() != null ? result.prediction().id() : null);
-        return new PredictionResult(
-                result.result().predictedStatus(),
-                result.result().predictedProbability(),
-                result.result().confidence(),
-                result.result().thresholdUsed(),
-                result.result().modelVersion(),
-                result.result().predictedAt()
-        );
+            PredictionResult latest = new PredictionResult(
+                    result.result().predictedStatus(),
+                    result.result().predictedProbability(),
+                    result.result().confidence(),
+                    result.result().thresholdUsed(),
+                    result.result().modelVersion(),
+                    result.result().predictedAt()
+            );
+            UseCaseLogSupport.end(
+                    log,
+                    "PredictFlightService.getLatestPrediction",
+                    userId,
+                    useCaseStartMs,
+                    "requestId=" + requestId + ", predictedStatus=" + latest.predictedStatus()
+            );
+            return latest;
+        } catch (Exception ex) {
+            UseCaseLogSupport.fail(log, "PredictFlightService.getLatestPrediction", userId, useCaseStartMs, ex);
+            throw ex;
+        }
     }
 
     /**

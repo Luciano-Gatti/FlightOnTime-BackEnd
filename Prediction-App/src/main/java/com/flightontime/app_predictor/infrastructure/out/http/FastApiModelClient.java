@@ -11,6 +11,7 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -19,6 +20,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
  * Clase FastApiModelClient.
  */
 @Component
+@ConditionalOnProperty(name = "providers.stub", havingValue = "false", matchIfMissing = true)
 public class FastApiModelClient implements ModelPredictionPort {
     private static final Logger log = LoggerFactory.getLogger(FastApiModelClient.class);
     private final WebClient modelWebClient;

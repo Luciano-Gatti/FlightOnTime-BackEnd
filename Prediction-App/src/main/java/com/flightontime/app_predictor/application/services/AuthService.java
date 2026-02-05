@@ -7,6 +7,8 @@ import com.flightontime.app_predictor.domain.ports.out.UserRepositoryPort;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Locale;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class AuthService {
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
     private static final String DEFAULT_ROLE = "ROLE_USER";
 
     private final UserRepositoryPort userRepositoryPort;
@@ -45,23 +48,49 @@ public class AuthService {
             String lastName,
             String rawPassword
     ) {
-        String normalizedEmail = normalizeEmail(email);
-        String fn = requireTrimmed("firstName", firstName);
-        String ln = requireTrimmed("lastName", lastName);
-        validateRequired("rawPassword", rawPassword);
-        if (userRepositoryPort.existsByEmail(normalizedEmail)) {
-            throw new EmailAlreadyRegisteredException("Email already registered");
-        }
-        OffsetDateTime createdAt = OffsetDateTime.now(ZoneOffset.UTC);
-        User user = new User(
+        long startMs = UseCaseLogSupport.start(
+                log,
+                "AuthService.register",
                 null,
-                normalizedEmail,
-                fn,
-                ln,
-                DEFAULT_ROLE,
-                createdAt
+                "hasEmail=" + (email != null) + ", hasFirstName=" + (firstName != null) + ", hasLastName="
+                        + (lastName != null)
         );
-        return userRepositoryPort.save(user, passwordHasherPort.hash(rawPassword));
+        try {
+            String normalizedEmail = normalizeEmail(email);
+            String fn = requireTrimmed("firstName", firstName);
+            String ln = requireTrimmed("lastName", lastName);
+            validateRequired("rawPassword", rawPassword);
+            if (userRepositoryPort.existsByEmail(normalizedEmail)) {
+                throw new EmailAlreadyRegisteredException("Email already registered");
+            }
+            OffsetDateTime createdAt = OffsetDateTime.now(ZoneOffset.UTC);
+            User user = new User(
+                    null,
+                    normalizedEmail,
+                    fn,
+                    ln,
+                    DEFAULT_ROLE,
+                    createdAt
+            );
+            User saved = userRepositoryPort.save(user, passwordHasherPort.hash(rawPassword));
+            UseCaseLogSupport.end(
+                    log,
+                    "AuthService.register",
+                    saved.id(),
+                    startMs,
+                    "createdUserId=" + saved.id() + ", role=" + saved.roles()
+            );
+            return saved;
+        } catch (Exception ex) {
+            UseCaseLogSupport.fail(
+                    log,
+                    "AuthService.register",
+                    null,
+                    startMs,
+                    ex
+            );
+            throw ex;
+        }
     }
 
     private String requireTrimmed(String field, String value) {
@@ -79,21 +108,46 @@ public class AuthService {
      * @return usuario autenticado.
      */
     public User login(String email, String rawPassword) {
-        String normalizedEmail = normalizeEmail(email);
-        validateRequired("rawPassword", rawPassword);
-        UserAuthData authData = userRepositoryPort.findAuthDataByEmail(normalizedEmail)
-                .orElseThrow(() -> new InvalidCredentialsException("Invalid credentials"));
-        if (!passwordHasherPort.matches(rawPassword, authData.passwordHash())) {
-            throw new InvalidCredentialsException("Invalid credentials");
-        }
-        return new User(
-                authData.id(),
-                authData.email(),
-                authData.firstName(),
-                authData.lastName(),
-                authData.roles(),
-                authData.createdAt()
+        long startMs = UseCaseLogSupport.start(
+                log,
+                "AuthService.login",
+                null,
+                "hasEmail=" + (email != null)
         );
+        try {
+            String normalizedEmail = normalizeEmail(email);
+            validateRequired("rawPassword", rawPassword);
+            UserAuthData authData = userRepositoryPort.findAuthDataByEmail(normalizedEmail)
+                    .orElseThrow(() -> new InvalidCredentialsException("Invalid credentials"));
+            if (!passwordHasherPort.matches(rawPassword, authData.passwordHash())) {
+                throw new InvalidCredentialsException("Invalid credentials");
+            }
+            User user = new User(
+                    authData.id(),
+                    authData.email(),
+                    authData.firstName(),
+                    authData.lastName(),
+                    authData.roles(),
+                    authData.createdAt()
+            );
+            UseCaseLogSupport.end(
+                    log,
+                    "AuthService.login",
+                    user.id(),
+                    startMs,
+                    "authenticated=true"
+            );
+            return user;
+        } catch (Exception ex) {
+            UseCaseLogSupport.fail(
+                    log,
+                    "AuthService.login",
+                    null,
+                    startMs,
+                    ex
+            );
+            throw ex;
+        }
     }
 
     private String normalizeEmail(String email) {
