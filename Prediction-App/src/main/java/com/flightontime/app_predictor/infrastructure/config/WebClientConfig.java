@@ -14,17 +14,36 @@ import reactor.netty.http.client.HttpClient;
  */
 @Configuration
 public class WebClientConfig {
+
+    private HttpClient buildHttpClient(Duration connectTimeout, Duration readTimeout) {
+        return HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Math.toIntExact(connectTimeout.toMillis()))
+                .responseTimeout(readTimeout);
+    }
+
     @Bean
-    public WebClient modelWebClient(@Value("${model.service.url}") String modelServiceUrl) {
+    public WebClient modelWebClient(
+            @Value("${model.service.url}") String modelServiceUrl,
+            @Value("${webclient.timeout.connect}") Duration connectTimeout,
+            @Value("${webclient.timeout.read}") Duration readTimeout
+    ) {
+        HttpClient httpClient = buildHttpClient(connectTimeout, readTimeout);
         return WebClient.builder()
                 .baseUrl(modelServiceUrl)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }
 
     @Bean
-    public WebClient airportWebClient(@Value("${airport.service.url}") String airportServiceUrl) {
+    public WebClient airportWebClient(
+            @Value("${airport.service.url}") String airportServiceUrl,
+            @Value("${webclient.timeout.connect}") Duration connectTimeout,
+            @Value("${webclient.timeout.read}") Duration readTimeout
+    ) {
+        HttpClient httpClient = buildHttpClient(connectTimeout, readTimeout);
         return WebClient.builder()
                 .baseUrl(airportServiceUrl)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }
 
@@ -34,9 +53,7 @@ public class WebClientConfig {
             @Value("${weather.service.timeout.connect}") Duration connectTimeout,
             @Value("${weather.service.timeout.read}") Duration readTimeout
     ) {
-        HttpClient httpClient = HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Math.toIntExact(connectTimeout.toMillis()))
-                .responseTimeout(readTimeout);
+        HttpClient httpClient = buildHttpClient(connectTimeout, readTimeout);
         return WebClient.builder()
                 .baseUrl(weatherServiceBaseUrl)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
@@ -49,9 +66,7 @@ public class WebClientConfig {
             @Value("${weather.service.timeout.connect}") Duration connectTimeout,
             @Value("${weather.service.timeout.read}") Duration readTimeout
     ) {
-        HttpClient httpClient = HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Math.toIntExact(connectTimeout.toMillis()))
-                .responseTimeout(readTimeout);
+        HttpClient httpClient = buildHttpClient(connectTimeout, readTimeout);
         return WebClient.builder()
                 .baseUrl(openMeteoBaseUrl)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
@@ -63,9 +78,7 @@ public class WebClientConfig {
             @Value("${weather.fallback.timeout.connect}") Duration connectTimeout,
             @Value("${weather.fallback.timeout.read}") Duration readTimeout
     ) {
-        HttpClient httpClient = HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Math.toIntExact(connectTimeout.toMillis()))
-                .responseTimeout(readTimeout);
+        HttpClient httpClient = buildHttpClient(connectTimeout, readTimeout);
         return WebClient.builder()
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
@@ -73,10 +86,14 @@ public class WebClientConfig {
 
     @Bean
     public WebClient aeroDataBoxWebClient(
-            @Value("${aerodatabox.service.url}") String aeroDataBoxServiceUrl
+            @Value("${aerodatabox.service.url}") String aeroDataBoxServiceUrl,
+            @Value("${webclient.timeout.connect}") Duration connectTimeout,
+            @Value("${webclient.timeout.read}") Duration readTimeout
     ) {
+        HttpClient httpClient = buildHttpClient(connectTimeout, readTimeout);
         return WebClient.builder()
                 .baseUrl(aeroDataBoxServiceUrl)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }
 }

@@ -1,7 +1,6 @@
 package com.flightontime.app_predictor.infrastructure.out.http;
 
 import com.flightontime.app_predictor.infrastructure.out.dto.WeatherApiFallbackResponse;
-import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -20,18 +19,15 @@ public class WeatherFallbackClient {
     private final WebClient fallbackWebClient;
     private final String apiKey;
     private final String baseUrl;
-    private final Duration readTimeout;
 
     public WeatherFallbackClient(
             @Qualifier("fallbackWeatherWebClient") WebClient fallbackWebClient,
             @Value("${weather.fallback.api-key:}") String apiKey,
-            @Value("${weather.fallback.base-url}") String baseUrl,
-            @Value("${weather.fallback.timeout.read}") Duration readTimeout
+            @Value("${weather.fallback.base-url}") String baseUrl
     ) {
         this.fallbackWebClient = fallbackWebClient;
         this.apiKey = apiKey;
         this.baseUrl = baseUrl;
-        this.readTimeout = readTimeout;
     }
 
     /**
@@ -51,7 +47,6 @@ public class WeatherFallbackClient {
                     .uri(uri)
                     .retrieve()
                     .bodyToMono(WeatherApiFallbackResponse.class)
-                    .timeout(readTimeout)
                     .block();
         } catch (WebClientResponseException ex) {
             ExternalProviderException providerException = new ExternalProviderException(
@@ -90,7 +85,6 @@ public class WeatherFallbackClient {
                     .uri(uri)
                     .retrieve()
                     .bodyToMono(WeatherApiFallbackResponse.class)
-                    .timeout(readTimeout)
                     .block();
         } catch (WebClientResponseException ex) {
             ExternalProviderException providerException = new ExternalProviderException(
