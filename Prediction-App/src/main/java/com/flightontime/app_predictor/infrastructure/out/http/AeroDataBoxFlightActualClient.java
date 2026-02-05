@@ -10,6 +10,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.json.JsonParser;
 import org.springframework.boot.json.JsonParserFactory;
@@ -23,6 +25,7 @@ import tools.jackson.databind.ObjectMapper;
  */
 @Component
 public class AeroDataBoxFlightActualClient implements FlightActualPort {
+    private static final Logger log = LoggerFactory.getLogger(AeroDataBoxFlightActualClient.class);
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
     private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
@@ -65,6 +68,21 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
             return parseFlightActualResponse(response);
         } catch (WebClientResponseException.NotFound ex) {
             return Optional.empty();
+        } catch (WebClientResponseException ex) {
+            ExternalProviderException providerException = new ExternalProviderException(
+                    "aerodatabox-api",
+                    ex.getStatusCode().value(),
+                    "AeroDataBox error for flight number " + flightNumber + " date " + date,
+                    ex.getResponseBodyAsString(),
+                    ex
+            );
+            log.error("AeroDataBox error provider={} flightNumber={} date={} status={} body={}",
+                    providerException.getProvider(),
+                    flightNumber,
+                    date,
+                    providerException.getStatusCode(),
+                    providerException.getBodyTruncated());
+            throw providerException;
         }
     }
 
@@ -104,6 +122,21 @@ public class AeroDataBoxFlightActualClient implements FlightActualPort {
             return parseFlightActualResponse(response);
         } catch (WebClientResponseException.NotFound ex) {
             return Optional.empty();
+        } catch (WebClientResponseException ex) {
+            ExternalProviderException providerException = new ExternalProviderException(
+                    "aerodatabox-api",
+                    ex.getStatusCode().value(),
+                    "AeroDataBox error for route " + originIata + "-" + destIata,
+                    ex.getResponseBodyAsString(),
+                    ex
+            );
+            log.error("AeroDataBox error provider={} route={}-{} status={} body={}",
+                    providerException.getProvider(),
+                    originIata,
+                    destIata,
+                    providerException.getStatusCode(),
+                    providerException.getBodyTruncated());
+            throw providerException;
         }
     }
 
