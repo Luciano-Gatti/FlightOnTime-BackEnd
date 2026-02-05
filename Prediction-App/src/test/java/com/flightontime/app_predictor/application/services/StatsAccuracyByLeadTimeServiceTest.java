@@ -2,12 +2,12 @@ package com.flightontime.app_predictor.application.services;
 
 import com.flightontime.app_predictor.domain.model.StatsAccuracyBin;
 import com.flightontime.app_predictor.domain.model.StatsAccuracyByLeadTime;
-import com.flightontime.app_predictor.infrastructure.out.entities.FlightOutcomeEntity;
-import com.flightontime.app_predictor.infrastructure.out.entities.FlightPredictionEntity;
-import com.flightontime.app_predictor.infrastructure.out.entities.FlightRequestEntity;
-import com.flightontime.app_predictor.infrastructure.out.repository.FlightOutcomeJpaRepository;
-import com.flightontime.app_predictor.infrastructure.out.repository.FlightPredictionJpaRepository;
-import com.flightontime.app_predictor.infrastructure.out.repository.FlightRequestJpaRepository;
+import com.flightontime.app_predictor.infrastructure.out.persistence.entities.FlightOutcomeEntity;
+import com.flightontime.app_predictor.infrastructure.out.persistence.entities.FlightPredictionEntity;
+import com.flightontime.app_predictor.infrastructure.out.persistence.entities.FlightRequestEntity;
+import com.flightontime.app_predictor.infrastructure.out.persistence.repository.FlightOutcomeJpaRepository;
+import com.flightontime.app_predictor.infrastructure.out.persistence.repository.FlightPredictionJpaRepository;
+import com.flightontime.app_predictor.infrastructure.out.persistence.repository.FlightRequestJpaRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;

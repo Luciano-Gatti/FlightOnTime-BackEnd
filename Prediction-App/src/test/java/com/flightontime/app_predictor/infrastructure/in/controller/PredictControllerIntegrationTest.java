@@ -7,17 +7,17 @@ import com.flightontime.app_predictor.domain.ports.out.AirportInfoPort;
 import com.flightontime.app_predictor.domain.ports.out.ModelPredictionPort;
 import com.flightontime.app_predictor.domain.ports.out.NotificationPort;
 import com.flightontime.app_predictor.domain.ports.out.WeatherPort;
-import com.flightontime.app_predictor.infrastructure.out.entities.AirportEntity;
-import com.flightontime.app_predictor.infrastructure.out.entities.FlightPredictionEntity;
-import com.flightontime.app_predictor.infrastructure.out.entities.FlightRequestEntity;
-import com.flightontime.app_predictor.infrastructure.out.entities.FlightSubscriptionEntity;
-import com.flightontime.app_predictor.infrastructure.out.entities.UserPredictionSnapshotEntity;
-import com.flightontime.app_predictor.infrastructure.out.repository.AirportJpaRepository;
-import com.flightontime.app_predictor.infrastructure.out.repository.FlightPredictionJpaRepository;
-import com.flightontime.app_predictor.infrastructure.out.repository.FlightRequestJpaRepository;
-import com.flightontime.app_predictor.infrastructure.out.repository.FlightSubscriptionJpaRepository;
-import com.flightontime.app_predictor.infrastructure.out.repository.UserPredictionSnapshotJpaRepository;
-import com.flightontime.app_predictor.infrastructure.out.repository.UserJpaRepository;
+import com.flightontime.app_predictor.infrastructure.out.persistence.entities.AirportEntity;
+import com.flightontime.app_predictor.infrastructure.out.persistence.entities.FlightPredictionEntity;
+import com.flightontime.app_predictor.infrastructure.out.persistence.entities.FlightRequestEntity;
+import com.flightontime.app_predictor.infrastructure.out.persistence.entities.FlightSubscriptionEntity;
+import com.flightontime.app_predictor.infrastructure.out.persistence.entities.UserPredictionSnapshotEntity;
+import com.flightontime.app_predictor.infrastructure.out.persistence.repository.AirportJpaRepository;
+import com.flightontime.app_predictor.infrastructure.out.persistence.repository.FlightPredictionJpaRepository;
+import com.flightontime.app_predictor.infrastructure.out.persistence.repository.FlightRequestJpaRepository;
+import com.flightontime.app_predictor.infrastructure.out.persistence.repository.FlightSubscriptionJpaRepository;
+import com.flightontime.app_predictor.infrastructure.out.persistence.repository.UserPredictionSnapshotJpaRepository;
+import com.flightontime.app_predictor.infrastructure.out.persistence.repository.UserJpaRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -269,8 +269,8 @@ class PredictControllerIntegrationTest {
     }
 
     private void seedUser() {
-        com.flightontime.app_predictor.infrastructure.out.entities.UserEntity user =
-                new com.flightontime.app_predictor.infrastructure.out.entities.UserEntity();
+        com.flightontime.app_predictor.infrastructure.out.persistence.entities.UserEntity user =
+                new com.flightontime.app_predictor.infrastructure.out.persistence.entities.UserEntity();
         user.setId(42L);
         user.setEmail("user42@example.com");
         user.setPasswordHash("hashed");
