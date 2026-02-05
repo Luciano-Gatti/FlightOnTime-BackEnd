@@ -2,8 +2,7 @@ package com.flightontime.app_predictor.infrastructure.out.mapper;
 
 import com.flightontime.app_predictor.domain.model.FlightRequest;
 import com.flightontime.app_predictor.infrastructure.out.persistence.entities.FlightRequestEntity;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import static com.flightontime.app_predictor.infrastructure.common.time.UtcTimes.toUtc;
 
 /**
  * Clase FlightRequestMapper.
@@ -60,16 +59,4 @@ public class FlightRequestMapper {
         return target;
     }
 
-    /**
-     * Ejecuta la operación to utc.
-     * @param value variable de entrada value.
-     * @return resultado de la operación to utc.
-     */
-
-    private OffsetDateTime toUtc(OffsetDateTime value) {
-        if (value == null) {
-            return null;
-        }
-        return value.withOffsetSameInstant(ZoneOffset.UTC);
-    }
 }
