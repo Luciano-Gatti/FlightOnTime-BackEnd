@@ -1,12 +1,12 @@
 package com.flightontime.app_predictor.application.services;
 
 import com.flightontime.app_predictor.application.dto.AirportWeatherDTO;
+import com.flightontime.app_predictor.application.exception.WeatherProviderException;
 import com.flightontime.app_predictor.domain.model.Airport;
 import com.flightontime.app_predictor.domain.ports.out.AirportInfoPort;
 import com.flightontime.app_predictor.domain.ports.out.AirportRepositoryPort;
 import com.flightontime.app_predictor.domain.ports.out.WeatherFallbackProviderPort;
 import com.flightontime.app_predictor.domain.ports.out.WeatherPrimaryProviderPort;
-import com.flightontime.app_predictor.infrastructure.out.adapters.WeatherProviderException;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -17,8 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 /**
  * Clase WeatherService.
