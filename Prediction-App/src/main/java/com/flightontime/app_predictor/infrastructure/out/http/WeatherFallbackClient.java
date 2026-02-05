@@ -2,6 +2,8 @@ package com.flightontime.app_predictor.infrastructure.out.http;
 
 import com.flightontime.app_predictor.infrastructure.out.dto.WeatherApiFallbackResponse;
 import java.time.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -14,6 +16,7 @@ import org.springframework.web.util.UriComponentsBuilder;
  */
 @Component
 public class WeatherFallbackClient {
+    private static final Logger log = LoggerFactory.getLogger(WeatherFallbackClient.class);
     private final WebClient fallbackWebClient;
     private final String apiKey;
     private final String baseUrl;
@@ -51,7 +54,19 @@ public class WeatherFallbackClient {
                     .timeout(readTimeout)
                     .block();
         } catch (WebClientResponseException ex) {
-            throw new RuntimeException("Fallback weather provider error for IATA " + iata, ex);
+            ExternalProviderException providerException = new ExternalProviderException(
+                    "weather-fallback-api",
+                    ex.getStatusCode().value(),
+                    "Fallback weather provider error for IATA " + iata,
+                    ex.getResponseBodyAsString(),
+                    ex
+            );
+            log.error("Fallback weather provider error provider={} iata={} status={} body={}",
+                    providerException.getProvider(),
+                    iata,
+                    providerException.getStatusCode(),
+                    providerException.getBodyTruncated());
+            throw providerException;
         } catch (Exception ex) {
             throw new RuntimeException("Fallback weather provider connection error for IATA " + iata, ex);
         }
@@ -78,7 +93,20 @@ public class WeatherFallbackClient {
                     .timeout(readTimeout)
                     .block();
         } catch (WebClientResponseException ex) {
-            throw new RuntimeException("Fallback weather provider error for coordinates " + latitude + "," + longitude, ex);
+            ExternalProviderException providerException = new ExternalProviderException(
+                    "weather-fallback-api",
+                    ex.getStatusCode().value(),
+                    "Fallback weather provider error for coordinates " + latitude + "," + longitude,
+                    ex.getResponseBodyAsString(),
+                    ex
+            );
+            log.error("Fallback weather provider error provider={} coordinates={},{} status={} body={}",
+                    providerException.getProvider(),
+                    latitude,
+                    longitude,
+                    providerException.getStatusCode(),
+                    providerException.getBodyTruncated());
+            throw providerException;
         } catch (Exception ex) {
             throw new RuntimeException("Fallback weather provider connection error for coordinates " + latitude + "," + longitude, ex);
         }

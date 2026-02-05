@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 /**
  * Clase FastApiModelClient.
@@ -57,21 +58,36 @@ public class FastApiModelClient implements ModelPredictionPort {
                 0.0
         );
         logJson("Model request payload", request);
-        ModelPredictResponse response = modelWebClient.post()
-                .uri("/predict")
-                .bodyValue(request)
-                .retrieve()
-                .bodyToMono(ModelPredictResponse.class)
-                .block();
-        ModelPredictResponse safeResponse = Objects.requireNonNull(response, "Model response is required");
-        logJson("Model response payload", safeResponse);
-        return new ModelPrediction(
-                normalizeStatus(safeResponse.predictedStatus()),
-                safeResponse.predictedProbability(),
-                safeResponse.confidence(),
-                safeResponse.thresholdUsed(),
-                safeResponse.modelVersion()
-        );
+        try {
+            ModelPredictResponse response = modelWebClient.post()
+                    .uri("/predict")
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(ModelPredictResponse.class)
+                    .block();
+            ModelPredictResponse safeResponse = Objects.requireNonNull(response, "Model response is required");
+            logJson("Model response payload", safeResponse);
+            return new ModelPrediction(
+                    normalizeStatus(safeResponse.predictedStatus()),
+                    safeResponse.predictedProbability(),
+                    safeResponse.confidence(),
+                    safeResponse.thresholdUsed(),
+                    safeResponse.modelVersion()
+            );
+        } catch (WebClientResponseException ex) {
+            ExternalProviderException providerException = new ExternalProviderException(
+                    "model-api",
+                    ex.getStatusCode().value(),
+                    "Model API error while requesting prediction",
+                    ex.getResponseBodyAsString(),
+                    ex
+            );
+            log.error("Model API error provider={} status={} body={}",
+                    providerException.getProvider(),
+                    providerException.getStatusCode(),
+                    providerException.getBodyTruncated());
+            throw providerException;
+        }
     }
 
     /**

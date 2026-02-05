@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 /**
  * Clase WeatherApiClient.
@@ -80,13 +81,11 @@ public class WeatherApiClient implements WeatherPort {
             cache.put(normalizedIata, new CacheEntry(dto, now.plus(cacheTtl)));
             return dto;
         } catch (RuntimeException primaryError) {
-            log.warn("Primary weather provider failed iata={} message={}", normalizedIata, primaryError.getMessage());
             try {
                 AirportWeatherDTO dto = fetchFallback(airport);
                 cache.put(normalizedIata, new CacheEntry(dto, now.plus(cacheTtl)));
                 return dto;
             } catch (RuntimeException fallbackError) {
-                log.error("Fallback weather provider failed iata={} message={}", normalizedIata, fallbackError.getMessage());
                 WeatherProviderException providerException = new WeatherProviderException(
                         "Weather provider error for IATA " + normalizedIata,
                         primaryError
@@ -106,17 +105,34 @@ public class WeatherApiClient implements WeatherPort {
     private AirportWeatherDTO fetchPrimary(Airport airport) {
         log.info("Calling OpenMeteo weather for iata={} lat={} lon={}",
                 airport.airportIata(), airport.latitude(), airport.longitude());
-        OpenMeteoWeatherResponse response = openMeteoWeatherWebClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/forecast")
-                        .queryParam("latitude", airport.latitude())
-                        .queryParam("longitude", airport.longitude())
-                        .queryParam("current", "temperature_2m,wind_speed_10m,visibility,precipitation")
-                        .queryParam("timezone", "UTC")
-                        .build())
-                .retrieve()
-                .bodyToMono(OpenMeteoWeatherResponse.class)
-                .block();
+        OpenMeteoWeatherResponse response;
+        try {
+            response = openMeteoWeatherWebClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/forecast")
+                            .queryParam("latitude", airport.latitude())
+                            .queryParam("longitude", airport.longitude())
+                            .queryParam("current", "temperature_2m,wind_speed_10m,visibility,precipitation")
+                            .queryParam("timezone", "UTC")
+                            .build())
+                    .retrieve()
+                    .bodyToMono(OpenMeteoWeatherResponse.class)
+                    .block();
+        } catch (WebClientResponseException ex) {
+            ExternalProviderException providerException = new ExternalProviderException(
+                    "open-meteo-api",
+                    ex.getStatusCode().value(),
+                    "OpenMeteo weather provider error for iata " + airport.airportIata(),
+                    ex.getResponseBodyAsString(),
+                    ex
+            );
+            log.error("OpenMeteo weather provider error provider={} iata={} status={} body={}",
+                    providerException.getProvider(),
+                    airport.airportIata(),
+                    providerException.getStatusCode(),
+                    providerException.getBodyTruncated());
+            throw providerException;
+        }
         OpenMeteoWeatherResponse safeResponse = Objects.requireNonNull(response, "OpenMeteo response is required");
         logJson("OpenMeteo response payload", safeResponse);
         /**
