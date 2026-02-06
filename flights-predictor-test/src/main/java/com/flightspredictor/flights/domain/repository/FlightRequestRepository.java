@@ -7,11 +7,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface FlightRequestRepository extends JpaRepository<FlightRequest, Long> {
 
-    Optional<FlightRequest> findByFlightDateUtcAndAirlineCodeAndOriginIataAndDestIataAndDistance(
+    Optional<FlightRequest> findByFlightDateUtcAndAirlineCodeAndOriginIataAndDestIata(
             LocalDateTime flightDateUtc,
             String airlineCode,
             String originIata,
-            String destIata,
-            Double distance
+            String destIata
     );
 }
