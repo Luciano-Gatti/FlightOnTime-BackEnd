@@ -1,30 +1,22 @@
 package com.flightontime.app_predictor.infrastructure.out.http;
 
-import com.flightontime.app_predictor.domain.model.Airport;
-import com.flightontime.app_predictor.domain.ports.out.AirportInfoPort;
 import com.flightontime.app_predictor.infrastructure.out.dto.AirportApiResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.netty.handler.timeout.ReadTimeoutException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 /**
  * Clase AirportApiClient.
  */
 @Component
 @ConditionalOnProperty(name = "providers.stub", havingValue = "false", matchIfMissing = true)
-public class AirportApiClient implements AirportInfoPort {
+public class AirportApiClient {
     private static final Logger log = LoggerFactory.getLogger(AirportApiClient.class);
     private final WebClient airportWebClient;
     private final String apiKey;
@@ -45,98 +37,19 @@ public class AirportApiClient implements AirportInfoPort {
      * @param airportIata variable de entrada airportIata.
      * @return resultado de la operación find by iata.
      */
-    @Override
-    public Optional<Airport> findByIata(String airportIata) {
-        try {
-            log.info("Fetching airport from external API iata={}", airportIata);
-            AirportApiResponse response = airportWebClient.get()
-                    .uri(uriBuilder -> uriBuilder.path("/airports/Iata/{iata}")
-                            .queryParam("withRunways", "false")
-                            .queryParam("withTime", "false")
-                            .build(airportIata))
-                    .header("x-api-market-key", apiKey)
-                    .retrieve()
-                    .bodyToMono(AirportApiResponse.class)
-                    .block();
-            logJson("Airport API response payload iata=" + airportIata, response);
-            log.info("Airport API request completed iata={} status={} foundData={}", airportIata, 200, response != null);
-            return Optional.ofNullable(response).map(this::toDomain);
-        } catch (WebClientResponseException.NotFound ex) {
-            log.info("Airport API request completed iata={} status={} foundData={}", airportIata, 404, false);
-            return Optional.empty();
-        } catch (WebClientResponseException ex) {
-            ExternalProviderException providerException = new ExternalProviderException(
-                    "airport-api",
-                    ex.getStatusCode().value(),
-                    "Airport API error for iata=" + airportIata,
-                    ex.getResponseBodyAsString(),
-                    ex
-            );
-            log.error("Airport API error provider={} iata={} status={} body={}",
-                    providerException.getProvider(),
-                    airportIata,
-                    providerException.getStatusCode(),
-                    providerException.getBodyTruncated());
-            throw providerException;
-        } catch (WebClientRequestException ex) {
-            ExternalProviderException providerException = new ExternalProviderException(
-                    "airport-api",
-                    503,
-                    "Airport API unavailable for iata=" + airportIata,
-                    null,
-                    ex
-            );
-            log.error("Airport API unavailable provider={} iata={} reason={}",
-                    providerException.getProvider(),
-                    airportIata,
-                    ex.getMessage());
-            throw providerException;
-        } catch (Exception ex) {
-            int fallbackStatus = ex instanceof ReadTimeoutException ? 504 : 502;
-            ExternalProviderException providerException = new ExternalProviderException(
-                    "airport-api",
-                    fallbackStatus,
-                    "Airport API parse/unexpected error for iata=" + airportIata,
-                    null,
-                    ex
-            );
-            log.error("Airport API unexpected error provider={} iata={} status={} reason={}",
-                    providerException.getProvider(),
-                    airportIata,
-                    providerException.getStatusCode(),
-                    ex.getMessage());
-            throw providerException;
-        }
-    }
-
-    /**
-     * Ejecuta la operación search by text.
-     * @param text variable de entrada text.
-     * @return resultado de la operación search by text.
-     */
-    @Override
-    public List<Airport> searchByText(String text) {
-        return Collections.emptyList();
-    }
-
-    /**
-     * Ejecuta la operación to domain.
-     * @param response variable de entrada response.
-     * @return resultado de la operación to domain.
-     */
-
-    private Airport toDomain(AirportApiResponse response) {
-        return new Airport(
-                response.airportIata(),
-                response.airportName(),
-                response.country() != null ? response.country().name() : null,
-                response.cityName(),
-                response.location() != null ? response.location().lat() : null,
-                response.location() != null ? response.location().lon() : null,
-                response.elevation() != null ? response.elevation().meter() : null,
-                response.timeZone(),
-                response.googleMaps() != null ? response.googleMaps().googleMaps() : null
-        );
+    public AirportApiResponse fetchAirportByIata(String airportIata) {
+        log.info("Fetching airport from external API iata={}", airportIata);
+        AirportApiResponse response = airportWebClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/airports/Iata/{iata}")
+                        .queryParam("withRunways", "false")
+                        .queryParam("withTime", "false")
+                        .build(airportIata))
+                .header("x-api-market-key", apiKey)
+                .retrieve()
+                .bodyToMono(AirportApiResponse.class)
+                .block();
+        logJson("Airport API response payload iata=" + airportIata, response);
+        return response;
     }
 
     /**

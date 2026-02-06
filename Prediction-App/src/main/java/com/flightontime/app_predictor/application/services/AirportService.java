@@ -74,21 +74,8 @@ public class AirportService {
 
         try {
             Airport airport = airportInfoPort.findByIata(airportIata)
-                    .map(found -> new Airport(
-                            airportIata,
-                            found.airportName(),
-                            found.country(),
-                            found.cityName(),
-                            found.latitude(),
-                            found.longitude(),
-                            found.elevation(),
-                            found.timeZone(),
-                            found.googleMaps()
-                    ))
                     .orElseThrow(() -> new AirportNotFoundException("Airport not found: " + airportIata));
-
             return airportRepositoryPort.save(airport);
-
         } catch (ExternalProviderException ex) {
             throw new ExternalApiException("Airport provider unavailable", ex);
         }
