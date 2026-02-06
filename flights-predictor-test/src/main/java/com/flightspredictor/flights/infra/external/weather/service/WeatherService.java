@@ -1,7 +1,6 @@
 package com.flightspredictor.flights.infra.external.weather.service;
 
 import com.flightspredictor.flights.domain.entities.Airport;
-import com.flightspredictor.flights.domain.service.airports.AirportService;
 import com.flightspredictor.flights.infra.external.weather.client.WeatherApiClient;
 import com.flightspredictor.flights.infra.external.weather.client.WeatherFallbackClient;
 import com.flightspredictor.flights.infra.external.weather.dto.WeatherData;
@@ -21,7 +20,6 @@ public class WeatherService {
     
     private final WeatherApiClient weatherApiClient;
     private final WeatherFallbackClient weatherFallbackClient;
-    private final AirportService airportService;
     
     /**
      * Constructor que inyecta el cliente HTTP para APIs meteorológicas
@@ -30,12 +28,10 @@ public class WeatherService {
      */
     public WeatherService(
             WeatherApiClient weatherApiClient,
-            WeatherFallbackClient weatherFallbackClient,
-            AirportService airportService
+            WeatherFallbackClient weatherFallbackClient
     ) {
         this.weatherApiClient = weatherApiClient;
         this.weatherFallbackClient = weatherFallbackClient;
-        this.airportService = airportService;
     }
     
     /**
@@ -86,19 +82,12 @@ public class WeatherService {
     /**
      * Obtiene los datos meteorológicos actuales usando el código IATA del aeropuerto.
      *
-     * @param iataCode código IATA del aeropuerto
+     * @param airport aeropuerto previamente resuelto
      * @return WeatherData con datos meteorológicos actuales
      */
-    public WeatherData getWeatherByIata(String iataCode) {
-        if (iataCode == null || iataCode.trim().isEmpty()) {
-            throw new IllegalArgumentException("El código IATA no puede estar vacío");
-        }
-
-        String normalizedIata = iataCode.trim().toUpperCase();
-        Airport airport = airportService.getOrFetchByIata(normalizedIata);
-
+    public WeatherData getWeatherByAirport(Airport airport) {
         if (airport == null) {
-            throw new IllegalStateException("No se pudo encontrar el aeropuerto para el código: " + normalizedIata);
+            throw new IllegalArgumentException("El aeropuerto no puede ser nulo");
         }
 
         try {

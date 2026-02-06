@@ -2,6 +2,7 @@ package com.flightspredictor.flights.controller;
 
 import com.flightspredictor.flights.infra.external.weather.dto.WeatherData;
 import com.flightspredictor.flights.infra.external.weather.service.WeatherService;
+import com.flightspredictor.flights.domain.service.airports.AirportService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,14 +15,16 @@ import org.springframework.web.bind.annotation.*;
 public class WeatherController {
     
     private final WeatherService weatherService;
+    private final AirportService airportService;
     
     /**
      * Constructor que inyecta el servicio meteorológico
      * 
      * @param weatherService servicio para obtener datos del clima
      */
-    public WeatherController(WeatherService weatherService) {
+    public WeatherController(WeatherService weatherService, AirportService airportService) {
         this.weatherService = weatherService;
+        this.airportService = airportService;
     }
     
     /**
@@ -62,7 +65,8 @@ public class WeatherController {
     @GetMapping("/{iataCode:[A-Za-z]{3}}")
     public ResponseEntity<WeatherData> getWeatherByIata(@PathVariable String iataCode) {
         try {
-            WeatherData weatherData = weatherService.getWeatherByIata(iataCode);
+            var airport = airportService.getOrFetchByIata(iataCode);
+            WeatherData weatherData = weatherService.getWeatherByAirport(airport);
             return ResponseEntity.ok(weatherData);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();

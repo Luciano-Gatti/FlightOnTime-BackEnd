@@ -6,6 +6,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.flightspredictor.flights.domain.entities.Airport;
 
+/**
+ * 🚨 NO USAR DIRECTAMENTE 🚨
+ *
+ * Todas las consultas a aeropuertos deben pasar por AirportService
+ * para asegurar normalización de IATA y conteo de lookup.
+ */
 public interface AirportRepository extends JpaRepository<Airport, Long> {
     Optional<Airport> findByAirportIata(String iata);
     

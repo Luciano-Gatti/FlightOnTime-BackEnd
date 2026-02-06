@@ -2,15 +2,13 @@ package com.flightspredictor.flights.domain.validations;
 
 import org.springframework.stereotype.Component;
 
+import com.flightspredictor.flights.domain.entities.Airport;
 import com.flightspredictor.flights.domain.dto.prediction.PredictionRequest;
 import com.flightspredictor.flights.domain.error.BusinessErrorCodes;
 import com.flightspredictor.flights.domain.error.BusinessException;
-import com.flightspredictor.flights.domain.service.prediction.AirportLookupService;
 
 @Component
 public class PredictionValidation {
-
-    private final AirportLookupService airportLookupService; // Crear la implementación en service para conectar con la validación
 
     public void validarReglasDeNegocio(PredictionRequest dto){
 
@@ -24,16 +22,12 @@ public class PredictionValidation {
         }
     }
 
-    public PredictionValidation(AirportLookupService airportLookupService){
-        this.airportLookupService = airportLookupService;
-    }
-
-    public void ValidarIata(String iataCode){
+    public void ValidarIata(Airport airport){
         //Crea la validación (Si el código IATA no se encuentra dentro de la base de datos, retorna el mensaje "El código IATA: 'xxx' no existe")
-        if(!airportLookupService.existsAirportIata(iataCode)){
+        if (airport == null) {
             throw new BusinessException(
                 BusinessErrorCodes.INVALID_IATA,
-                "El código IATA" + iataCode + "no existe"
+                "El código IATA no existe"
             );
         }
     }

@@ -44,8 +44,9 @@ public class AirportService {
      */
     public boolean existsAirportIata(String iata) {
         String normalizedIata = normalizeIata(iata);
-        logAirportLookupTrace(normalizedIata);
-        return repository.existsByAirportIataIgnoreCase(iata);
+        int lookupCount = AirportLookupTraceContext.incrementAndGet();
+        logAirportLookupTrace(normalizedIata, lookupCount);
+        return repository.existsByAirportIataIgnoreCase(normalizedIata);
     }
 
 
@@ -57,14 +58,15 @@ public class AirportService {
         String normalizedIata = normalizeIata(iata);
 
         // Busca primero el aeropuerto en la base de datos si ya existe
-        logAirportLookupTrace(normalizedIata);
+        int lookupCount = AirportLookupTraceContext.incrementAndGet();
+        logAirportLookupTrace(normalizedIata, lookupCount);
         Optional<Airport> existingAirport = repository.findByAirportIata(normalizedIata);
         if (existingAirport.isPresent()) {
             return existingAirport.get();
         }
 
         // Si no existe, trae los datos de la API
-        var apiResponse = apiClient.airportResponse(iata);
+        var apiResponse = apiClient.airportResponse(normalizedIata);
 
         if (apiResponse == null) {
             throw new AirportNotFoundException(
@@ -84,13 +86,12 @@ public class AirportService {
         return repository.save(airport);
     }
 
-    private void logAirportLookupTrace(String normalizedIata) {
+    private void logAirportLookupTrace(String normalizedIata, int lookupCount) {
         if (!airportLookupTraceEnabled) {
             return;
         }
         String correlationId = MDC.get("correlationId");
         String caller = resolveCaller();
-        int lookupCount = AirportLookupTraceContext.incrementAndGet();
         log.info("AIRPORT_LOOKUP_TRACE correlationId={} iata={} caller={} airportLookupCount={}",
                 correlationId, normalizedIata, caller, lookupCount);
     }

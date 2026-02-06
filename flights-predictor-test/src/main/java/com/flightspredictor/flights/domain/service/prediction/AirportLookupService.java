@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
 
 /**
  * Servicio de consulta para aeropuertos.
@@ -36,12 +35,7 @@ public class AirportLookupService {
     }
 
     @Transactional
-    public void getAirportExist(String origin, String dest) {
-        airportService.getOrFetchByIata(origin);
-        airportService.getOrFetchByIata(dest);
-    }
-
-    public Optional<Airport> getAirport(String iata) {
-        return Optional.ofNullable(airportService.getOrFetchByIata(iata));
+    public Airport getAirport(String iata) {
+        return airportService.getOrFetchByIata(iata);
     }
 }
