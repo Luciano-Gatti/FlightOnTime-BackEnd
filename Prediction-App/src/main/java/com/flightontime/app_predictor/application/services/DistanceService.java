@@ -1,5 +1,6 @@
 package com.flightontime.app_predictor.application.services;
 
+import com.flightontime.app_predictor.application.dto.AirportDTO;
 import com.flightontime.app_predictor.domain.model.Airport;
 import com.flightontime.app_predictor.domain.ports.in.DistanceUseCase;
 import com.flightontime.app_predictor.domain.ports.out.AirportInfoPort;
@@ -19,6 +20,7 @@ public class DistanceService implements DistanceUseCase {
 
     private final AirportRepositoryPort airportRepositoryPort;
     private final AirportInfoPort airportInfoPort;
+    private final AirportService airportService;
 
     /**
      * Construye el servicio de cálculo de distancias.
@@ -26,12 +28,16 @@ public class DistanceService implements DistanceUseCase {
      * @param airportRepositoryPort repositorio local de aeropuertos.
      * @param airportInfoPort puerto de consulta de aeropuertos externos.
      */
-    public DistanceService(AirportRepositoryPort airportRepositoryPort, AirportInfoPort airportInfoPort) {
+    public DistanceService(
+            AirportRepositoryPort airportRepositoryPort, 
+            AirportInfoPort airportInfoPort, 
+            AirportService airportService) {
         this.airportRepositoryPort = airportRepositoryPort;
         this.airportInfoPort = airportInfoPort;
+        this.airportService = airportService;
     }
 
-    @Override
+    
     /**
      * Calcula la distancia entre dos aeropuertos (IATA) usando Haversine.
      *
@@ -39,6 +45,7 @@ public class DistanceService implements DistanceUseCase {
      * @param destinationIata IATA de destino.
      * @return distancia en kilómetros.
      */
+    @Override
     public double calculateDistance(String originIata, String destinationIata) {
         long startMs = UseCaseLogSupport.start(
                 log,
@@ -47,71 +54,25 @@ public class DistanceService implements DistanceUseCase {
                 "originIata=" + originIata + ", destinationIata=" + destinationIata
         );
         try {
-            String normalizedOrigin = normalizeIata(originIata);
-            String normalizedDestination = normalizeIata(destinationIata);
-            Airport origin = resolveAirport(normalizedOrigin);
-            Airport destination = resolveAirport(normalizedDestination);
-            if (origin.latitude() == null || origin.longitude() == null
-                    || destination.latitude() == null || destination.longitude() == null) {
+            AirportDTO originDto = airportService.getAirportByIata(originIata);
+            AirportDTO destinationDto = airportService.getAirportByIata(destinationIata);
+
+            if (originDto.latitude() == null || originDto.longitude() == null
+                    || destinationDto.latitude() == null || destinationDto.longitude() == null) {
                 throw new IllegalArgumentException("Airport coordinates are required to calculate distance");
             }
-            double distance = haversine(origin.latitude(), origin.longitude(), destination.latitude(), destination.longitude());
-            UseCaseLogSupport.end(
-                    log,
-                    "DistanceService.calculateDistance",
-                    null,
-                    startMs,
-                    "distanceKm=" + distance
+
+            double distance = haversine(
+                    originDto.latitude(), originDto.longitude(),
+                    destinationDto.latitude(), destinationDto.longitude()
             );
+
+            UseCaseLogSupport.end(log, "DistanceService.calculateDistance", null, startMs, "distanceKm=" + distance);
             return distance;
         } catch (Exception ex) {
             UseCaseLogSupport.fail(log, "DistanceService.calculateDistance", null, startMs, ex);
             throw ex;
         }
-    }
-
-    /**
-     * Resuelve un aeropuerto desde el repositorio local o fuente externa.
-     *
-     * @param normalizedIata IATA normalizado (trim y upper).
-     * @return aeropuerto encontrado o persistido.
-     */
-    private Airport resolveAirport(String normalizedIata) {
-        return airportRepositoryPort.findByIata(normalizedIata)
-                .orElseGet(() -> airportInfoPort.findByIata(normalizedIata)
-                        .map(this::storeAirport)
-                        .orElseThrow(() -> {
-                            log.warn("Airport not found while calculating distance: {}", normalizedIata);
-                            return new IllegalArgumentException("Airport not found: " + normalizedIata);
-                        }));
-    }
-
-    /**
-     * Persiste un aeropuerto obtenido desde una fuente externa.
-     *
-     * @param airport aeropuerto a almacenar.
-     * @return aeropuerto persistido (sin modificación de datos).
-     */
-    private Airport storeAirport(Airport airport) {
-        log.info("Storing airport from external source for distance calculation: {}", airport.airportIata());
-        return airportRepositoryPort.save(airport);
-    }
-
-    /**
-     * Normaliza el IATA a mayúsculas y sin espacios.
-     *
-     * @param airportIata IATA original.
-     * @return IATA normalizado o null si el valor era null.
-     */
-    private String normalizeIata(String airportIata) {
-        if (airportIata == null || airportIata.isBlank()) {
-            throw new IllegalArgumentException("iata is required");
-        }
-        String normalized = airportIata.trim().toUpperCase(Locale.ROOT);
-        if (normalized.length() != 3) {
-            throw new IllegalArgumentException("iata must be length 3");
-        }
-        return normalized;
     }
 
     /**
