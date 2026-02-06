@@ -6,6 +6,7 @@ import com.flightspredictor.flights.domain.entities.Airport;
 import com.flightspredictor.flights.domain.error.AirportNotFoundException;
 import com.flightspredictor.flights.domain.repository.AirportRepository;
 import com.flightspredictor.flights.domain.validations.IAirportsValidations;
+import com.flightspredictor.flights.infra.util.AirportLookupTraceContext;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,7 +27,7 @@ public class AirportService {
     public AirportService(AirportApiClient apiClient,
                           AirportRepository repository,
                           List<IAirportsValidations> validations,
-                          @Value("${app.debug.airport-lookup-trace:false}") boolean airportLookupTraceEnabled) {
+                          @Value("${app.debug.airportLookupTrace:false}") boolean airportLookupTraceEnabled) {
         this.apiClient = apiClient;
         this.repository = repository;
         this.validations = validations;
@@ -51,7 +52,7 @@ public class AirportService {
 
         // Busca primero el aeropuerto en la base de datos si ya existe
         Optional<Airport> existingAirport = repository.findByAirportIata(normalizedIata);
-        logAirportLookupTrace(normalizedIata, existingAirport.isPresent() ? "DB" : "EXTERNAL_FETCH");
+        logAirportLookupTrace(normalizedIata);
         if (existingAirport.isPresent()) {
             return existingAirport.get();
         }
@@ -77,14 +78,15 @@ public class AirportService {
         return repository.save(airport);
     }
 
-    private void logAirportLookupTrace(String normalizedIata, String source) {
+    private void logAirportLookupTrace(String normalizedIata) {
         if (!airportLookupTraceEnabled) {
             return;
         }
         String correlationId = MDC.get("correlationId");
         String caller = resolveCaller();
-        log.debug("AirportLookup correlationId={} iata={} source={} caller={}",
-                correlationId, normalizedIata, source, caller);
+        int lookupCount = AirportLookupTraceContext.incrementAndGet();
+        log.info("AIRPORT_LOOKUP_TRACE correlationId={} iata={} caller={} airportLookupCount={}",
+                correlationId, normalizedIata, caller, lookupCount);
     }
 
     private String resolveCaller() {
@@ -94,7 +96,7 @@ public class AirportService {
             if (shouldSkipFrame(className)) {
                 continue;
             }
-            return className + "." + element.getMethodName();
+            return className + "#" + element.getMethodName();
         }
         return "UNKNOWN";
     }

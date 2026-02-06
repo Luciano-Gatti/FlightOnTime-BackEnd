@@ -41,6 +41,9 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
                     request.getRequestURI(), ex);
             throw ex;
         } finally {
+            int airportLookupCount = AirportLookupTraceContext.getCount();
+            log.info("AIRPORT_LOOKUP_COUNT correlationId={} airportLookupCount={}", correlationId, airportLookupCount);
+            AirportLookupTraceContext.clear();
             MDC.remove(CORRELATION_ID_KEY);
         }
     }
