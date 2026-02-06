@@ -19,6 +19,6 @@ public record AirportApiResponse(
         AirportApiElevation elevation,
         @JsonProperty("timeZone")
         String timeZone,
-        AirportApiGoogleMaps googleMaps
+        AirportApiUrls urls
 ) {
 }
