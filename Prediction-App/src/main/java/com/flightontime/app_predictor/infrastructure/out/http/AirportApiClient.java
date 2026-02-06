@@ -23,14 +23,17 @@ public class AirportApiClient {
     private final WebClient airportWebClient;
     private final String apiKey;
     private final ObjectMapper objectMapper;
+    private final String airportServiceUrl;
 
     public AirportApiClient(
             @Qualifier("airportWebClient") WebClient airportWebClient,
             @Value("${api.market.key:}") String apiKey,
+            @Value("${airport.service.url}") String airportServiceUrl,
             ObjectMapper objectMapper
     ) {
         this.airportWebClient = airportWebClient;
         this.apiKey = apiKey;
+        this.airportServiceUrl = airportServiceUrl;
         this.objectMapper = objectMapper;
     }
 
@@ -40,11 +43,12 @@ public class AirportApiClient {
      * @return resultado de la operación find by iata.
      */
     public AirportApiResponse fetchAirportByIata(String airportIata) {
-        String url = AirportUrlBuilder.buildAirportUrl(airportIata);
+        String path = AirportUrlBuilder.buildAirportUrl(airportIata);
+        String url = airportServiceUrl + path;
         log.info("Outbound request method=GET url={}", url);
         AirportApiResponse response = airportWebClient.get()
-                .uri(url)
-                .header("x-api-market-key", apiKey)
+                .uri(path)
+                .header("x-magicapi-key", apiKey)
                 .exchangeToMono(clientResponse -> {
                     int statusCode = clientResponse.statusCode().value();
                     log.info("Airport provider response status={}", statusCode);
