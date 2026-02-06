@@ -95,7 +95,7 @@ public class WeatherService {
         }
 
         String normalizedIata = iataCode.trim().toUpperCase();
-        Airport airport = airportService.getAirport(normalizedIata);
+        Airport airport = airportService.getOrFetchByIata(normalizedIata);
 
         if (airport == null) {
             throw new IllegalStateException("No se pudo encontrar el aeropuerto para el código: " + normalizedIata);

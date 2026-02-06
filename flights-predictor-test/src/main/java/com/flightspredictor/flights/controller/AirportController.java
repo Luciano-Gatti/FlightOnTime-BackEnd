@@ -18,7 +18,7 @@ public class AirportController {
 
     @GetMapping("/{iata}")
     public ResponseEntity<AirportResp> getAirport (@PathVariable String iata) {
-        var airport = airportService.getAirport(iata);
+        var airport = airportService.getOrFetchByIata(iata);
 
         return ResponseEntity.ok(new AirportResp(airport));
     }
