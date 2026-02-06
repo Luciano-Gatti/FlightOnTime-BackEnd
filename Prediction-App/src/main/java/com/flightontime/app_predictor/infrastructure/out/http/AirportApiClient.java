@@ -56,7 +56,10 @@ public class AirportApiClient {
                     log.info("Outbound request method=GET url={}", uri);
                     return uri;
                 })
-                .header("x-api-market-key", apiKey)
+                .headers(headers -> {
+                    headers.set("x-api-market-key", apiKey);
+                    headers.set("x-magicapi-key", apiKey);
+                })
                 .exchangeToMono(clientResponse -> {
                     int statusCode = clientResponse.statusCode().value();
                     log.info("Airport provider response status={}", statusCode);
