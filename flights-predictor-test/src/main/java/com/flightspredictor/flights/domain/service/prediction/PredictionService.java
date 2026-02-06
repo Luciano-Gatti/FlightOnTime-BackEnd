@@ -14,13 +14,17 @@ import com.flightspredictor.flights.domain.entities.FlightRequest;
 import com.flightspredictor.flights.domain.mapper.prediction.PredictionMapper;
 import com.flightspredictor.flights.domain.mapper.prediction.RequestMapper;
 import com.flightspredictor.flights.domain.repository.FlightRequestRepository;
+import com.flightspredictor.flights.domain.repository.FlightPredictionRepository;
 import com.flightspredictor.flights.domain.util.GeoUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PredictionService {
 
     private final AirportLookupService airportLookupService;
@@ -28,14 +32,19 @@ public class PredictionService {
     private final PredictionMapper predictionMapper;
     private final RequestMapper requestMapper;
     private final FlightRequestRepository requestRepo;
+    private final FlightPredictionRepository predictionRepo;
 
     public ModelPredictionResponse predict(PredictionRequest request){
+        String correlationId = MDC.get("correlationId");
+        log.info("PREDICT_STEP step=START correlationId={}", correlationId);
 
         // Trae los aeropuertos y sus coordenadas
+        log.info("PREDICT_STEP step=RESOLVE_AIRPORTS correlationId={}", correlationId);
         var originAirport = airportLookupService.getAirport(request.origin());
         var destAirport = airportLookupService.getAirport(request.dest());
 
         // Busca si no existe una request en la base de datos
+        log.info("PREDICT_STEP step=FIND_FLIGHT_REQUEST correlationId={}", correlationId);
         Optional<FlightRequest> existingRequest =
                 requestRepo.
                         findByFlightDateUtcAndAirlineCodeAndOriginIataAndDestIata(
@@ -47,9 +56,11 @@ public class PredictionService {
 
         // Si exite, devuelve la predicción asociada a request
         FlightRequest requestEntity = existingRequest.orElse(null);
+        log.info("PREDICT_STEP step=FIND_FLIGHT_PREDICTION correlationId={}", correlationId);
         if (requestEntity != null) {
             List<FlightPrediction> predictions = requestEntity.getPredictions();
             if (predictions != null && !predictions.isEmpty()) {
+                log.info("PREDICT_STEP step=END correlationId={}", correlationId);
                 return new ModelPredictionResponse(predictions.get(0));
             }
         }
@@ -76,18 +87,19 @@ public class PredictionService {
 
         // Construye las entidades para ser almacenadas en la base de datos
         if (requestEntity == null) {
+            log.info("PREDICT_STEP step=CREATE_FLIGHT_REQUEST correlationId={}", correlationId);
             requestEntity = new FlightRequest(request, calculatedDistance);
+            requestRepo.save(requestEntity);
         }
         FlightPrediction predictionEntity = new FlightPrediction(domainResponse, requestEntity);
-        requestEntity.setPredictions(List.of(predictionEntity));
+        log.info("PREDICT_STEP step=CREATE_FLIGHT_PREDICTION correlationId={}", correlationId);
+        predictionRepo.save(predictionEntity);
 
-        // Guarda la request y a la vez la prediction asociada a ella
-        requestRepo.save(requestEntity);
+        log.info("PREDICT_STEP step=END correlationId={}", correlationId);
 
         return domainResponse;
     }
 }
-
 
 
 
