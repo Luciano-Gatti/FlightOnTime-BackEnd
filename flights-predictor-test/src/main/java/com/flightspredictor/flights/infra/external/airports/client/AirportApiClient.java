@@ -28,6 +28,7 @@ public class AirportApiClient {
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("x-api-market-key", apiKey);
+        headers.set("x-magicapi-key", apiKey);
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
         try {
