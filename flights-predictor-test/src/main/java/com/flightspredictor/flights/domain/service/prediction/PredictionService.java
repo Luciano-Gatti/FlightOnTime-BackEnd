@@ -35,21 +35,14 @@ public class PredictionService {
         var originAirport = airportLookupService.getAirport(request.origin());
         var destAirport = airportLookupService.getAirport(request.dest());
 
-        // Calcula distancia automáticamente la distancia para inyectarla en la request
-        double calculatedDistance = GeoUtils.calculateDistance(
-                originAirport.getLatitude(), destAirport.getLatitude(),
-                originAirport.getLongitude(), destAirport.getLongitude()
-        );
-
         // Busca si no existe una request en la base de datos
         Optional<FlightRequest> existingRequest =
                 requestRepo.
-                        findByFlightDateUtcAndAirlineCodeAndOriginIataAndDestIataAndDistance(
+                        findByFlightDateUtcAndAirlineCodeAndOriginIataAndDestIata(
                                 request.flightDateTime().toLocalDateTime(),
                                 request.opUniqueCarrier(),
                                 request.origin(),
-                                request.dest(),
-                                calculatedDistance
+                                request.dest()
             );
 
         // Si exite, devuelve la predicción asociada a request
@@ -59,6 +52,17 @@ public class PredictionService {
             if (predictions != null && !predictions.isEmpty()) {
                 return new ModelPredictionResponse(predictions.get(0));
             }
+        }
+
+        double calculatedDistance;
+        if (requestEntity != null) {
+            calculatedDistance = requestEntity.getDistance();
+        } else {
+            // Calcula distancia automáticamente la distancia para inyectarla en la request
+            calculatedDistance = GeoUtils.calculateDistance(
+                    originAirport.getLatitude(), destAirport.getLatitude(),
+                    originAirport.getLongitude(), destAirport.getLongitude()
+            );
         }
 
         // Mapea la request para entregarla al modelo
@@ -83,8 +87,6 @@ public class PredictionService {
         return domainResponse;
     }
 }
-
-
 
 
 
