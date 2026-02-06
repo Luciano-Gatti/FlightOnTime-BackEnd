@@ -43,16 +43,22 @@ public class AirportService {
      * @return true si existe, false en caso contrario
      */
     public boolean existsAirportIata(String iata) {
+        String normalizedIata = normalizeIata(iata);
+        logAirportLookupTrace(normalizedIata);
         return repository.existsByAirportIataIgnoreCase(iata);
     }
 
 
-    public Airport getAirport (String iata) {
+    public Airport getAirport(String iata) {
+        return getOrFetchByIata(iata);
+    }
+
+    public Airport getOrFetchByIata(String iata) {
         String normalizedIata = normalizeIata(iata);
 
         // Busca primero el aeropuerto en la base de datos si ya existe
-        Optional<Airport> existingAirport = repository.findByAirportIata(normalizedIata);
         logAirportLookupTrace(normalizedIata);
+        Optional<Airport> existingAirport = repository.findByAirportIata(normalizedIata);
         if (existingAirport.isPresent()) {
             return existingAirport.get();
         }
