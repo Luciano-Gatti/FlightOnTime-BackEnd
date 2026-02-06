@@ -1,1 +1,0 @@
-ALTER TABLE prediction MODIFY COLUMN status VARCHAR(50);
