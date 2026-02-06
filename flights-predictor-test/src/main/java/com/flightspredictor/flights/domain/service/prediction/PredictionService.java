@@ -4,15 +4,16 @@ import com.flightspredictor.flights.infra.external.prediction.client.PredictionA
 import com.flightspredictor.flights.domain.dto.prediction.ModelPredictionRequest;
 import com.flightspredictor.flights.domain.dto.prediction.ModelPredictionResponse;
 
+import java.util.List;
 import java.util.Optional;
 
 import com.flightspredictor.flights.domain.dto.prediction.PredictionRequest;
 import com.flightspredictor.flights.domain.dto.prediction.PredictionResponse;
-import com.flightspredictor.flights.domain.entities.Prediction;
-import com.flightspredictor.flights.domain.entities.Request;
+import com.flightspredictor.flights.domain.entities.FlightPrediction;
+import com.flightspredictor.flights.domain.entities.FlightRequest;
 import com.flightspredictor.flights.domain.mapper.prediction.PredictionMapper;
 import com.flightspredictor.flights.domain.mapper.prediction.RequestMapper;
-import com.flightspredictor.flights.domain.repository.RequestRepository;
+import com.flightspredictor.flights.domain.repository.FlightRequestRepository;
 import com.flightspredictor.flights.domain.util.GeoUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,7 @@ public class PredictionService {
     private final PredictionApiClient predictionClient;
     private final PredictionMapper predictionMapper;
     private final RequestMapper requestMapper;
-    private final RequestRepository requestRepo;
+    private final FlightRequestRepository requestRepo;
 
     public ModelPredictionResponse predict(PredictionRequest request){
 
@@ -47,10 +48,10 @@ public class PredictionService {
         );
 
         // Busca si no existe una request en la base de datos
-        Optional<Request> existingRequest =
+        Optional<FlightRequest> existingRequest =
                 requestRepo.
-                        findByFlightDateTimeAndOpUniqueCarrierAndOriginAndDestAndDistance(
-                                request.flightDateTime(),
+                        findByFlightDateUtcAndAirlineCodeAndOriginIataAndDestIataAndDistance(
+                                request.flightDateTime().toLocalDateTime(),
                                 request.opUniqueCarrier(),
                                 request.origin(),
                                 request.dest(),
@@ -58,10 +59,12 @@ public class PredictionService {
             );
 
         // Si exite, devuelve la predicción asociada a request
-        if (existingRequest.isPresent()) {
-            Prediction prediction = existingRequest.get().getPrediction();
-
-            return new ModelPredictionResponse(prediction);
+        FlightRequest requestEntity = existingRequest.orElse(null);
+        if (requestEntity != null) {
+            List<FlightPrediction> predictions = requestEntity.getPredictions();
+            if (predictions != null && !predictions.isEmpty()) {
+                return new ModelPredictionResponse(predictions.get(0));
+            }
         }
 
         // Mapea la request para entregarla al modelo
@@ -74,11 +77,11 @@ public class PredictionService {
         ModelPredictionResponse domainResponse = predictionMapper.mapToModelResponse(response);
 
         // Construye las entidades para ser almacenadas en la base de datos
-        Request requestEntity = new Request(request, calculatedDistance);
-        Prediction predictionEntity = new Prediction(domainResponse, requestEntity);
-
-        // Hace la vinculación de la request con la predicción
-        requestEntity.setPrediction(predictionEntity);
+        if (requestEntity == null) {
+            requestEntity = new FlightRequest(request, calculatedDistance);
+        }
+        FlightPrediction predictionEntity = new FlightPrediction(domainResponse, requestEntity);
+        requestEntity.setPredictions(List.of(predictionEntity));
 
         // Guarda la request y a la vez la prediction asociada a ella
         requestRepo.save(requestEntity);
@@ -86,9 +89,6 @@ public class PredictionService {
         return domainResponse;
     }
 }
-
-
-
 
 
 

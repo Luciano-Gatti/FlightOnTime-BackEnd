@@ -1,13 +1,12 @@
 package com.flightspredictor.flights.domain.dto.prediction;
 
-import com.flightspredictor.flights.domain.enums.Prevision;
-import com.flightspredictor.flights.domain.enums.Status;
+import com.flightspredictor.flights.domain.enums.PredictedStatus;
 import java.util.Map;
 
 public record PredictionStatsResponse(
         long totalPredictions,
-        Map<Status, Long> byStatus,
-        Map<Prevision, Long> byPrevision,
+        Map<PredictedStatus, Long> byStatus,
+        Map<String, Long> byConfidence,
         Double averageProbability
 ) {
 }

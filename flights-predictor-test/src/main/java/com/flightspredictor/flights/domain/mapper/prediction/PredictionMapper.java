@@ -1,9 +1,8 @@
 package com.flightspredictor.flights.domain.mapper.prediction;
 
-import com.flightspredictor.flights.domain.enums.Prevision;
-import com.flightspredictor.flights.domain.enums.Status;
 import com.flightspredictor.flights.domain.dto.prediction.ModelPredictionResponse;
 import com.flightspredictor.flights.domain.dto.prediction.PredictionResponse;
+import com.flightspredictor.flights.domain.enums.PredictedStatus;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -11,33 +10,19 @@ public class PredictionMapper {
 
     public ModelPredictionResponse mapToModelResponse(PredictionResponse response) {
 
-        Prevision prevision = setPrevision(response.prevision());
-        Status status = setStatus(response.confianza());
+        PredictedStatus predictedStatus = setPredictedStatus(response.prevision());
 
         return new ModelPredictionResponse(
-                prevision,
+                predictedStatus,
                 response.probabilidad(),
-                status
+                response.confianza()
         );
     }
 
-    private Prevision setPrevision(String prevision) {
+    private PredictedStatus setPredictedStatus(String prevision) {
         if ("Retrasado".equalsIgnoreCase(prevision) || "Delayed".equalsIgnoreCase(prevision)) {
-            return Prevision.DELAYED;
+            return PredictedStatus.DELAYED;
         }
-        return Prevision.ON_TIME;
-    }
-
-    private Status setStatus(String confianza) {
-        if ("Baja".equalsIgnoreCase(confianza)) {
-            return Status.LOW;
-        }
-        if ("Media".equalsIgnoreCase(confianza)) {
-            return Status.MEDIUM;
-        }
-        if ("Alta".equalsIgnoreCase(confianza)) {
-            return Status.HIGH;
-        }
-        return Status.MEDIUM;
+        return PredictedStatus.ON_TIME;
     }
 }

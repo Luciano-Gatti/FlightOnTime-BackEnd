@@ -1,10 +1,9 @@
 package com.flightspredictor.flights.domain.service.prediction;
 
 import com.flightspredictor.flights.domain.dto.prediction.PredictionStatsResponse;
-import com.flightspredictor.flights.domain.enums.Prevision;
-import com.flightspredictor.flights.domain.enums.Status;
-import com.flightspredictor.flights.domain.entities.Prediction;
-import com.flightspredictor.flights.domain.repository.PredictionRepository;
+import com.flightspredictor.flights.domain.entities.FlightPrediction;
+import com.flightspredictor.flights.domain.enums.PredictedStatus;
+import com.flightspredictor.flights.domain.repository.FlightPredictionRepository;
 import java.util.DoubleSummaryStatistics;
 import java.util.List;
 import java.util.Map;
@@ -14,23 +13,23 @@ import org.springframework.stereotype.Service;
 @Service
 public class PredictionStatsService {
 
-    private final PredictionRepository predictionRepository;
+    private final FlightPredictionRepository predictionRepository;
 
-    public PredictionStatsService(PredictionRepository predictionRepository) {
+    public PredictionStatsService(FlightPredictionRepository predictionRepository) {
         this.predictionRepository = predictionRepository;
     }
 
     public PredictionStatsResponse getStats() {
-        List<Prediction> predictions = predictionRepository.findAll();
+        List<FlightPrediction> predictions = predictionRepository.findAll();
 
-        Map<Status, Long> byStatus = predictions.stream()
-                .collect(Collectors.groupingBy(Prediction::getStatus, Collectors.counting()));
+        Map<PredictedStatus, Long> byStatus = predictions.stream()
+                .collect(Collectors.groupingBy(FlightPrediction::getPredictedStatus, Collectors.counting()));
 
-        Map<Prevision, Long> byPrevision = predictions.stream()
-                .collect(Collectors.groupingBy(Prediction::getPrevision, Collectors.counting()));
+        Map<String, Long> byConfidence = predictions.stream()
+                .collect(Collectors.groupingBy(FlightPrediction::getConfidence, Collectors.counting()));
 
         DoubleSummaryStatistics probabilityStats = predictions.stream()
-                .map(Prediction::getProbability)
+                .map(FlightPrediction::getPredictedProbability)
                 .filter(value -> value != null)
                 .mapToDouble(Double::doubleValue)
                 .summaryStatistics();
@@ -42,7 +41,7 @@ public class PredictionStatsService {
         return new PredictionStatsResponse(
                 predictions.size(),
                 byStatus,
-                byPrevision,
+                byConfidence,
                 averageProbability
         );
     }
