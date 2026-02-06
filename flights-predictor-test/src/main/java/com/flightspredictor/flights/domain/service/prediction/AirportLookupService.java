@@ -3,6 +3,7 @@ package com.flightspredictor.flights.domain.service.prediction;
 import com.flightspredictor.flights.domain.entities.Airport;
 import com.flightspredictor.flights.domain.repository.AirportRepository;
 import com.flightspredictor.flights.domain.service.airports.AirportService;
+import com.flightspredictor.flights.infra.util.AirportLookupTraceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -29,7 +30,7 @@ public class  AirportLookupService {
 
     private final AirportRepository airportRepository;
     private final AirportService airportService;
-    @Value("${app.debug.airport-lookup-trace:false}")
+    @Value("${app.debug.airportLookupTrace:false}")
     private boolean airportLookupTraceEnabled;
 
     /**
@@ -45,29 +46,33 @@ public class  AirportLookupService {
 
     @Transactional
     public void getAirportExist(String origin, String dest) {
-        Optional<Airport> originAirport = airportRepository.findByAirportIata(origin);
-        logAirportLookupTrace(normalizeIata(origin), originAirport.isPresent() ? "DB" : "EXTERNAL_FETCH");
+        String normalizedOrigin = normalizeIata(origin);
+        Optional<Airport> originAirport = airportRepository.findByAirportIata(normalizedOrigin);
+        logAirportLookupTrace(normalizedOrigin);
         originAirport.orElseGet(() -> airportRepository.save(airportService.getAirport(origin)));
 
-        Optional<Airport> destAirport = airportRepository.findByAirportIata(dest);
-        logAirportLookupTrace(normalizeIata(dest), destAirport.isPresent() ? "DB" : "EXTERNAL_FETCH");
+        String normalizedDest = normalizeIata(dest);
+        Optional<Airport> destAirport = airportRepository.findByAirportIata(normalizedDest);
+        logAirportLookupTrace(normalizedDest);
         destAirport.orElseGet(() -> airportRepository.save(airportService.getAirport(dest)));
     }
 
     public Optional<Airport> getAirport(String iata) {
-        Optional<Airport> airport = airportRepository.findByAirportIata(iata);
-        logAirportLookupTrace(normalizeIata(iata), airport.isPresent() ? "DB" : "EXTERNAL_FETCH");
+        String normalizedIata = normalizeIata(iata);
+        Optional<Airport> airport = airportRepository.findByAirportIata(normalizedIata);
+        logAirportLookupTrace(normalizedIata);
         return airport;
     }
 
-    private void logAirportLookupTrace(String normalizedIata, String source) {
+    private void logAirportLookupTrace(String normalizedIata) {
         if (!airportLookupTraceEnabled) {
             return;
         }
         String correlationId = MDC.get("correlationId");
         String caller = resolveCaller();
-        log.debug("AirportLookup correlationId={} iata={} source={} caller={}",
-                correlationId, normalizedIata, source, caller);
+        int lookupCount = AirportLookupTraceContext.incrementAndGet();
+        log.info("AIRPORT_LOOKUP_TRACE correlationId={} iata={} caller={} airportLookupCount={}",
+                correlationId, normalizedIata, caller, lookupCount);
     }
 
     private String resolveCaller() {
@@ -77,7 +82,7 @@ public class  AirportLookupService {
             if (shouldSkipFrame(className)) {
                 continue;
             }
-            return className + "." + element.getMethodName();
+            return className + "#" + element.getMethodName();
         }
         return "UNKNOWN";
     }
