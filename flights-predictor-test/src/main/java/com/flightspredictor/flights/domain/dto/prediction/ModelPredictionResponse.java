@@ -2,27 +2,26 @@ package com.flightspredictor.flights.domain.dto.prediction;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.flightspredictor.flights.domain.enums.Prevision;
-import com.flightspredictor.flights.domain.enums.Status;
-import com.flightspredictor.flights.domain.entities.Prediction;
+import com.flightspredictor.flights.domain.entities.FlightPrediction;
+import com.flightspredictor.flights.domain.enums.PredictedStatus;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ModelPredictionResponse(
 
         @JsonProperty("prediction")
-        Prevision prevision,
+        PredictedStatus predictedStatus,
 
         @JsonProperty("probability")
-        Double probability,
+        Double predictedProbability,
 
         @JsonProperty("threshold")
-        Status status
+        String confidence
 ) {
-    public ModelPredictionResponse(Prediction response) {
+    public ModelPredictionResponse(FlightPrediction response) {
         this (
-                response.getPrevision(),
-                response.getProbability(),
-                response.getStatus()
+                response.getPredictedStatus(),
+                response.getPredictedProbability(),
+                response.getConfidence()
         );
     }
 }
