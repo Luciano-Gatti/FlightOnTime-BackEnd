@@ -31,20 +31,14 @@ public class PredictionService {
 
     public ModelPredictionResponse predict(PredictionRequest request){
 
-        // Busca los aeropueros desde la request para guardarlos en base de datos si no existen
-        airportLookupService.getAirportExist(
-                request.origin(),
-                request.dest()
-        );
-
         // Trae los aeropuertos y sus coordenadas
         var originAirport = airportLookupService.getAirport(request.origin());
         var destAirport = airportLookupService.getAirport(request.dest());
 
         // Calcula distancia automáticamente la distancia para inyectarla en la request
         double calculatedDistance = GeoUtils.calculateDistance(
-                originAirport.get().getLatitude(), destAirport.get().getLatitude(),
-                originAirport.get().getLongitude(), destAirport.get().getLongitude()
+                originAirport.getLatitude(), destAirport.getLatitude(),
+                originAirport.getLongitude(), destAirport.getLongitude()
         );
 
         // Busca si no existe una request en la base de datos
@@ -89,7 +83,6 @@ public class PredictionService {
         return domainResponse;
     }
 }
-
 
 
 
