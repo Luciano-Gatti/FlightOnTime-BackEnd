@@ -1,7 +1,7 @@
 package com.flightspredictor.flights.domain.dto.prediction;
 
-import com.flightspredictor.flights.domain.enum.Prevision;
-import com.flightspredictor.flights.domain.enum.Status;
+import com.flightspredictor.flights.domain.enums.Prevision;
+import com.flightspredictor.flights.domain.enums.Status;
 import java.util.Map;
 
 public record PredictionStatsResponse(

@@ -2,10 +2,9 @@ package com.flightspredictor.flights.domain.dto.prediction;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.flightspredictor.flights.domain.enum.Prevision;
-import com.flightspredictor.flights.domain.enum.Status;
+import com.flightspredictor.flights.domain.enums.Prevision;
+import com.flightspredictor.flights.domain.enums.Status;
 import com.flightspredictor.flights.domain.entities.Prediction;
-import com.flightspredictor.flights.domain.entities.Request;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ModelPredictionResponse(

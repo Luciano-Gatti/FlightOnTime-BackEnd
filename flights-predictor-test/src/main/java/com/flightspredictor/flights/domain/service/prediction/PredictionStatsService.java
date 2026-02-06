@@ -1,8 +1,8 @@
 package com.flightspredictor.flights.domain.service.prediction;
 
 import com.flightspredictor.flights.domain.dto.prediction.PredictionStatsResponse;
-import com.flightspredictor.flights.domain.enum.Prevision;
-import com.flightspredictor.flights.domain.enum.Status;
+import com.flightspredictor.flights.domain.enums.Prevision;
+import com.flightspredictor.flights.domain.enums.Status;
 import com.flightspredictor.flights.domain.entities.Prediction;
 import com.flightspredictor.flights.domain.repository.PredictionRepository;
 import java.util.DoubleSummaryStatistics;

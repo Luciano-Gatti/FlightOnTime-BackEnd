@@ -1,4 +1,4 @@
-package com.flightspredictor.flights.domain.enum;
+package com.flightspredictor.flights.domain.enums;
 
 public enum Prevision {
     DELAYED("DELAYED"),

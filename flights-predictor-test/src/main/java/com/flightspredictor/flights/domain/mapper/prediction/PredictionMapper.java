@@ -1,7 +1,7 @@
 package com.flightspredictor.flights.domain.mapper.prediction;
 
-import com.flightspredictor.flights.domain.enum.Prevision;
-import com.flightspredictor.flights.domain.enum.Status;
+import com.flightspredictor.flights.domain.enums.Prevision;
+import com.flightspredictor.flights.domain.enums.Status;
 import com.flightspredictor.flights.domain.dto.prediction.ModelPredictionResponse;
 import com.flightspredictor.flights.domain.dto.prediction.PredictionResponse;
 import org.springframework.stereotype.Component;
