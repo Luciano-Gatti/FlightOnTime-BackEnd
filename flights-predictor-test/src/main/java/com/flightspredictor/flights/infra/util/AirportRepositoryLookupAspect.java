@@ -32,10 +32,12 @@ public class AirportRepositoryLookupAspect {
         if (airportRepoTraceEnabled && shouldTraceRepoCall(joinPoint)) {
             String correlationId = MDC.get("correlationId");
             String caller = resolveCaller();
-            log.info("AIRPORT_REPO_CALL correlationId={} method={} caller={}",
+            String iata = resolveIata(joinPoint);
+            log.info("AIRPORT_REPO_CALL correlationId={} method={} caller={} iata={}",
                     correlationId,
                     joinPoint.getSignature().getName(),
-                    caller);
+                    caller,
+                    iata);
         }
         if (shouldTrack(joinPoint) && !calledFromAirportService()) {
             int lookupCount = AirportLookupTraceContext.incrementAndGet();
@@ -76,7 +78,9 @@ public class AirportRepositoryLookupAspect {
             if (shouldSkipFrame(className)) {
                 continue;
             }
-            return className + "#" + element.getMethodName();
+            if (className.startsWith("com.flightspredictor.")) {
+                return className + "#" + element.getMethodName() + ":" + element.getLineNumber();
+            }
         }
         return "UNKNOWN";
     }
@@ -84,10 +88,33 @@ public class AirportRepositoryLookupAspect {
     private boolean shouldSkipFrame(String className) {
         return className.equals(AirportRepositoryLookupAspect.class.getName())
                 || className.equals(AirportService.class.getName())
+                || className.startsWith("com.flightspredictor.flights.domain.repository")
                 || className.startsWith("java.")
+                || className.startsWith("javax.")
+                || className.startsWith("jakarta.")
+                || className.startsWith("sun.")
+                || className.startsWith("jdk.")
                 || className.startsWith("org.springframework.")
                 || className.startsWith("org.hibernate.")
-                || className.startsWith("jakarta.")
+                || className.startsWith("com.sun.proxy")
+                || className.startsWith("net.sf.cglib")
+                || className.startsWith("org.aopalliance")
                 || className.startsWith("org.aspectj.");
+    }
+
+    private String resolveIata(ProceedingJoinPoint joinPoint) {
+        Object[] args = joinPoint.getArgs();
+        if (args.length == 0 || !(args[0] instanceof String)) {
+            return "UNKNOWN";
+        }
+        String rawIata = (String) args[0];
+        return normalizeIata(rawIata);
+    }
+
+    private String normalizeIata(String iata) {
+        if (iata == null) {
+            return "NULL";
+        }
+        return iata.trim().toUpperCase();
     }
 }
