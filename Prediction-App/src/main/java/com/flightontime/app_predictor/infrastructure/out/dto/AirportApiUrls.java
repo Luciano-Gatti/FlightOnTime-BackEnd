@@ -4,11 +4,17 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Registro AirportApiGoogleMaps.
+ * Registro AirportApiUrls.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record AirportApiGoogleMaps(
+public record AirportApiUrls(
         @JsonProperty("googleMaps")
-        String googleMaps
+        String googleMaps,
+        @JsonProperty("webSite")
+        String webSite,
+        @JsonProperty("wikipedia")
+        String wikipedia,
+        @JsonProperty("twitter")
+        String twitter
 ) {
 }

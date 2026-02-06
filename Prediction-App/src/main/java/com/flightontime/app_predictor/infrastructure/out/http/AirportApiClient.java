@@ -23,14 +23,17 @@ public class AirportApiClient {
     private final WebClient airportWebClient;
     private final String apiKey;
     private final ObjectMapper objectMapper;
+    private final String airportServiceUrl;
 
     public AirportApiClient(
             @Qualifier("airportWebClient") WebClient airportWebClient,
             @Value("${api.market.key:}") String apiKey,
+            @Value("${airport.service.url}") String airportServiceUrl,
             ObjectMapper objectMapper
     ) {
         this.airportWebClient = airportWebClient;
         this.apiKey = apiKey;
+        this.airportServiceUrl = airportServiceUrl;
         this.objectMapper = objectMapper;
     }
 
