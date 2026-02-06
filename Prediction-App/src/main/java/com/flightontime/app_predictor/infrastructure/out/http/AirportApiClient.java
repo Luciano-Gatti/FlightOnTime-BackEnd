@@ -40,14 +40,24 @@ public class AirportApiClient {
      * @return resultado de la operación find by iata.
      */
     public AirportApiResponse fetchAirportByIata(String airportIata) {
-        String url = AirportUrlBuilder.buildAirportUrl(airportIata);
-        log.info("Outbound request method=GET url={}", url);
+
+        // Provider doc: GET /airports/{codeType}/{code}
+        // BaseUrl viene de airport.service.url
+        String codeType = "iata";
+
         AirportApiResponse response = airportWebClient.get()
-                .uri(url)
+                .uri(uriBuilder -> {
+                    var uri = uriBuilder
+                            .path("/airports/{codeType}/{code}")
+                            .build(codeType, airportIata);
+                    log.info("Outbound request method=GET url={}", uri);
+                    return uri;
+                })
                 .header("x-api-market-key", apiKey)
                 .exchangeToMono(clientResponse -> {
                     int statusCode = clientResponse.statusCode().value();
                     log.info("Airport provider response status={}", statusCode);
+
                     if (statusCode >= 400) {
                         return clientResponse.bodyToMono(String.class)
                                 .defaultIfEmpty("")
@@ -56,9 +66,11 @@ public class AirportApiClient {
                                     return clientResponse.createException().flatMap(Mono::error);
                                 });
                     }
+
                     return clientResponse.bodyToMono(AirportApiResponse.class);
                 })
                 .block();
+
         logJson("Airport API response payload iata=" + airportIata, response);
         return response;
     }
