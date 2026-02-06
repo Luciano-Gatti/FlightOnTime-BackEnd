@@ -1,7 +1,9 @@
-package com.flightspredictor.flights.infra.external.weather.client;
+package com.flightspredictor.flights.infra.external.weather.service;
 
 import com.flightspredictor.flights.domain.entities.Airport;
 import com.flightspredictor.flights.domain.service.airports.AirportService;
+import com.flightspredictor.flights.infra.external.weather.client.WeatherApiClient;
+import com.flightspredictor.flights.infra.external.weather.client.WeatherFallbackClient;
 import com.flightspredictor.flights.infra.external.weather.dto.WeatherData;
 import com.flightspredictor.flights.infra.external.weather.dto.external.WeatherApiResponse;
 import com.flightspredictor.flights.infra.external.weather.dto.external.LocationResponse;
@@ -15,7 +17,7 @@ import java.time.format.DateTimeFormatter;
  * Orquesta las llamadas al cliente HTTP y transforma los datos externos a formato interno
  */
 @Service
-public class WeatherClient {
+public class WeatherService {
     
     private final WeatherApiClient weatherApiClient;
     private final WeatherFallbackClient weatherFallbackClient;
@@ -26,7 +28,7 @@ public class WeatherClient {
      * 
      * @param weatherApiClient cliente configurado para llamadas a Open-Meteo
      */
-    public WeatherClient(
+    public WeatherService(
             WeatherApiClient weatherApiClient,
             WeatherFallbackClient weatherFallbackClient,
             AirportService airportService

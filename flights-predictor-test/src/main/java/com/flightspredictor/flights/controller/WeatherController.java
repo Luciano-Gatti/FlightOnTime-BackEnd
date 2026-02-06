@@ -1,7 +1,7 @@
 package com.flightspredictor.flights.controller;
 
 import com.flightspredictor.flights.infra.external.weather.dto.WeatherData;
-import com.flightspredictor.flights.infra.external.weather.client.WeatherClient;
+import com.flightspredictor.flights.infra.external.weather.service.WeatherService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,14 +13,14 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/weather")
 public class WeatherController {
     
-    private final WeatherClient weatherService;
+    private final WeatherService weatherService;
     
     /**
      * Constructor que inyecta el servicio meteorológico
      * 
      * @param weatherService servicio para obtener datos del clima
      */
-    public WeatherController(WeatherClient weatherService) {
+    public WeatherController(WeatherService weatherService) {
         this.weatherService = weatherService;
     }
     
