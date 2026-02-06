@@ -34,8 +34,13 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
 
         try {
             filterChain.doFilter(request, response);
-            log.info("USECASE_OK correlationId={} method={} path={}", correlationId, request.getMethod(),
-                    request.getRequestURI());
+            if (response.getStatus() >= 400) {
+                log.error("USECASE_FAIL correlationId={} method={} path={} status={}", correlationId,
+                        request.getMethod(), request.getRequestURI(), response.getStatus());
+            } else {
+                log.info("USECASE_OK correlationId={} method={} path={}", correlationId, request.getMethod(),
+                        request.getRequestURI());
+            }
         } catch (Exception ex) {
             log.error("USECASE_FAIL correlationId={} method={} path={}", correlationId, request.getMethod(),
                     request.getRequestURI(), ex);
