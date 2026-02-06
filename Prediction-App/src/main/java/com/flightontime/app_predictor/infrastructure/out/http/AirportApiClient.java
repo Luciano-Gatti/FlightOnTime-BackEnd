@@ -5,6 +5,7 @@ import com.flightontime.app_predictor.domain.ports.out.AirportInfoPort;
 import com.flightontime.app_predictor.infrastructure.out.dto.AirportApiResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.netty.handler.timeout.ReadTimeoutException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -58,9 +59,10 @@ public class AirportApiClient implements AirportInfoPort {
                     .bodyToMono(AirportApiResponse.class)
                     .block();
             logJson("Airport API response payload iata=" + airportIata, response);
+            log.info("Airport API request completed iata={} status={} foundData={}", airportIata, 200, response != null);
             return Optional.ofNullable(response).map(this::toDomain);
         } catch (WebClientResponseException.NotFound ex) {
-            log.warn("Airport not found in external API iata={}", airportIata);
+            log.info("Airport API request completed iata={} status={} foundData={}", airportIata, 404, false);
             return Optional.empty();
         } catch (WebClientResponseException ex) {
             ExternalProviderException providerException = new ExternalProviderException(
@@ -87,6 +89,21 @@ public class AirportApiClient implements AirportInfoPort {
             log.error("Airport API unavailable provider={} iata={} reason={}",
                     providerException.getProvider(),
                     airportIata,
+                    ex.getMessage());
+            throw providerException;
+        } catch (Exception ex) {
+            int fallbackStatus = ex instanceof ReadTimeoutException ? 504 : 502;
+            ExternalProviderException providerException = new ExternalProviderException(
+                    "airport-api",
+                    fallbackStatus,
+                    "Airport API parse/unexpected error for iata=" + airportIata,
+                    null,
+                    ex
+            );
+            log.error("Airport API unexpected error provider={} iata={} status={} reason={}",
+                    providerException.getProvider(),
+                    airportIata,
+                    providerException.getStatusCode(),
                     ex.getMessage());
             throw providerException;
         }
