@@ -5,6 +5,7 @@ import com.flightontime.app_predictor.domain.exception.BusinessException;
 import com.flightontime.app_predictor.domain.exception.DomainException;
 import com.flightontime.app_predictor.domain.exception.ExternalApiException;
 import com.flightontime.app_predictor.application.exception.WeatherProviderException;
+import com.flightontime.app_predictor.infrastructure.out.http.ExternalProviderException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.time.OffsetDateTime;
@@ -77,6 +78,14 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, message, request, null);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponseDTO> handleIllegalArgument(
+            IllegalArgumentException ex,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request, null);
+    }
+
     /**
      * Ejecuta la operación handle airport not found.
      * @param ex variable de entrada ex.
@@ -146,7 +155,21 @@ public class GlobalExceptionHandler {
          * @param null variable de entrada null.
          * @return resultado de la operación build response.
          */
-        return buildResponse(HttpStatus.BAD_GATEWAY, "External service unavailable", request, null);
+        return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, "External service unavailable", request, null);
+    }
+
+    /**
+     * Ejecuta la operación handle external provider.
+     * @param ex variable de entrada ex.
+     * @param request variable de entrada request.
+     * @return resultado de la operación handle external provider.
+     */
+    @ExceptionHandler(ExternalProviderException.class)
+    public ResponseEntity<ErrorResponseDTO> handleExternalProvider(
+            ExternalProviderException ex,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, "External service unavailable", request, null);
     }
 
     /**
