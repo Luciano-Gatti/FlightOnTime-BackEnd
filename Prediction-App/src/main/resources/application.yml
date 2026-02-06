@@ -1,2 +1,2 @@
 providers:
-  stub: false
+  stub: true

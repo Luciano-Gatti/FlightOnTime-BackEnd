@@ -71,6 +71,21 @@ public class AirportService {
      */
     private Airport fetchAndStoreAirport(String airportIata) {
         log.info("Airport not present in DB, fetching from external provider iata={}", airportIata);
+        log.info("Airport not present in DB, fetching from external provider iata={}", airportIata);
+        Airport airport = airportInfoPort.findByIata(airportIata)
+                .map(found -> new Airport(
+                        airportIata,
+                        found.airportName(),
+                        found.country(),
+                        found.cityName(),
+                        found.latitude(),
+                        found.longitude(),
+                        found.elevation(),
+                        found.timeZone(),
+                        found.googleMaps()
+                ))
+                .orElseThrow(() -> new AirportNotFoundException("Airport not found: " + airportIata));
+        return airportRepositoryPort.save(airport);
         try {
             Airport airport = airportInfoPort.findByIata(airportIata)
                     .map(found -> new Airport(
