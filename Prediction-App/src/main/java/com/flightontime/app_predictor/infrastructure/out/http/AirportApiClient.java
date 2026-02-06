@@ -1,8 +1,9 @@
 package com.flightontime.app_predictor.infrastructure.out.http;
 
-import com.flightontime.app_predictor.infrastructure.out.dto.AirportApiResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.flightontime.app_predictor.infrastructure.out.dto.AirportApiResponse;
+import com.flightontime.app_predictor.infrastructure.out.http.util.AirportUrlBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 /**
  * Clase AirportApiClient.
@@ -38,15 +40,24 @@ public class AirportApiClient {
      * @return resultado de la operación find by iata.
      */
     public AirportApiResponse fetchAirportByIata(String airportIata) {
-        log.info("Fetching airport from external API iata={}", airportIata);
+        String url = AirportUrlBuilder.buildAirportUrl(airportIata);
+        log.info("Outbound request method=GET url={}", url);
         AirportApiResponse response = airportWebClient.get()
-                .uri(uriBuilder -> uriBuilder.path("/airports/Iata/{iata}")
-                        .queryParam("withRunways", "false")
-                        .queryParam("withTime", "false")
-                        .build(airportIata))
+                .uri(url)
                 .header("x-api-market-key", apiKey)
-                .retrieve()
-                .bodyToMono(AirportApiResponse.class)
+                .exchangeToMono(clientResponse -> {
+                    int statusCode = clientResponse.statusCode().value();
+                    log.info("Airport provider response status={}", statusCode);
+                    if (statusCode >= 400) {
+                        return clientResponse.bodyToMono(String.class)
+                                .defaultIfEmpty("")
+                                .flatMap(body -> {
+                                    log.error("Airport provider error status={} body={}", statusCode, truncate(body));
+                                    return clientResponse.createException().flatMap(Mono::error);
+                                });
+                    }
+                    return clientResponse.bodyToMono(AirportApiResponse.class);
+                })
                 .block();
         logJson("Airport API response payload iata=" + airportIata, response);
         return response;
@@ -68,5 +79,16 @@ public class AirportApiClient {
         } catch (JsonProcessingException ex) {
             log.warn("{}: <failed to serialize payload>", message, ex);
         }
+    }
+
+    private String truncate(String body) {
+        if (body == null) {
+            return null;
+        }
+        int limit = 1000;
+        if (body.length() <= limit) {
+            return body;
+        }
+        return body.substring(0, limit) + "...(truncated)";
     }
 }
