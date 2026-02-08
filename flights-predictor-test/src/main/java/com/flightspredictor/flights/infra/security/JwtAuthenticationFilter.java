@@ -5,7 +5,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -95,13 +94,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws IOException {
         String correlationId = MDC.get("correlationId");
         log.warn("SECURITY_JWT_INVALID correlationId={} reason={}", correlationId, reason);
-        JwtErrorResponse error = new JwtErrorResponse(
+        SecurityErrorResponse error = SecurityErrorResponse.unauthorized(
                 HttpServletResponse.SC_UNAUTHORIZED,
                 "Unauthorized",
                 "JWT inválido o expirado",
                 request.getRequestURI(),
-                correlationId,
-                LocalDateTime.now()
+                correlationId
         );
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);

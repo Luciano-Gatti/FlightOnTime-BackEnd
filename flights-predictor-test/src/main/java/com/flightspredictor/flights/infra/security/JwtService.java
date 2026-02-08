@@ -24,6 +24,10 @@ public class JwtService {
 
     public String generateToken(Authentication authentication) {
         Instant now = Instant.now();
+        Long userId = null;
+        if (authentication.getPrincipal() instanceof UserPrincipal userPrincipal) {
+            userId = userPrincipal.getId();
+        }
         String roles = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .reduce((a, b) -> a + "," + b)
@@ -34,7 +38,23 @@ public class JwtService {
                 .issuer(properties.issuer())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusSeconds(properties.expirationSeconds())))
+                .claim("userId", userId)
+                .claim("email", authentication.getName())
                 .claim("roles", roles)
+                .signWith(signingKey)
+                .compact();
+    }
+
+    public String generateToken(com.flightspredictor.flights.domain.entities.User user) {
+        Instant now = Instant.now();
+        return Jwts.builder()
+                .subject(user.getEmail())
+                .issuer(properties.issuer())
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusSeconds(properties.expirationSeconds())))
+                .claim("userId", user.getId())
+                .claim("email", user.getEmail())
+                .claim("roles", user.getRoles())
                 .signWith(signingKey)
                 .compact();
     }

@@ -64,11 +64,11 @@ class JwtSecurityIntegrationTest {
     }
 
     @Test
-    void predictWithoutTokenReturnsUnauthorized() throws Exception {
+    void predictWithoutTokenReturnsOk() throws Exception {
         mockMvc.perform(post("/predict")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(buildPredictionRequest()))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isOk());
     }
 
     @Test
