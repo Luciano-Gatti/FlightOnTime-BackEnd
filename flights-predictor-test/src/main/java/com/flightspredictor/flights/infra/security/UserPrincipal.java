@@ -54,6 +54,18 @@ public class UserPrincipal implements UserDetails {
         return true;
     }
 
+    public Long getId() {
+        return user.getId();
+    }
+
+    public String getEmail() {
+        return user.getEmail();
+    }
+
+    public String getRoles() {
+        return user.getRoles();
+    }
+
     private List<GrantedAuthority> parseAuthorities(String roles) {
         if (roles == null || roles.isBlank()) {
             return List.of();
