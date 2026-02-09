@@ -3,6 +3,7 @@ package com.flightspredictor.flights.infra.error;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -10,6 +11,8 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import com.flightspredictor.flights.domain.error.BusinessException;
+import com.flightspredictor.flights.infra.security.InvalidPasswordException;
+import com.flightspredictor.flights.infra.security.UserEmailAlreadyExistsException;
 
 /**
  * Maneja errores de validación producidos por Bean Validation (@Valid).
@@ -39,9 +42,12 @@ public class GlobalExceptionHandler {
                 );
         // Construccion de la respuesta de error.
         Map<String, Object> response = new HashMap<>();
-        response.put("Estado", HttpStatus.BAD_REQUEST.value());
-        response.put("Error", "Error de Validacion");
-        response.put("Detalles", errores);
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put("error", "Validation Error");
+        response.put("message", "Validation failed");
+        response.put("errorCode", "VALIDATION_ERROR");
+        response.put("correlationId", MDC.get("correlationId"));
+        response.put("details", errores);
 
         //Retorna un HTTP 400
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
@@ -51,12 +57,38 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handlerBusinessError(BusinessException ex){
         //Mapa que contendrá los errores de validación por campo
         Map<String, Object> respuesta = new HashMap<>();
-        respuesta.put("Estado", HttpStatus.BAD_REQUEST.value());
-        respuesta.put("Codigo", ex.getCode());
-        respuesta.put("Mensaje", ex.getMessage());
+        respuesta.put("status", HttpStatus.BAD_REQUEST.value());
+        respuesta.put("error", "Business Error");
+        respuesta.put("message", ex.getMessage());
+        respuesta.put("errorCode", ex.getCode());
+        respuesta.put("correlationId", MDC.get("correlationId"));
 
         //Retorna un HTTP 400
         return new ResponseEntity<>(respuesta, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(UserEmailAlreadyExistsException.class)
+    public ResponseEntity<Object> handlerUserEmailAlreadyExists(UserEmailAlreadyExistsException ex){
+        return new ResponseEntity<>(
+                buildStandardError(
+                        HttpStatus.CONFLICT,
+                        "USER_EMAIL_ALREADY_EXISTS",
+                        "Email already exists"
+                ),
+                HttpStatus.CONFLICT
+        );
+    }
+
+    @ExceptionHandler(InvalidPasswordException.class)
+    public ResponseEntity<Object> handlerInvalidPassword(InvalidPasswordException ex){
+        return new ResponseEntity<>(
+                buildStandardError(
+                        HttpStatus.BAD_REQUEST,
+                        "USER_PASSWORD_INVALID",
+                        ex.getMessage()
+                ),
+                HttpStatus.BAD_REQUEST
+        );
     }
     
     /**
@@ -74,13 +106,23 @@ public class GlobalExceptionHandler {
     // Construccion de la respuesta de error.
     public ResponseEntity<Object> handlerUnexpected(Exception ex){
         return new ResponseEntity<>(
-                Map.of(
-                        "Estado" , 500,
-                        "Error", "INTERNAL ERROR",
-                        "Mensaje", "Error inesperado"
+                buildStandardError(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "INTERNAL_ERROR",
+                        "Error inesperado"
                 ),
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
+    }
+
+    private Map<String, Object> buildStandardError(HttpStatus status, String errorCode, String message) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", status.value());
+        response.put("error", status.getReasonPhrase());
+        response.put("message", message);
+        response.put("errorCode", errorCode);
+        response.put("correlationId", MDC.get("correlationId"));
+        return response;
     }
 
 }
