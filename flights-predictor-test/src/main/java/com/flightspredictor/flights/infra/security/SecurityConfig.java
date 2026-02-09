@@ -30,7 +30,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+<<<<<<< codex/modify-jwt-auth-for-optional-authentication-2c5df2
                         .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/register").permitAll()
+=======
+                        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+>>>>>>> main
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/predict").permitAll()
                         .requestMatchers("/history/**", "/subscriptions/**").hasRole("USER")

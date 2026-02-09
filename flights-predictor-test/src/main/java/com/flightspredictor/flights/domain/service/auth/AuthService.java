@@ -2,6 +2,7 @@ package com.flightspredictor.flights.domain.service.auth;
 
 import com.flightspredictor.flights.domain.dto.auth.LoginRequest;
 import com.flightspredictor.flights.domain.dto.auth.LoginResponse;
+<<<<<<< codex/modify-jwt-auth-for-optional-authentication-2c5df2
 import com.flightspredictor.flights.domain.dto.auth.RegisterRequest;
 import com.flightspredictor.flights.domain.dto.auth.RegisterResponse;
 import com.flightspredictor.flights.domain.dto.auth.RegisterUserResponse;
@@ -17,6 +18,14 @@ import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
+=======
+import com.flightspredictor.flights.domain.entities.User;
+import com.flightspredictor.flights.domain.repository.UserRepository;
+import com.flightspredictor.flights.infra.security.InvalidCredentialsException;
+import com.flightspredictor.flights.infra.security.JwtProperties;
+import com.flightspredictor.flights.infra.security.JwtService;
+import lombok.RequiredArgsConstructor;
+>>>>>>> main
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +37,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProperties jwtProperties;
+<<<<<<< codex/modify-jwt-auth-for-optional-authentication-2c5df2
     private final int passwordMinLength;
     private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d).+$");
 
@@ -47,6 +57,11 @@ public class AuthService {
 
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByEmailIgnoreCase(normalizeEmail(request.email()))
+=======
+
+    public LoginResponse login(LoginRequest request) {
+        User user = userRepository.findByEmail(request.email())
+>>>>>>> main
                 .orElseThrow(InvalidCredentialsException::new);
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new InvalidCredentialsException();
@@ -54,6 +69,7 @@ public class AuthService {
         String token = jwtService.generateToken(user);
         long expiresInMinutes = (long) Math.ceil(jwtProperties.expirationSeconds() / 60.0);
         return new LoginResponse(token, "Bearer", expiresInMinutes);
+<<<<<<< codex/modify-jwt-auth-for-optional-authentication-2c5df2
     }
 
     public RegisterResponse register(RegisterRequest request) {
@@ -115,5 +131,7 @@ public class AuthService {
 
     private String normalizeEmail(String email) {
         return email == null ? null : email.trim().toLowerCase();
+=======
+>>>>>>> main
     }
 }
