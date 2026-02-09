@@ -33,6 +33,7 @@ public class PredictionService {
     private final RequestMapper requestMapper;
     private final FlightRequestRepository requestRepo;
     private final FlightPredictionRepository predictionRepo;
+    private final SnapshotService snapshotService;
 
     public ModelPredictionResponse predict(PredictionRequest request){
         String correlationId = MDC.get("correlationId");
@@ -60,6 +61,7 @@ public class PredictionService {
         if (requestEntity != null) {
             List<FlightPrediction> predictions = requestEntity.getPredictions();
             if (predictions != null && !predictions.isEmpty()) {
+                snapshotService.recordSnapshotIfAuthenticated(requestEntity, predictions.get(0));
                 log.info("PREDICT_STEP step=END correlationId={}", correlationId);
                 return new ModelPredictionResponse(predictions.get(0));
             }
@@ -93,14 +95,14 @@ public class PredictionService {
         }
         FlightPrediction predictionEntity = new FlightPrediction(domainResponse, requestEntity);
         log.info("PREDICT_STEP step=CREATE_FLIGHT_PREDICTION correlationId={}", correlationId);
-        predictionRepo.save(predictionEntity);
+        FlightPrediction savedPrediction = predictionRepo.save(predictionEntity);
+        snapshotService.recordSnapshotIfAuthenticated(requestEntity, savedPrediction);
 
         log.info("PREDICT_STEP step=END correlationId={}", correlationId);
 
         return domainResponse;
     }
 }
-
 
 
 
